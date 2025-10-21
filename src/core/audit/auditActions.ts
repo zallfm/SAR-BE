@@ -1,0 +1,7 @@
+export enum AuditAction {
+  LOGIN_SUCCESS = 'LOGIN_SUCCESS',
+  LOGIN_FAILED = 'LOGIN_FAILED',
+  LOGOUT_SUCCESS = 'LOGOUT_SUCCESS',
+  SESSION_TIMEOUT = 'SESSION_TIMEOUT'
+  // (Nanti tambah APP_*, UAR_*, dsb.)
+}
