@@ -9,6 +9,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
 
   [ERROR_CODES.VAL_REQUIRED_FIELD]: 'Required field is missing.',
   [ERROR_CODES.VAL_INVALID_FORMAT]: 'Invalid format of provided data.',
+  
 
   [ERROR_CODES.API_NETWORK_ERROR]: 'Network error occurred.',
   [ERROR_CODES.API_TIMEOUT]: 'Request timed out.',

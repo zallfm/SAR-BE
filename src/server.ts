@@ -3,7 +3,6 @@ import { buildApp } from './app';
 import { SECURITY_CONFIG } from './config/security';
 
 const port = Number(process.env.PORT || 3000);
-// console.log(port)
 
 const start = async () => {
   const app = await buildApp();
