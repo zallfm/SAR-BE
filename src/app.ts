@@ -9,6 +9,8 @@ import { errorHandler } from './core/errors/errorHandler';
 import { authRoutes } from './api/auth/auth.routes';
 import rateLimit from '@fastify/rate-limit';
 import { SECURITY_CONFIG } from './config/security';
+import prisma from "./plugins/prisma";
+import { logMonitoringRoutes } from './api/logging_monitoring/log_monitoring.routes';
 
 export async function buildApp() {
   const app = Fastify({
@@ -31,6 +33,7 @@ export async function buildApp() {
   // app.setErrorHandler(errorHandler);
 
   await app.register(authRoutes, { prefix: '/api/auth' });
+  await app.register(logMonitoringRoutes, { prefix: '/api/sar' });
 
   app.get("/health", async (request, reply) => {
     try {
