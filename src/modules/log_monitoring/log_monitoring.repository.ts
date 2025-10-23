@@ -17,19 +17,32 @@ export interface ListLogsQuery {
     order?: Order;
 }
 
-const parseDate = (s: string): Date => {
-    const [d, m, rest] = s.split('-');
-    const [y, time] = rest.split(' ');
-    const [hh, mm, ss] = time.split(':').map(Number);
-    return new Date(Number(y), Number(m) - 1, Number(d), hh, mm, ss)
-}
+let seqNO = (mockLogs?.[0]?.NO ?? 0) + 1;
 
-function withinRange(dt: string, start?: string, end?: string): boolean {
+const parseDate = (s: string): Date => {
+    if (!s) return new Date(); // fallback
+    try {
+        // Normalisasi semua pemisah jadi "-"
+        const safe = s.replace(/[\/]/g, "-");
+        const [d, m, rest] = safe.split("-");
+        const [y, time] = rest.split(" ");
+        const [hh, mm, ss] = time.split(":").map(Number);
+        return new Date(Number(y), Number(m) - 1, Number(d), hh, mm, ss);
+    } catch (err) {
+        console.error("[parseDate ERROR]", s, err);
+        return new Date(); // fallback supaya nggak crash
+    }
+};
+
+
+function withinRange(dt?: string, start?: string, end?: string): boolean {
+    if (!dt) return false;
     const t = parseDate(dt).getTime();
     if (start && t < parseDate(start).getTime()) return false;
-    if (end && t > parseDate(end).getTime()) return false
-    return true
+    if (end && t > parseDate(end).getTime()) return false;
+    return true;
 }
+
 
 export const logRepository = {
     async listLogs(params: ListLogsQuery) {
@@ -56,7 +69,7 @@ export const logRepository = {
         if (q) {
             const s = q.toLowerCase();
             rows = rows.filter(r =>
-                r.DETAILS.toLowerCase().includes(s) ||
+                // r.DETAILS.toLowerCase().includes(s) ||
                 r.FUNCTION_NAME.toLowerCase().includes(s) ||
                 r.MODULE.toLowerCase().includes(s) ||
                 r.PROCESS_ID.toLowerCase().includes(s)
@@ -88,17 +101,59 @@ export const logRepository = {
         const data = rows.slice(offset, offset + limit);
         console.log("data", data)
 
+        const mapped = data.map(r => ({
+            ...r,
+            DETAILS: mockLogDetails
+                .filter((d: LogDetail) => d.PROCESS_ID === r.PROCESS_ID)
+                .sort((a, b) => a.ID - b.ID),
+        }));
+
         return {
-            data,
+            data: mapped,
             meta: {
-                page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit))
-            }
-        }
+                page,
+                limit,
+                total,
+                totalPages: Math.max(1, Math.ceil(total / limit)),
+            },
+        };
     },
 
     async getLogByProcessId(processId: string) {
-        return mockLogs.find(r => r.PROCESS_ID === processId) ?? null
+        // console.log(processId)
+        const header = mockLogs.find(r => r.PROCESS_ID === processId);
+        if (!header) return null
+
+        const details: LogDetail[] = mockLogDetails
+            .filter(d => d.PROCESS_ID === processId)
+            .sort((a, b) => a.ID - b.ID)
+
+        const result: LogEntry = {
+            ...header,
+            DETAILS: details
+        }
+        console.log("result", result)
+
+        return result
     },
+
+    async insertLog(newLog: LogEntry) {
+        // Tambah nomor otomatis (increment)
+        newLog.NO = mockLogs.length > 0 ? Math.max(...mockLogs.map(l => l.NO)) + 1 : 1;
+
+        // Tambahkan ke array mock
+        mockLogs.push(newLog);
+
+        if (newLog.DETAILS?.length) {
+            mockLogDetails.push(...newLog.DETAILS);
+        }
+
+
+        console.log("[✅ MOCK INSERTED]", newLog.PROCESS_ID, newLog.MODULE, newLog.FUNCTION_NAME);
+        return newLog;
+    },
+
+
 
     async listDetailsByProcessId(processId: string, page = 1, limit = 20) {
         const rows: LogDetail[] = mockLogDetails.filter(d => d.PROCESS_ID === processId)
