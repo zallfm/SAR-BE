@@ -8,5 +8,6 @@ export async function logMonitoringRoutes(app: FastifyInstance) {
     app.get('/log_monitoring/:processId/details', { schema: listDetailsSchema }, logMonitoringController.listDetails(app));
     app.get('/log_monitoring/export', {schema: exportExcelSchema}, logMonitoringController.exportExcel(app))
     app.get('/log_monitoring/:processId/details/export', logMonitoringController.exportDetailsExcel(app))
+    app.post('/log_monitoring', logMonitoringController.createLog(app));
     // app.get('/log_monitoring/export?status=Error&module=Application&order=desc&sortBy=START_DATE, {schema: exportExcelSchema}, logMonitoringController.exportExcel(app))
 }

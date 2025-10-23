@@ -217,7 +217,7 @@ export const mockLogs: LogEntry[] = [
 ];
 
 // ---- Mock details: 10 langkah per PROCESS_ID (contoh) ----
-const mkDetails = (processId: string, base = '21-07-2024 10:00:00'): LogDetail[] => {
+const mkDetails = (processId: string, base = '21-10-2025 10:00:00'): LogDetail[] => {
     return Array.from({ length: 10 }, (_, i) => ({
         ID: i + 1,
         PROCESS_ID: processId,

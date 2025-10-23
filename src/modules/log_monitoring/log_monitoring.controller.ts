@@ -2,7 +2,30 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { logMonitoringService } from "./log_monitoring.service";
 import { mockLogDetails } from "./mock";
 import ExcelJS from 'exceljs';
+import { logRepository } from "./log_monitoring.repository";
+import { LogEntry } from "../../types/log_monitoring";
 
+const toGB = (d: Date) =>
+    d.toLocaleString('en-GB', { hour12: false }).replace(',', '');
+const normalizeStatus = (s?: string): LogEntry['STATUS'] => {
+    if (!s) return 'Success';
+    const v = String(s).toLowerCase().trim();
+    if (v === 'success') return 'Success';
+    if (v === 'failure' || v === 'error') return 'Error';
+    if (v === 'warning') return 'Warning';
+    if (v === 'inprogress' || v === 'in progress') return 'InProgress';
+    // fallback aman
+    return 'Success';
+};
+let seqCounter = 0;
+function generateProcessId() {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const seq = String(seqCounter++).padStart(5, "0"); // 00001, 00002, ...
+    return `${yyyy}${mm}${dd}${seq}`;
+}
 export const logMonitoringController = {
     listLogs: (app: FastifyInstance) => async (
         req: FastifyRequest<{
@@ -38,6 +61,43 @@ export const logMonitoringController = {
         );
         return reply.status(200).send(result)
     },
+
+    createLog: (app: FastifyInstance) => async (req: FastifyRequest, reply: FastifyReply) => {
+        try {
+            const body = req.body as any;
+            const now = new Date();
+
+            const processId = generateProcessId();
+
+            const newLog: LogEntry = {
+                NO: 0, // repo yang isi urutan
+                PROCESS_ID: String(processId),
+                USER_ID: String(body.userId ?? 'anonymous'),
+                MODULE: String(body.module ?? 'Unknown'),
+                FUNCTION_NAME: String(body.action ?? 'Unknown'),
+                START_DATE: toGB(new Date(body.timestamp ?? now)),
+                END_DATE: toGB(now),
+                STATUS: normalizeStatus(body.status),
+                DETAILS: [
+                    {
+                        ID: 1,
+                        PROCESS_ID: String(processId),
+                        MESSAGE_DATE_TIME: toGB(now),
+                        LOCATION: String(body.location ?? body.module ?? 'Unknown'),
+                        MESSAGE_DETAIL: String(body.description ?? 'Action logged by frontend'),
+                    },
+                ],
+            };
+
+            await logRepository.insertLog(newLog);
+            return reply.status(201).send({ message: 'Log created', data: newLog });
+        } catch (err) {
+            app.log.error(err);
+            return reply.status(500).send({ message: 'Failed to create log' });
+        }
+    },
+
+
     exportExcel: (app: FastifyInstance) => async (
         req: FastifyRequest<{
             Querystring: {
