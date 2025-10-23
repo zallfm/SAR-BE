@@ -4,15 +4,26 @@ import type { LogEntry, LogDetail } from '../../types/log_monitoring';
 export const mockLogs: LogEntry[] = [
     // Security
     {
+        NO: 18,
+        PROCESS_ID: '2025011600018',
+        USER_ID: 'admin',
+        MODULE: 'Security',
+        FUNCTION_NAME: 'Login Success',
+        START_DATE: '21-07-2024 16:30:00',
+        END_DATE: '21-07-2025 16:30:00',
+        STATUS: 'Success',
+        DETAILS: []
+    },
+    {
         NO: 17,
         PROCESS_ID: '2025011600017',
         USER_ID: 'admin',
         MODULE: 'Security',
         FUNCTION_NAME: 'Login Success',
-        START_DATE: '21-07-2024 16:30:00',
-        END_DATE: '21-07-2024 16:30:00',
+        START_DATE: '21-07-2025 16:30:00',
+        END_DATE: '21-07-2025 16:30:00',
         STATUS: 'Success',
-        DETAILS: 'User admin successfully logged in from IP: 192.168.1.100'
+        DETAILS: []
     },
     {
         NO: 16,
@@ -20,10 +31,10 @@ export const mockLogs: LogEntry[] = [
         USER_ID: 'unknown',
         MODULE: 'Security',
         FUNCTION_NAME: 'Login Failed',
-        START_DATE: '21-07-2024 16:25:00',
-        END_DATE: '21-07-2024 16:25:00',
+        START_DATE: '21-07-2025 16:25:00',
+        END_DATE: '21-07-2025 16:25:00',
         STATUS: 'Error',
-        DETAILS: 'Failed login attempt for username: testuser (attempt #3) - Potential brute force attack'
+        DETAILS: []
     },
 
     // InProgress
@@ -33,10 +44,10 @@ export const mockLogs: LogEntry[] = [
         USER_ID: 'systemowner',
         MODULE: 'UAR',
         FUNCTION_NAME: 'Update',
-        START_DATE: '21-07-2024 16:00:00',
-        END_DATE: '21-07-2024 16:00:00',
+        START_DATE: '21-07-2025 16:00:00',
+        END_DATE: '21-07-2025 16:00:00',
         STATUS: 'InProgress',
-        DETAILS: 'Updating UAR progress for Division: Production Planning Control'
+        DETAILS: []
     },
 
     // Errors
@@ -44,12 +55,12 @@ export const mockLogs: LogEntry[] = [
         NO: 14,
         PROCESS_ID: '2025011600014',
         USER_ID: 'dph',
-        MODULE: 'Application',
+        MODULE: 'Application xx',
         FUNCTION_NAME: 'Update',
-        START_DATE: '21-07-2024 15:15:00',
-        END_DATE: '21-07-2024 15:15:01',
+        START_DATE: '22-10-2025 15:15:00',
+        END_DATE: '24-10-2025 15:15:01',
         STATUS: 'Error',
-        DETAILS: 'Failed to update application: Database connection timeout'
+        DETAILS: []
     },
     {
         NO: 13,
@@ -57,10 +68,10 @@ export const mockLogs: LogEntry[] = [
         USER_ID: 'admin',
         MODULE: 'UAR',
         FUNCTION_NAME: 'Create',
-        START_DATE: '21-07-2024 15:00:00',
-        END_DATE: '21-07-2024 15:00:02',
+        START_DATE: '23-10-2025 15:00:00',
+        END_DATE: '25-10-2025 15:00:02',
         STATUS: 'Error',
-        DETAILS: 'Failed to create UAR record: Validation error - Invalid division code'
+        DETAILS: []
     },
 
     // Schedule
@@ -70,10 +81,10 @@ export const mockLogs: LogEntry[] = [
         USER_ID: 'systemowner',
         MODULE: 'Schedule',
         FUNCTION_NAME: 'Update',
-        START_DATE: '21-07-2024 14:15:00',
-        END_DATE: '21-07-2024 14:15:04',
+        START_DATE: '21-07-2025 14:15:00',
+        END_DATE: '21-07-2025 14:15:04',
         STATUS: 'Success',
-        DETAILS: 'Updated schedule: UAR Review Schedule for Q2 2025'
+        DETAILS: []
     },
     {
         NO: 11,
@@ -81,10 +92,10 @@ export const mockLogs: LogEntry[] = [
         USER_ID: 'admin',
         MODULE: 'Schedule',
         FUNCTION_NAME: 'Create',
-        START_DATE: '21-07-2024 14:00:00',
-        END_DATE: '21-07-2024 14:00:05',
+        START_DATE: '21-07-2025 14:00:00',
+        END_DATE: '21-07-2025 14:00:05',
         STATUS: 'Success', 
-        DETAILS: 'Created new schedule: UAR Review Schedule for Q1 2025'
+        DETAILS: []
     },
 
     // User
@@ -94,10 +105,10 @@ export const mockLogs: LogEntry[] = [
         USER_ID: 'dph', 
         MODULE: 'User',
         FUNCTION_NAME: 'Update', 
-        START_DATE: '21-07-2024 13:15:00', 
-        END_DATE: '21-07-2024 13:15:03',
+        START_DATE: '21-07-2025 13:15:00', 
+        END_DATE: '21-07-2025 13:15:03',
         STATUS: 'Success', 
-        DETAILS: 'Updated user permissions: UAR PIC for Division: Production Engineering'
+        DETAILS:[]
     },
     {
         NO: 9, 
@@ -105,10 +116,10 @@ export const mockLogs: LogEntry[] = [
         USER_ID: 'admin', 
         MODULE: 'User',
         FUNCTION_NAME: 'Create', 
-        START_DATE: '21-07-2024 13:00:00', 
-        END_DATE: '21-07-2024 13:00:07',
+        START_DATE: '21-07-2025 13:00:00', 
+        END_DATE: '21-07-2025 13:00:07',
         STATUS: 'Success', 
-        DETAILS: 'Created new user: UAR PIC for Division: Production Planning Control'
+        DETAILS: []
     },
 
     // System Master
@@ -117,10 +128,10 @@ export const mockLogs: LogEntry[] = [
         USER_ID: 'admin', 
         MODULE: 'System Master',
         FUNCTION_NAME: 'Update', 
-        START_DATE: '21-07-2024 12:15:00', 
-        END_DATE: '21-07-2024 12:15:04',
+        START_DATE: '21-07-2025 12:15:00', 
+        END_DATE: '21-07-2025 12:15:04',
         STATUS: 'Success', 
-        DETAILS: 'Updated system master: Security Center Configuration'
+        DETAILS: []
     },
     {
         NO: 7, 
@@ -128,10 +139,10 @@ export const mockLogs: LogEntry[] = [
         USER_ID: 'systemowner', 
         MODULE: 'System Master',
         FUNCTION_NAME: 'Create', 
-        START_DATE: '21-07-2024 12:00:00', 
-        END_DATE: '21-07-2024 12:00:06',
+        START_DATE: '21-07-2025 12:00:00', 
+        END_DATE: '21-07-2025 12:00:06',
         STATUS: 'Success', 
-        DETAILS: 'Created new system master record: LDAP Configuration'
+        DETAILS: []
     },
 
     // Application
@@ -141,10 +152,10 @@ export const mockLogs: LogEntry[] = [
         USER_ID: 'admin', 
         MODULE: 'Application',
         FUNCTION_NAME: 'Update', 
-        START_DATE: '21-07-2024 11:30:00', 
-        END_DATE: '21-07-2024 11:30:03',
+        START_DATE: '21-07-2025 11:30:00', 
+        END_DATE: '21-07-2025 11:30:03',
         STATUS: 'Warning', 
-        DETAILS: 'Updated application status: Toyota Management System to Inactive'
+        DETAILS:[]
     },
     {
         NO: 5, 
@@ -152,10 +163,10 @@ export const mockLogs: LogEntry[] = [
         USER_ID: 'dph', 
         MODULE: 'Application',
         FUNCTION_NAME: 'Update', 
-        START_DATE: '21-07-2024 11:15:00', 
-        END_DATE: '21-07-2024 11:15:05',
+        START_DATE: '21-07-2025 11:15:00', 
+        END_DATE: '21-07-2025 11:15:05',
         STATUS: 'Success', 
-        DETAILS: 'Updated application: Production Achievement System'
+        DETAILS: []
     },
     {
         NO: 4, 
@@ -163,10 +174,10 @@ export const mockLogs: LogEntry[] = [
         USER_ID: 'admin', 
         MODULE: 'Application',
         FUNCTION_NAME: 'Create', 
-        START_DATE: '21-07-2024 11:00:00', 
-        END_DATE: '21-07-2024 11:00:08',
+        START_DATE: '21-07-2025 11:00:00', 
+        END_DATE: '21-07-2025 11:00:08',
         STATUS: 'Success', 
-        DETAILS: 'Created new application: Integrated Production Planning Control System'
+        DETAILS: []
     },
 
     // UAR (oldest)
@@ -176,10 +187,10 @@ export const mockLogs: LogEntry[] = [
         USER_ID: 'systemowner', 
         MODULE: 'UAR',
         FUNCTION_NAME: 'Delete', 
-        START_DATE: '21-07-2024 10:30:00', 
-        END_DATE: '21-07-2024 10:30:02',
+        START_DATE: '21-07-2025 10:30:00', 
+        END_DATE: '21-07-2025 10:30:02',
         STATUS: 'Success', 
-        DETAILS: 'Deleted UAR record for Division: Corporate Planning'
+        DETAILS: []
     },
     {
         NO: 2, 
@@ -187,10 +198,10 @@ export const mockLogs: LogEntry[] = [
         USER_ID: 'dph', 
         MODULE: 'UAR',
         FUNCTION_NAME: 'Update', 
-        START_DATE: '21-07-2024 10:15:00', 
-        END_DATE: '21-07-2024 10:15:03',
+        START_DATE: '21-07-2025 10:15:00', 
+        END_DATE: '21-07-2025 10:15:03',
         STATUS: 'Success', 
-        DETAILS: 'Updated UAR progress for Division: Production Engineering'
+        DETAILS: []
     },
     {
         NO: 1, 
@@ -198,10 +209,10 @@ export const mockLogs: LogEntry[] = [
         USER_ID: 'admin', 
         MODULE: 'UAR',
         FUNCTION_NAME: 'Create', 
-        START_DATE: '21-07-2024 10:00:00', 
-        END_DATE: '21-07-2024 10:00:05',
+        START_DATE: '21-07-2025 10:00:00', 
+        END_DATE: '21-07-2025 10:00:05',
         STATUS: 'Success', 
-        DETAILS: 'Created new UAR record for Division: Production Planning Control'
+        DETAILS: []
     }
 ];
 

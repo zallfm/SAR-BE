@@ -19,6 +19,7 @@
     "@prisma/adapter-mssql": "^6.17.1",
     "@prisma/client": "^6.17.1",
     "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
     "fastify": "^5.6.1",
     "fastify-plugin": "^4.5.1",
     "jsonwebtoken": "^9.0.2",

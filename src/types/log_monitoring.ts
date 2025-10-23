@@ -7,7 +7,7 @@ export interface LogEntry {
   START_DATE: string;
   END_DATE: string;
   STATUS: 'Success' | 'Error' | 'Warning' | 'InProgress';
-  DETAILS: string
+  DETAILS: LogDetail[];
 }
 
 export interface LogDetail {

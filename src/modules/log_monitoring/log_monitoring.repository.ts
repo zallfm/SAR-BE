@@ -56,7 +56,7 @@ export const logRepository = {
         if (q) {
             const s = q.toLowerCase();
             rows = rows.filter(r =>
-                r.DETAILS.toLowerCase().includes(s) ||
+                // r.DETAILS.toLowerCase().includes(s) ||
                 r.FUNCTION_NAME.toLowerCase().includes(s) ||
                 r.MODULE.toLowerCase().includes(s) ||
                 r.PROCESS_ID.toLowerCase().includes(s)
@@ -87,16 +87,39 @@ export const logRepository = {
         const offset = (page - 1) * limit;
         const data = rows.slice(offset, offset + limit);
 
+        const mapped = data.map(r => ({
+            ...r,
+            DETAILS: mockLogDetails
+                .filter((d: LogDetail) => d.PROCESS_ID === r.PROCESS_ID)
+                .sort((a, b) => a.ID - b.ID),
+        }));
+
         return {
-            data,
+            data: mapped,
             meta: {
-                page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit))
-            }
-        }
+                page,
+                limit,
+                total,
+                totalPages: Math.max(1, Math.ceil(total / limit)),
+            },
+        };
     },
 
     async getLogByProcessId(processId: string) {
-        return mockLogs.find(r => r.PROCESS_ID === processId) ?? null
+        // console.log(processId)
+        const header = mockLogs.find(r => r.PROCESS_ID === processId);
+        if (!header) return null
+
+        const details: LogDetail[] = mockLogDetails
+            .filter(d => d.PROCESS_ID === processId)
+            .sort((a, b) => a.ID - b.ID)
+
+        const result: LogEntry = {
+            ...header,
+            DETAILS: details
+        }
+
+        return result
     },
 
     async listDetailsByProcessId(processId: string, page = 1, limit = 20) {
