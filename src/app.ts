@@ -1,18 +1,18 @@
-import Fastify from 'fastify';
-import cors from '@fastify/cors';
-import helmet from '@fastify/helmet';
-import fastifyJWT from '@fastify/jwt';
-import rateLimit from '@fastify/rate-limit';
+import Fastify from "fastify";
+import cors from "@fastify/cors";
+import helmet from "@fastify/helmet";
+import fastifyJWT from "@fastify/jwt";
+import rateLimit from "@fastify/rate-limit";
 
-import { env } from './config/env';
-import { securityPlugin } from './plugins/securityHeaders';
-import { requestIdPlugin } from './core/observability/requestId';
-import { errorHandler } from './core/errors/errorHandler';
-import { authRoutes } from './api/auth/auth.routes';
-import { logMonitoringRoutes } from './api/logging_monitoring/log_monitoring.routes';
+import { env } from "./config/env";
+import { securityPlugin } from "./plugins/securityHeaders";
+import { requestIdPlugin } from "./core/observability/requestId";
+import { errorHandler } from "./core/errors/errorHandler";
+import { authRoutes } from "./api/auth/auth.routes";
+import { logMonitoringRoutes } from "./api/logging_monitoring/log_monitoring.routes";
 import prisma from "./plugins/prisma";
 import { indexRoutes } from "./api/index.routes";
-import { SECURITY_CONFIG } from './config/security';
+import { SECURITY_CONFIG } from "./config/security";
 
 export async function buildApp() {
   const app = Fastify({
@@ -37,16 +37,13 @@ export async function buildApp() {
 
   // ✅ 2️⃣ Aktifkan CORS untuk frontend kamu (Vite di port 5173)
   await app.register(cors, {
-    origin: [
-      'http://localhost:5173',
-      'http://127.0.0.1:5173'
-    ],
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-Requested-With',
-      'x-request-id'
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "x-request-id",
     ],
     credentials: true,
   });
@@ -68,18 +65,16 @@ export async function buildApp() {
   // 🚀 3️⃣ Register Routes
   // ==========================================
 
-  await app.register(authRoutes, { prefix: '/api/auth' });
-  await app.register(logMonitoringRoutes, { prefix: '/api/sar' });
+  await app.register(authRoutes, { prefix: "/api/auth" });
+  await app.register(indexRoutes, { prefix: "/api/sar" });
 
   // ==========================================
   // ❤️ 4️⃣ Health Check
   // ==========================================
-  await app.register(indexRoutes, { prefix: "/api" });
 
-  
   app.get("/health", async (request, reply) => {
     try {
-      if (app.hasDecorator('prisma')) {
+      if (app.hasDecorator("prisma")) {
         await app.prisma.$queryRaw`SELECT 1`;
         return { status: "ok", db: "ok" };
       }
