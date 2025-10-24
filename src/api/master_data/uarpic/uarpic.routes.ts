@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
-import { errorHandler } from "../../core/errors/errorHandler";
-import { uarController } from "../../modules/UarPic/uarpic.controller";
-import { uarPicSchema } from "../../modules/UarPic/uarpic.schemas";
+import { errorHandler } from "../../../core/errors/errorHandler";
+import { uarController } from "../../../modules/UarPic/uarpic.controller";
+import { uarPicSchema } from "../../../modules/UarPic/uarpic.schemas";
 
 type CreateUarBody = {
   PIC_NAME: string;
