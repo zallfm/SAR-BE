@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
+import { errorHandler } from "../../core/errors/errorHandler";
 import { uarController } from "../../modules/UarPic/uarpic.controller";
 import { uarPicSchema } from "../../modules/UarPic/uarpic.schemas";
-import { errorHandler } from "../../core/errors/errorHandler";
 
 type CreateUarBody = {
   PIC_NAME: string;
@@ -10,19 +10,31 @@ type CreateUarBody = {
 };
 
 export async function uarRoutes(app: FastifyInstance) {
-  app.get("/uarpic", async (req, reply) => {
+  app.get("/", async (req, reply) => {
     return uarController.getUar(app)(req, reply);
   });
 
   app.post<{ Body: CreateUarBody }>(
-    "/uarpic",
-    { errorHandler },
+    "/",
+    { errorHandler, schema: uarPicSchema },
     async (req, reply) => {
       return uarController.createUar(app)(req, reply);
     }
   );
 
-  app.put("/uarpic", { errorHandler }, async (req, reply) => {
-    return uarController.editUar(app)(req, reply);
-  });
+  app.put<{ Params: { id: string }; Body: CreateUarBody }>(
+    "/:id",
+    { errorHandler, schema: uarPicSchema },
+    async (req, reply) => {
+      return uarController.editUar(app)(req, reply);
+    }
+  );
+
+  app.delete<{ Params: { id: string }; Body: CreateUarBody }>(
+    "/:id",
+    { errorHandler },
+    async (req, reply) => {
+      return uarController.deleteUar(app)(req, reply);
+    }
+  );
 }

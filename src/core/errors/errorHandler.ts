@@ -18,7 +18,6 @@ export async function errorHandler(
 
   // logger selalu ada: pakai this.log kalau tersedia, kalau tidak pakai req.log
   const logger = (this as any)?.log ?? req.log;
-
   if (err instanceof ApplicationError) {
     err.requestId = requestId;
     const status = err.statusCode ?? 400;
@@ -27,15 +26,19 @@ export async function errorHandler(
     return reply.status(status).send(err.toResponse());
   }
 
-  const status =
-    (err as any).statusCode ?? ((err as any).validation ? 422 : 500);
-  const code = (err as any).validation
-    ? ERROR_CODES.AUTH_INVALID_CREDENTIALS
-    : ERROR_CODES.VAL_REQUIRED_FIELD;
+  if ((err as any).validation) {
+    logger.error({ err, requestId }, "Schema validation error");
 
-  const message = (err as any).validation
-    ? ERROR_MESSAGES[ERROR_CODES.AUTH_INVALID_CREDENTIALS]
-    : ERROR_MESSAGES[ERROR_CODES.VAL_REQUIRED_FIELD];
-  logger.error({ err, requestId }, "Unhandled error");
-  return reply.status(status).send({ code, message, requestId });
+    const code = ERROR_CODES.VAL_INVALID_FORMAT;
+
+    const message = (err as any).message;
+
+    return reply.status(400).send({ code, message, requestId });
+  }
+  logger.error({ err, requestId }, "Unhandled 500-level error");
+
+  const code = ERROR_CODES.SYS_UNKNOWN_ERROR;
+  const message = ERROR_MESSAGES[code] || "An unexpected error occurred";
+
+  return reply.status(500).send({ code, message, requestId });
 }

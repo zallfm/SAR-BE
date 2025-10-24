@@ -11,9 +11,15 @@ import { uarRoutes } from "./api/uarpic/uarpic.routes";
 import rateLimit from "@fastify/rate-limit";
 import { SECURITY_CONFIG } from "./config/security";
 import prisma from "./plugins/prisma";
+import { indexRoutes } from "./api/index.routes";
 export async function buildApp() {
   const app = Fastify({
     logger: { level: env.NODE_ENV === "production" ? "info" : "debug" },
+    ajv: {
+      customOptions: {
+        coerceTypes: false,
+      },
+    },
   });
 
   await app.register(prisma);
@@ -31,12 +37,12 @@ export async function buildApp() {
 
   // app.setErrorHandler(errorHandler);
 
-  await app.register(authRoutes, { prefix: "/api/auth" });
-  await app.register(uarRoutes, { prefix: "/api" });
+  await app.register(indexRoutes, { prefix: "/api" });
 
+  
   app.get("/health", async (request, reply) => {
     try {
-      await app.prisma.$queryRaw`SELECT 1`;
+      await app.prisma.tB_H_EMPLOYEE.count();
       return { status: "ok", db: "ok" };
     } catch (e) {
       app.log.error(e, "Database health check failed");
