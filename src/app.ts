@@ -19,7 +19,7 @@ export async function buildApp() {
     logger: { level: env.NODE_ENV === "production" ? "info" : "debug" },
     ajv: {
       customOptions: {
-        coerceTypes: false,
+        coerceTypes: true,
       },
     },
   });
