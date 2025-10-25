@@ -1,57 +1,71 @@
-export type AppStatus = "Active" | "Inactive";
+// ======================================
+// 📦 Application Type Definitions
+// ======================================
 
-export interface ApplicationEntity {
-  ID: string;
-  name: string;
-  division: string;
-  ownerId: string;
-  custodianId: string;
-  securityCenter: "SC" | "Global SC" | "TMMINRole" | "LDAP";
-  status: AppStatus;
-  createdAt: string; // ISO
-  updatedAt: string; // ISO
-}
-
-export interface ApplicationListItem extends ApplicationEntity {
-  ownerName: string;
-  custodianName: string;
-}
-
-export type SortField = "updatedAt" | "createdAt" | "name" | "ID";
-export type SortOrder = "asc" | "desc";
-
-export interface ApplicationListQuery {
-  page?: number;
-  limit?: number;
-  sortField?: SortField;
-  sortOrder?: SortOrder;
-  search?: string;
-  status?: AppStatus;
-  securityCenter?: ApplicationEntity["securityCenter"];
-  division?: string;
-  ownerId?: string;
-  custodianId?: string;
-}
-
-export interface ApplicationListResult {
-  data: ApplicationListItem[];
-  pagination: {
-    page: number;
-    limit: number;
-    totalItems: number;
-    totalPages: number;
-    hasPrev: boolean;
-    hasNext: boolean;
-  };
-  sort: { field: SortField; order: SortOrder };
-  requestId: string;
-}
-
+// --- SystemUser: pemilik & custodian sistem
 export interface SystemUser {
-  ID: string;
+  ID: string;              // Noreg unik
   name: string;
   division: string;
   email: string;
   department: string;
-  roles?: Array<"OWNER" | "CUSTODIAN">; // opsional (untuk masa depan)
+  canBeOwner: boolean;     // eligible sebagai System Owner
+  canBeCustodian: boolean; // eligible sebagai System Custodian
+}
+
+// --- Security Center master
+export type SecurityCenter = "SC" | "Global SC" | "TMMINRole" | "LDAP";
+
+// --- Status aplikasi
+export type ApplicationStatus = "Aktif" | "Inactive";
+
+// --- Application model utama (DB/Repository)
+export interface Application {
+  ID: string; // SARAPPLICATIONYYYYMMDD0001
+  APPLICATION_ID: string;
+  APPLICATION_NAME: string;
+  DIVISION_ID_OWNER: string;
+  NOREG_SYSTEM_OWNER: string; // referensi ke SystemUser.ID
+  NOREG_SYSTEM_CUST: string;  // referensi ke SystemUser.ID
+  SECURITY_CENTER: SecurityCenter;
+  APPLICATION_STATUS: ApplicationStatus;
+  CREATED_BY: string;
+  CREATED_DT: string; // ISO string
+  CHANGED_BY: string;
+  CHANGED_DT: string; // ISO string
+}
+
+// ======================================
+// 🧾 DTO (Data Transfer Object) — Request Body
+// ======================================
+
+// --- DTO untuk create (POST)
+export type ApplicationCreateDTO = {
+  APPLICATION_ID: string;
+  APPLICATION_NAME: string;
+  DIVISION_ID_OWNER: string;
+  NOREG_SYSTEM_OWNER: string;
+  NOREG_SYSTEM_CUST: string;
+  SECURITY_CENTER: SecurityCenter;
+  APPLICATION_STATUS: ApplicationStatus;
+};
+
+// --- DTO untuk update (PUT)
+export type ApplicationUpdateDTO = Partial<ApplicationCreateDTO>;
+
+// --- DTO untuk query list (GET)
+export type ApplicationListQuery = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortField?: "APPLICATION_ID" | "APPLICATION_NAME" | "CREATED_DT" | "CHANGED_DT";
+  sortOrder?: "asc" | "desc";
+};
+
+// --- Response standar list
+export interface ApplicationListResponse {
+  data: Application[];
+  page: number;
+  limit: number;
+  total: number;
 }
