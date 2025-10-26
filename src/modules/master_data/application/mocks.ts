@@ -3,34 +3,33 @@
 // ===========================================
 
 export interface SystemUser {
-  ID: string;            // NOREG
-  name: string;
-  division: string;
-  email: string;
-  department: string;
+  NOREG: string;            // NOREG
+  PERSONAL_NAME: string;
+  DIVISION_NAME: string;
+  MAIL: string;
+  DEPARTEMENT_NAME: string;
   canBeOwner: boolean;      // eligible as System Owner
   canBeCustodian: boolean;  // eligible as System Custodian
 }
 
 export const systemUsers: SystemUser[] = [
-  { ID:"00123456", name:"Okubo",     division:"Production Planning Control", email:"okubo@toyota.co.id",     department:"PPC Dept", canBeOwner:true,  canBeCustodian:true  }, // BOTH
-  { ID:"00123457", name:"Yoshida",   division:"Production Planning Control", email:"yoshida@toyota.co.id",   department:"PPC Dept", canBeOwner:true,  canBeCustodian:false }, // OWNER only
-  { ID:"00234567", name:"Tanaka",    division:"Production Engineering",      email:"tanaka@toyota.co.id",    department:"PE Dept",  canBeOwner:true, canBeCustodian:false  }, // CUST only
-  { ID:"00234568", name:"Sato",      division:"Production Engineering",      email:"sato@toyota.co.id",      department:"PE Dept",  canBeOwner:true,  canBeCustodian:false  }, // BOTH
-  { ID:"00345678", name:"Suzuki",    division:"Corporate Planning",          email:"suzuki@toyota.co.id",    department:"CP Dept",  canBeOwner:false, canBeCustodian:true  }, // CUST only
-  { ID:"00345679", name:"Takahashi", division:"Corporate Planning",          email:"takahashi@toyota.co.id", department:"CP Dept",  canBeOwner:false, canBeCustodian:true  }, // CUST only
+  { NOREG:"00123456", PERSONAL_NAME:"Okubo",     DIVISION_NAME:"Production Planning Control", MAIL:"okubo@toyota.co.id",     DEPARTEMENT_NAME:"PPC Dept", canBeOwner:true,  canBeCustodian:true  }, // BOTH
+  { NOREG:"00123457", PERSONAL_NAME:"Yoshida",   DIVISION_NAME:"Production Planning Control", MAIL:"yoshida@toyota.co.id",   DEPARTEMENT_NAME:"PPC Dept", canBeOwner:true,  canBeCustodian:false }, // OWNER only
+  { NOREG:"00234567", PERSONAL_NAME:"Tanaka",    DIVISION_NAME:"Production Engineering",      MAIL:"tanaka@toyota.co.id",    DEPARTEMENT_NAME:"PE Dept",  canBeOwner:true, canBeCustodian:false  }, // CUST only
+  { NOREG:"00234568", PERSONAL_NAME:"Sato",      DIVISION_NAME:"Production Engineering",      MAIL:"sato@toyota.co.id",      DEPARTEMENT_NAME:"PE Dept",  canBeOwner:true,  canBeCustodian:false  }, // BOTH
+  { NOREG:"00345678", PERSONAL_NAME:"Suzuki",    DIVISION_NAME:"Corporate Planning",          MAIL:"suzuki@toyota.co.id",    DEPARTEMENT_NAME:"CP Dept",  canBeOwner:true, canBeCustodian:true  }, // CUST only
+  { NOREG:"00345679", PERSONAL_NAME:"Takahashi", DIVISION_NAME:"Corporate Planning",          MAIL:"takahashi@toyota.co.id", DEPARTEMENT_NAME:"CP Dept",  canBeOwner:false, canBeCustodian:true  }, // CUST only
 ];
 
 // ------------------------
 // Security Center Master
 // ------------------------
-export const securityCenters: string[] = ["SC", "Global SC", "TMMINRole", "LDAP"];
+export const securityCenters: string[] = ["SC", "Global SC", "TMMINRole", "LDAPS"];
 
 // -----------------------
 // Application Mock Data
 // -----------------------
 export type ApplicationRow = {
-  ID: string; // akan dinormalisasi ke format SARAPPLICATIONYYYYMMDD0001
   APPLICATION_ID: string;
   APPLICATION_NAME: string;
   DIVISION_ID_OWNER: string;
@@ -46,7 +45,6 @@ export type ApplicationRow = {
 
 export const mockApplications: ApplicationRow[] = [
   {
-    ID: "1",
     APPLICATION_ID: "IPPCS",
     APPLICATION_NAME: "Integrated Production Planning Control System",
     DIVISION_ID_OWNER: "Production Planning Control",
@@ -60,7 +58,6 @@ export const mockApplications: ApplicationRow[] = [
     CHANGED_DT: "2024-07-20T11:00:00.000Z",
   },
   {
-    ID: "2",
     APPLICATION_ID: "PAS",
     APPLICATION_NAME: "Production Achievement System",
     DIVISION_ID_OWNER: "Production Engineering",
@@ -74,7 +71,6 @@ export const mockApplications: ApplicationRow[] = [
     CHANGED_DT: "2024-07-19T09:45:00.000Z",
   },
   {
-    ID: "3",
     APPLICATION_ID: "TMS",
     APPLICATION_NAME: "Toyota Management System",
     DIVISION_ID_OWNER: "Corporate Planning",

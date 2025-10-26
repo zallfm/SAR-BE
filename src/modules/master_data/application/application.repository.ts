@@ -39,7 +39,7 @@ function normalizeMockIds(rows: ApplicationRow[]): ApplicationRow[] {
     const key = yyyymmdd(new Date(r.CREATED_DT));
     const next = (dailySeq.get(key) ?? 0) + 1;
     dailySeq.set(key, next);
-    out.push({ ...r, ID: generateIdForDate(key, next) });
+    out.push({ ...r, APPLICATION_ID: generateIdForDate(key, next) });
   }
   return out;
 }
@@ -50,8 +50,8 @@ let apps: ApplicationRow[] = normalizeMockIds(mockApplications);
 function nextDailySequence(dateKey: string): number {
   const prefix = `SARAPPLICATION${dateKey}`;
   const seqs = apps
-    .filter(a => a.ID.startsWith(prefix))
-    .map(a => Number(a.ID.slice(prefix.length)))
+    .filter(a => a.APPLICATION_ID.startsWith(prefix))
+    .map(a => Number(a.APPLICATION_ID.slice(prefix.length)))
     .filter(Number.isFinite);
   return (seqs.length ? Math.max(...seqs) : 0) + 1;
 }
@@ -75,7 +75,7 @@ export const applicationRepository = {
       );
     }
 
-    // Default (schema & controller) sudah set CREATED_DT desc (terbaru di atas)
+    // Default (schema & controller) sudah set CREATED_DT desc
     const sortField = params.sortField ?? "CREATED_DT";
     const sortOrder = params.sortOrder ?? "desc";
 
@@ -103,14 +103,14 @@ export const applicationRepository = {
   },
 
   async findById(id: string) {
-    return apps.find((x) => x.ID === id) ?? null;
+    return apps.find((x) => x.APPLICATION_ID === id) ?? null;
   },
 
   async findByCode(code: string) {
     return apps.find((x) => x.APPLICATION_ID === code) ?? null;
   },
 
-  async create(payload: Omit<ApplicationRow, "ID" | "CREATED_BY" | "CREATED_DT" | "CHANGED_BY" | "CHANGED_DT">) {
+  async create(payload: Omit<ApplicationRow, "CREATED_BY" | "CREATED_DT" | "CHANGED_BY" | "CHANGED_DT">) {
     const now = new Date();
     const key = yyyymmdd(now);
     const seq = nextDailySequence(key);
@@ -118,7 +118,6 @@ export const applicationRepository = {
 
     const newRow: ApplicationRow = {
       ...payload,
-      ID: generateIdForDate(key, seq), // ⬅️ FORMAT BARU
       CREATED_BY: "system",
       CREATED_DT: nowIso,
       CHANGED_BY: "system",
@@ -131,7 +130,7 @@ export const applicationRepository = {
   },
 
   async update(id: string, updates: Partial<ApplicationRow>) {
-    const idx = apps.findIndex((x) => x.ID === id);
+    const idx = apps.findIndex((x) => x.APPLICATION_ID === id);
     if (idx === -1) return null;
     const nowIso = new Date().toISOString();
     apps[idx] = {
@@ -145,17 +144,42 @@ export const applicationRepository = {
 
   // ---------- master lookups ----------
   async getUserByNoreg(noreg: string): Promise<SystemUser | null> {
-    return systemUsers.find((u) => u.ID === noreg) ?? null;
+    return systemUsers.find((u) => u.NOREG === noreg) ?? null;
   },
-  async listUsers(): Promise<SystemUser[]> {
-    return systemUsers;
+  async listUsers(p?: { q?: string; limit?: number; offset?: number }) {
+    const q = (p?.q ?? "").toLowerCase();
+    const limit = Math.min(p?.limit ?? 10, 50);
+    const offset = p?.offset ?? 0;
+
+    const all = q
+      ? systemUsers.filter(u =>
+        (u.NOREG + " " + u.PERSONAL_NAME).toLowerCase().includes(q)
+      )
+      : systemUsers;
+
+    return {
+      items: all.slice(offset, offset + limit),
+      total: all.length,
+    };
   },
   async isValidSecurityCenter(sc: string): Promise<boolean> {
     return securityCenters.includes(sc);
   },
-  async listSecurityCenters(): Promise<string[]> {
-    return securityCenters;
-  },
+  async listSecurityCenters(p?: { q?: string; limit?: number; offset?: number }) {
+    const q = (p?.q ?? "").toLowerCase().trim();
+    const limit = Math.min(p?.limit ?? 10, 100);
+    const offset = p?.offset ?? 0;
+
+    // securityCenters: string[]
+    const all = q
+      ? securityCenters.filter(sc => sc.toLowerCase().includes(q))
+      : securityCenters;
+
+    return {
+      items: all.slice(offset, offset + limit),
+      total: all.length,
+    };
+  }
 };
 
 // --- di bawah export const applicationRepository = { ... } tambahkan:

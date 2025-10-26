@@ -1,7 +1,7 @@
 import { SystemUser, systemUsers } from "./mocks"; // atau dari repository master user
 
 function findUser(noreg: string) {
-  return systemUsers.find(u => u.ID === noreg);
+  return systemUsers.find(u => u.NOREG === noreg);
 }
 
 // ➜ aturan baru

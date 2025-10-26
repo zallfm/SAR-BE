@@ -28,7 +28,7 @@ export const applicationController = {
         sortField,
         sortOrder,
       });
-      console.log("result", result)
+      // console.log("result", result)
 
       return reply.send({
         data: result.data,
@@ -57,13 +57,24 @@ export const applicationController = {
     },
 
   // masters
-  listUsers: () => async (_req: FastifyRequest, reply: FastifyReply) => {
-    const users = await svc.listUsers();
-    return reply.send({ data: users });
+  listUsers: () => async (req: FastifyRequest<{ Querystring: { q?: string; limit?: number; offset?: number } }>, reply: FastifyReply) => {
+    const { q = "", limit = 10, offset = 0 } = req.query ?? {};
+    const result = await svc.listUsers({ q, limit: Number(limit), offset: Number(offset) });
+    return reply.send({ data: result.items, total: result.total });
   },
 
-  listSecurityCenters: () => async (_req: FastifyRequest, reply: FastifyReply) => {
-    const centers = await svc.listSecurityCenters();
-    return reply.send({ data: centers });
-  },
+
+  listSecurityCenters: () =>
+    async (
+      req: FastifyRequest<{ Querystring: { q?: string; limit?: number; offset?: number } }>,
+      reply: FastifyReply
+    ) => {
+      const { q = "", limit = 10, offset = 0 } = req.query ?? {};
+      const result = await svc.listSecurityCenters({
+        q,
+        limit: Number(limit),
+        offset: Number(offset),
+      });
+      return reply.send({ data: result.items, total: result.total });
+    },
 };

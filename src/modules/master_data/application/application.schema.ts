@@ -4,7 +4,6 @@ const ApplicationItemSchema = {
   type: "object",
   additionalProperties: false,
   properties: {
-    ID: { type: "string" },
     APPLICATION_ID: { type: "string" },
     APPLICATION_NAME: { type: "string" },
     DIVISION_ID_OWNER: { type: "string" },
@@ -18,7 +17,7 @@ const ApplicationItemSchema = {
     CHANGED_DT: { type: "string" },
   },
   required: [
-    "ID","APPLICATION_ID","APPLICATION_NAME","DIVISION_ID_OWNER",
+    "APPLICATION_ID","APPLICATION_NAME","DIVISION_ID_OWNER",
     "NOREG_SYSTEM_OWNER","NOREG_SYSTEM_CUST","SECURITY_CENTER",
     "APPLICATION_STATUS","CREATED_BY","CREATED_DT","CHANGED_BY","CHANGED_DT"
   ],

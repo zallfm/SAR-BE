@@ -4,11 +4,11 @@
 
 // --- SystemUser: pemilik & custodian sistem
 export interface SystemUser {
-  ID: string;              // Noreg unik
-  name: string;
-  division: string;
-  email: string;
-  department: string;
+  NOREG: string;              // Noreg unik
+  PERSONAL_NAME: string;
+  DIVISION_NAME: string;
+  MAIL: string;
+  DEPARTEMENT_NAME: string;
   canBeOwner: boolean;     // eligible sebagai System Owner
   canBeCustodian: boolean; // eligible sebagai System Custodian
 }

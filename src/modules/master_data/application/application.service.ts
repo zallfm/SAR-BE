@@ -40,12 +40,16 @@ export const applicationService = {
     SECURITY_CENTER: string;
     APPLICATION_STATUS: "Aktif" | "Inactive";
   }) {
-    // 1) Unique constraint
-    if (await repo.findByCode(input.APPLICATION_ID)) {
+
+    const existingApp = await repo.findByCode(input.APPLICATION_ID);
+    if (existingApp) {
       throw new ApplicationError(
         ERROR_CODES.VAL_DUPLICATE_ENTRY,
-        "APPLICATION_ID already exists"
-      );
+        "APPLICATION_ID already exists",
+        { APPLICATION_ID: input.APPLICATION_ID },
+        undefined,
+        400
+      )
     }
 
     // 2) Validate owner/custodian existence + eligibility
@@ -67,7 +71,7 @@ export const applicationService = {
     }
 
     // Optional: prevent same person for both roles
-    if (owner.ID === cust.ID) {
+    if (owner.NOREG === cust.NOREG) {
       throw new ApplicationError(ERROR_CODES.VAL_INVALID_FORMAT, "Owner and Custodian must be different users");
     }
 
@@ -140,10 +144,10 @@ export const applicationService = {
   },
 
   // masters (untuk dropdown FE)
-  async listUsers() {
-    return repo.listUsers();
+  async listUsers(p?: { q?: string; limit?: number; offset?: number }) {
+    return repo.listUsers(p);
   },
-  async listSecurityCenters() {
-    return repo.listSecurityCenters();
+  async listSecurityCenters(p?: { q?: string; limit?: number; offset?: number }) {
+    return repo.listSecurityCenters(p);
   },
 };
