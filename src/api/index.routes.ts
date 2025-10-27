@@ -5,10 +5,32 @@ import { uarRoutes } from "./master_data/uarpic/uarpic.routes";
 import { authRoutes } from "./auth/auth.routes";
 import { logMonitoringRoutes } from "./logging_monitoring/log_monitoring.routes";
 import { applicationRoutes } from "./master_data/application/application";
+import { roleGate } from "../plugins/rbac";
 
 export async function indexRoutes(app: FastifyInstance) {
-  app.register(scheduleRoutes, { prefix: "/schedules" });
-  app.register(uarRoutes, { prefix: "/uarpic" });
+  // app.register(scheduleRoutes, { prefix: "/schedules" });
+  // app.register(uarRoutes, { prefix: "/uarpic" });
+  // app.register(logMonitoringRoutes, { prefix: "/log_monitoring" });
+  // app.register(applicationRoutes, { prefix: "/application" });
+
+  app.register(async (r) => {
+    r.addHook('preHandler', roleGate(['ADMIN', 'SO']));
+    await scheduleRoutes(r);
+  }, { prefix: "/schedules" });
+
+  app.register(async (r) => {
+    r.addHook('preHandler', roleGate(['ADMIN', 'DPH']));
+    await uarRoutes(r);
+  }, { prefix: "/uarpic" });
+
+  // app.register(async (r) => {
+  //   r.addHook('preHandler', roleGate(['ADMIN', 'DPH', 'SO']));
+  //   await logMonitoringRoutes(r);
+  // }, { prefix: "/log_monitoring" });
   app.register(logMonitoringRoutes, { prefix: "/log_monitoring" });
-  app.register(applicationRoutes, { prefix: "/application" });
+
+  app.register(async (r) => {
+    r.addHook('preHandler', roleGate(['ADMIN', 'SO', 'DPH']));
+    await applicationRoutes(r);
+  }, { prefix: "/application" });
 }
