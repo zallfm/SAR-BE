@@ -1,12 +1,12 @@
 import type { FastifyInstance } from "fastify";
-import { ApplicationError } from "../../core/errors/applicationError";
-import { ERROR_CODES } from "../../core/errors/errorCodes";
-import { ERROR_MESSAGES } from "../../core/errors/errorMessages";
+import { ApplicationError } from "../../../core/errors/applicationError";
+import { ERROR_CODES } from "../../../core/errors/errorCodes";
+import { ERROR_MESSAGES } from "../../../core/errors/errorMessages";
 import { initialSchedules } from "./schedule.repository";
-import { generateID } from "../../utils/idHelper";
-import { tempUarPic } from "../UarPic/uarpic.repository";
-import { UarPic } from "../../types/uarPic";
-import { uarPicSchema } from "../UarPic/uarpic.schemas";
+import { generateID } from "../../../utils/idHelper";
+import { tempUarPic } from "../uarpic/uarpic.repository";
+import { UarPic } from "../../../types/uarPic";
+import { uarPicSchema } from "../uarpic/uarpic.schemas";
 import {
   applications,
   uarSO1,
@@ -14,8 +14,8 @@ import {
   uarSO3,
   uarSO4,
   uarSO5,
-} from "../../data/mockup";
-import { Schedule } from "../../types/schedule";
+} from "../../../data/mockup";
+import { Schedule } from "../../../types/schedule";
 
 const dateCheck = (date: string) => {
   const regex = /^(\d{2})\/(\d{2})$/;
@@ -202,7 +202,11 @@ export const scheduleService = {
     return scheduleData;
   },
 
-  async updateStatusSchedule(app: FastifyInstance, ID: string, SCHEDULE_STATUS: string) {
+  async updateStatusSchedule(
+    app: FastifyInstance,
+    ID: string,
+    SCHEDULE_STATUS: string
+  ) {
     const scheduleIndex = initialSchedules.findIndex((item) => item.ID === ID);
     if (scheduleIndex === -1) {
       throw new ApplicationError(
@@ -243,11 +247,38 @@ export const scheduleService = {
   },
 
   async getRunningSyncSchedules(app: FastifyInstance) {
-    const today = new Date();
+    // Normalize today to midnight for an accurate date-only comparison
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const currentYear = today.getFullYear();
+
     const runningSchedules = initialSchedules.filter((item) => {
-      const startDate = new Date(item.SCHEDULE_SYNC_START_DT);
-      const endDate = new Date(item.SCHEDULE_SYNC_END_DT);
-      return today >= startDate && today <= endDate;
+      const [startDay, startMonth] =
+        item.SCHEDULE_SYNC_START_DT.split("/").map(Number);
+      const [endDay, endMonth] =
+        item.SCHEDULE_SYNC_END_DT.split("/").map(Number);
+
+      let startDate = new Date(currentYear, startMonth - 1, startDay);
+      let endDate = new Date(currentYear, endMonth - 1, endDay);
+
+      if (endDate.getTime() < startDate.getTime()) {
+        if (today.getTime() >= startDate.getTime()) {
+          return true;
+        }
+        const lastYearStartDate = new Date(
+          currentYear - 1,
+          startMonth - 1,
+          startDay
+        );
+        if (today.getTime() <= endDate.getTime()) {
+          return today.getTime() >= lastYearStartDate.getTime();
+        }
+      }
+
+      return (
+        today.getTime() >= startDate.getTime() &&
+        today.getTime() <= endDate.getTime()
+      );
     });
 
     console.log("Running Sync Schedules:", runningSchedules);

@@ -1,6 +1,5 @@
 import type { FastifyRequest, FastifyReply, FastifyInstance } from "fastify";
 import { scheduleService } from "./schedule.service";
-import { initialSchedules } from "./schedule.repository";
 
 type CreateScheduleBody = {
   APPLICATION_ID: string;

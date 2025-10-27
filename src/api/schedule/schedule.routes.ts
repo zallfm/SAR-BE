@@ -1,8 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import { errorHandler } from "../../core/errors/errorHandler";
 
-import { scheduleController } from "../../modules/Schedule/schedule.controller";
-import { scheduleSchema } from "../../modules/Schedule/schedule.schemas";
+import { scheduleController } from "../../modules/master_data/schedule/schedule.controller";
+import { scheduleSchema } from "../../modules/master_data/schedule/schedule.schemas";
 
 type CreateScheduleBody = {
   APPLICATION_ID: string;

@@ -1,10 +1,10 @@
 import type { FastifyInstance } from "fastify";
-import { ApplicationError } from "../../core/errors/applicationError";
-import { ERROR_CODES } from "../../core/errors/errorCodes";
-import { ERROR_MESSAGES } from "../../core/errors/errorMessages";
+import { ApplicationError } from "../../../core/errors/applicationError";
+import { ERROR_CODES } from "../../../core/errors/errorCodes";
+import { ERROR_MESSAGES } from "../../../core/errors/errorMessages";
 import { initialUarPic } from "./uarpic.repository";
-import { UarPic } from "../../types/uarPic";
-import { generateID } from "../../utils/idHelper";
+import { UarPic } from "../../../types/uarPic";
+import { generateID } from "../../../utils/idHelper";
 
 function validateUarPicData(
   PIC_NAME: string,

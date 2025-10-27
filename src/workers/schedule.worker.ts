@@ -8,8 +8,8 @@ import {
   fetchFromDB3,
   fetchFromDB4,
   fetchFromDB5,
-} from "../modules/Schedule/schedule.service";
-import { initialUarPic } from "../modules/UarPic/uarpic.repository";
+} from "../modules/master_data/schedule/schedule.service";
+import { initialUarPic } from "../modules/master_data/uarpic/uarpic.repository";
 import { UarPic } from "../types/uarPic"; // Added: Path may need adjustment
 import { divisions } from "../data/mockup";
 
