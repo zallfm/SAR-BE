@@ -40,8 +40,9 @@ export const applicationService = {
     SECURITY_CENTER: string;
     APPLICATION_STATUS: "Aktif" | "Inactive";
   }) {
+    // console.log("input", input)
 
-    const existingApp = await repo.findByCode(input.APPLICATION_ID);
+    const existingApp = await repo.findByCode(input.APPLICATION_ID.toLowerCase());
     if (existingApp) {
       throw new ApplicationError(
         ERROR_CODES.VAL_DUPLICATE_ENTRY,
@@ -71,7 +72,10 @@ export const applicationService = {
     }
 
     // Optional: prevent same person for both roles
+    // console.log("owner.NOREG", owner.NOREG)
+    // console.log("cust.NOREG", cust.NOREG)
     if (owner.NOREG === cust.NOREG) {
+      // console.log("masuk nih")
       throw new ApplicationError(ERROR_CODES.VAL_INVALID_FORMAT, "Owner and Custodian must be different users");
     }
 

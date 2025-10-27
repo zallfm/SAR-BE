@@ -24,7 +24,7 @@ export const systemUsers: SystemUser[] = [
 // ------------------------
 // Security Center Master
 // ------------------------
-export const securityCenters: string[] = ["SC", "Global SC", "TMMINRole", "LDAPS"];
+export const securityCenters: string[] = ["SC", "Global SC", "TMMINRole", "LDAP"];
 
 // -----------------------
 // Application Mock Data

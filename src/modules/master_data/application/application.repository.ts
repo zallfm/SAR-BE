@@ -44,7 +44,7 @@ function normalizeMockIds(rows: ApplicationRow[]): ApplicationRow[] {
   return out;
 }
 
-let apps: ApplicationRow[] = normalizeMockIds(mockApplications);
+let apps: ApplicationRow[] = [...mockApplications];
 
 // Ambil sequence harian berikutnya dari state apps saat ini
 function nextDailySequence(dateKey: string): number {
@@ -107,7 +107,7 @@ export const applicationRepository = {
   },
 
   async findByCode(code: string) {
-    return apps.find((x) => x.APPLICATION_ID === code) ?? null;
+    return apps.find((x) => x.APPLICATION_ID.toLowerCase() === code.toLowerCase()) ?? null;
   },
 
   async create(payload: Omit<ApplicationRow, "CREATED_BY" | "CREATED_DT" | "CHANGED_BY" | "CHANGED_DT">) {
