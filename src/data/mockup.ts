@@ -1,6 +1,6 @@
 import { UarPic } from "../types/uarPic";
 
-export const updatedUarPic = [
+export const uarSO1 = [
   {
     ID: "SARPICCIO202510220001",
     PIC_NAME: "Hesti",
@@ -44,7 +44,7 @@ export const updatedUarPic = [
   {
     ID: "SARPICCIO202510230001",
     PIC_NAME: "Alia",
-    DIVISION_ID: 3,
+    DIVISION_ID: 4,
     MAIL: "alia@toyota.co.id",
     CREATED_BY: "system",
     CREATED_DT: new Date().toISOString(),
@@ -52,13 +52,368 @@ export const updatedUarPic = [
     CHANGED_DT: null,
   },
   {
-    ID: "SARPICCIO202510230001",
-    PIC_NAME: null,
+    ID: "SARPICCIO202510230002",
+    PIC_NAME: "Rizky",
+    DIVISION_ID: 5,
+    MAIL: "rizky@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: "admin",
+    CHANGED_DT: new Date().toISOString(),
+  },
+  {
+    ID: "SARPICCIO202510230003",
+    PIC_NAME: "Teguh",
+    DIVISION_ID: 6,
+    MAIL: "teguh@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+  {
+    ID: "SARPICCIO202510230004",
+    PIC_NAME: "Mega",
+    DIVISION_ID: 2,
+    MAIL: "mega@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: "admin",
+    CHANGED_DT: new Date().toISOString(),
+  },
+  {
+    ID: "SARPICCIO202510230005",
+    PIC_NAME: "Yusuf",
+    DIVISION_ID: 1,
+    MAIL: "yusuf@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+  {
+    ID: "SARPICCIO202510230006",
+    PIC_NAME: "Nadia",
+    DIVISION_ID: 4,
+    MAIL: "nadia@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+
+  {
+    ID: "SARPICCIO202510240001",
+    PIC_NAME: "Wendi",
+    DIVISION_ID: 2,
+    MAIL: "wendi@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+  {
+    ID: "SARPICCIO202510240002",
+    PIC_NAME: "Gilang",
+    DIVISION_ID: 5,
+    MAIL: "gilang@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: "admin",
+    CHANGED_DT: new Date().toISOString(),
+  },
+  {
+    ID: "SARPICCIO202510240003",
+    PIC_NAME: "Wulan",
     DIVISION_ID: 3,
-    MAIL: "alia@toyota.co.id",
+    MAIL: "wulan@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+  {
+    ID: "SARPICCIO202510240004",
+    PIC_NAME: "Rendra",
+    DIVISION_ID: 6,
+    MAIL: "rendra@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: "system",
+    CHANGED_DT: new Date().toISOString(),
+  },
+  {
+    ID: "SARPICCIO202510240005",
+    PIC_NAME: "Putri",
+    DIVISION_ID: 1,
+    MAIL: "putri@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+  {
+    ID: "SARPICCIO202510240006",
+    PIC_NAME: "Fajar",
+    DIVISION_ID: 5,
+    MAIL: "fajar@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: "admin",
+    CHANGED_DT: new Date().toISOString(),
+  },
+  {
+    ID: "SARPICCIO202510240007",
+    PIC_NAME: "Selvi",
+    DIVISION_ID: 2,
+    MAIL: "selvi@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+  {
+    ID: "SARPICCIO202510240008",
+    PIC_NAME: "Arman",
+    DIVISION_ID: 6,
+    MAIL: "arman@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+  {
+    ID: "SARPICCIO202510240009",
+    PIC_NAME: "Laras",
+    DIVISION_ID: 4,
+    MAIL: "laras@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: "system",
+    CHANGED_DT: new Date().toISOString(),
+  },
+  {
+    ID: "SARPICCIO202510240010",
+    PIC_NAME: "Imam",
+    DIVISION_ID: 3,
+    MAIL: "imam@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+  // --- New Data Added to uarSO1 ---
+  {
+    ID: "SARPICCIO202510240011",
+    PIC_NAME: "Kevin",
+    DIVISION_ID: 1,
+    MAIL: "kevin@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+  {
+    ID: "SARPICCIO202510240012",
+    PIC_NAME: "Linda",
+    DIVISION_ID: 2,
+    MAIL: "linda@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: "admin",
+    CHANGED_DT: new Date().toISOString(),
+  },
+  {
+    ID: "SARPICCIO202510240013",
+    PIC_NAME: "Marwan",
+    DIVISION_ID: 3,
+    MAIL: "marwan@toyota.co.id",
     CREATED_BY: "system",
     CREATED_DT: new Date().toISOString(),
     CHANGED_BY: null,
     CHANGED_DT: null,
   },
 ] as UarPic[];
+
+export const uarSO2 = [
+  // --- This ID is different from uarSO1's version ---
+  {
+    ID: "SARPICCIO202510240001",
+    PIC_NAME: "Rani", // Different name
+    DIVISION_ID: 2,
+    MAIL: "rani@toyota.co.id", // Different email
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+  // --- This ID is unique to uarSO2 ---
+  {
+    ID: "SARPICCIO202510250001",
+    PIC_NAME: "Sari",
+    DIVISION_ID: 2,
+    MAIL: "sari@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+  // --- This ID also exists in uarSO1 ---
+  {
+    ID: "SARPICCIO202510220002",
+    PIC_NAME: "Budi",
+    DIVISION_ID: 2,
+    MAIL: "budi@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: "2025-10-22T00:00:00.000Z", // Older date
+    CHANGED_BY: "admin", // Has been changed here
+    CHANGED_DT: new Date().toISOString(),
+  },
+] as UarPic[];
+
+export const uarSO3 = [
+  // --- This ID is different from uarSO1 and uarSO2 ---
+  {
+    ID: "SARPICCIO202510240001",
+    PIC_NAME: "Erina", // Different name
+    DIVISION_ID: 5, // Different division
+    MAIL: "erina@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+  // --- Unique to uarSO3 ---
+  {
+    ID: "SARPICCIO202510250002",
+    PIC_NAME: "Tono",
+    DIVISION_ID: 3,
+    MAIL: "tono@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+  // --- Unique to uarSO3 ---
+  {
+    ID: "SARPICCIO202510250003",
+    PIC_NAME: "Vina",
+    DIVISION_ID: 1,
+    MAIL: "vina@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+] as UarPic[];
+
+export const uarSO4 = [
+  // --- This ID is also in uarSO1, 2, 3 but with different data ---
+  {
+    ID: "SARPICCIO202510240001",
+    PIC_NAME: "Fadhli", // Different name
+    DIVISION_ID: 2,
+    MAIL: "fadhli@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+  // --- This ID also exists in uarSO1 ---
+  {
+    ID: "SARPICCIO202510230003",
+    PIC_NAME: "Teguh",
+    DIVISION_ID: 6,
+    MAIL: "teguh@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+  // --- Unique to uarSO4 ---
+  {
+    ID: "SARPICCIO202510250004",
+    PIC_NAME: "Zaki",
+    DIVISION_ID: 2,
+    MAIL: "zaki@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+] as UarPic[];
+
+export const uarSO5 = [
+  // --- This ID is also in uarSO1, 2, 3, 4 ---
+  {
+    ID: "SARPICCIO202510240001",
+    PIC_NAME: "Fajri", // Different name
+    DIVISION_ID: 2,
+    MAIL: "fajri@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+  // --- This ID also exists in uarSO1 ---
+  {
+    ID: "SARPICCIO202510240005",
+    PIC_NAME: "Putri",
+    DIVISION_ID: 1,
+    MAIL: "putri-new@toyota.co.id", // Different email
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: "admin", // Was null in uarSO1
+    CHANGED_DT: new Date().toISOString(),
+  },
+  // --- Unique to uarSO5 ---
+  {
+    ID: "SARPICCIO202510250005",
+    PIC_NAME: "Bayu",
+    DIVISION_ID: 2,
+    MAIL: "bayu@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+  // --- Unique to uarSO5 ---
+  {
+    ID: "SARPICCIO202510250006",
+    PIC_NAME: "Chandra",
+    DIVISION_ID: 6,
+    MAIL: "chandra@toyota.co.id",
+    CREATED_BY: "system",
+    CREATED_DT: new Date().toISOString(),
+    CHANGED_BY: null,
+    CHANGED_DT: null,
+  },
+] as UarPic[];
+
+export const divisions: string[] = [
+  "Production Planning Control",
+  "Production Engineering",
+  "Corporate Planning",
+  "Human Resources",
+  "Finance & Accounting",
+  "IT Division",
+];
+
+export const applications = [
+  {
+    APPLICATION_ID: "IPPCS",
+    APP_NAME: "IPPCS",
+  },
+  {
+    APPLICATION_ID: "TVEST",
+    APP_NAME: "TVEST",
+  },
+  {
+    APPLICATION_ID: "IFAST",
+    APP_NAME: "IFAST",
+  },
+  {
+    APPLICATION_ID: "RCS",
+    APP_NAME: "RCS",
+  },
+];

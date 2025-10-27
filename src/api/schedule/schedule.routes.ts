@@ -30,4 +30,11 @@ export const scheduleRoutes = async (app: FastifyInstance) => {
       return scheduleController.editSchedule(app)(req, reply);
     }
   );
+  app.put<{ Params: { id: string }; Body: CreateScheduleBody }>(
+    "/:id/status",
+    { errorHandler },
+    async (req, reply) => {
+      return scheduleController.updateStatusSchedule(app)(req, reply);
+    }
+  );
 };

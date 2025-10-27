@@ -40,13 +40,109 @@ function dupeCheck(MAIL: string) {
 }
 
 export const uarPicService = {
-  async getUarPics(app: FastifyInstance) {
-    const sortedUarPics = initialUarPic.sort((a, b) => {
-      return (
-        new Date(b.CREATED_DT).getTime() - new Date(a.CREATED_DT).getTime()
+  async getUarPics(app: FastifyInstance, query: any) {
+    const {
+      page = 1,
+      limit = 10,
+      divisionId, // Added for filtering
+      q,
+      pic_name,
+      startDate,
+      endDate,
+      sortBy = "CREATED_DT", // Changed default to CREATED_DT
+      order = "desc",
+    } = query;
+
+    let rows: UarPic[] = initialUarPic.slice();
+
+    // Filter by divisionId
+    if (divisionId) {
+      rows = rows.filter((r) => r.DIVISION_ID === Number(divisionId));
+      console.log("diveision", rows);
+    }
+
+    // Filter by general query 'q'
+    if (q) {
+      const s = String(q).toLowerCase();
+      rows = rows.filter(
+        (r) =>
+          r.PIC_NAME.toLowerCase().includes(s) ||
+          r.MAIL.toLowerCase().includes(s) ||
+          r.ID.toLowerCase().includes(s)
       );
+    }
+
+    if (pic_name) {
+      const s = String(pic_name).toLowerCase();
+      rows = rows.filter((r) => r.PIC_NAME.toLowerCase().includes(s));
+    }
+
+    // Filter by date range (on CREATED_DT)
+    if (startDate || endDate) {
+      const start = startDate ? new Date(startDate).getTime() : null;
+      // Set end date to end of the day to include all items on that day
+      const end = endDate ? new Date(endDate).setHours(23, 59, 59, 999) : null;
+
+      rows = rows.filter((r) => {
+        const itemDate = new Date(r.CREATED_DT).getTime();
+        if (start && itemDate < start) return false;
+        if (end && itemDate > end) return false;
+        return true;
+      });
+    }
+
+    rows.sort((a, b) => {
+      let va: number | string, vb: number | string;
+
+      switch (sortBy) {
+        case "DIVISION_ID":
+          va = a.DIVISION_ID;
+          vb = b.DIVISION_ID;
+          break;
+        case "PIC_NAME":
+          va = a.PIC_NAME.toLowerCase();
+          vb = b.PIC_NAME.toLowerCase();
+          break;
+        case "MAIL":
+          va = a.MAIL.toLowerCase();
+          vb = b.MAIL.toLowerCase();
+          break;
+        case "ID":
+          va = a.ID;
+          vb = b.ID;
+          break;
+        case "CREATED_DT":
+        default: // Default to CREATED_DT
+          va = new Date(a.CREATED_DT).getTime();
+          vb = new Date(b.CREATED_DT).getTime();
+          break;
+      }
+
+      let diff: number;
+      if (typeof va === "string" && typeof vb === "string") {
+        diff = va.localeCompare(vb);
+      } else {
+        diff = (va as number) - (vb as number);
+      }
+
+      return order === "asc" ? diff : -diff;
     });
-    return sortedUarPics;
+
+    const total = rows.length;
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 10;
+    const offset = (pageNum - 1) * limitNum;
+    const data = rows.slice(offset, offset + limitNum);
+
+    return {
+      data: data,
+      meta: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limitNum)),
+      },
+    };
   },
   async createUarPic(
     app: FastifyInstance,
@@ -149,6 +245,4 @@ export const uarPicService = {
     console.log("Running Schedules:", runningSchedules);
     return runningSchedules;
   },
-
-  
 };

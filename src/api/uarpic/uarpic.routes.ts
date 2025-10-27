@@ -11,6 +11,8 @@ type CreateUarBody = {
 
 export async function uarRoutes(app: FastifyInstance) {
   app.get("/", async (req, reply) => {
+    console.log("req.query", req.query);
+
     return uarController.getUar(app)(req, reply);
   });
 
