@@ -21,7 +21,6 @@ export type ApplicationStatus = "Aktif" | "Inactive";
 
 // --- Application model utama (DB/Repository)
 export interface Application {
-  ID: string; // SARAPPLICATIONYYYYMMDD0001
   APPLICATION_ID: string;
   APPLICATION_NAME: string;
   DIVISION_ID_OWNER: string;
