@@ -14,11 +14,11 @@ export const uarController = {
     async (req: FastifyRequest, reply: FastifyReply) => {
       const requestId = (req.headers["x-request-id"] as string) || req.id;
 
-      const uarData = await uarPicService.getUarPics(app);      
+      const uarData = await uarPicService.getUarPics(app, req.query);
 
       return reply.status(200).send({
         requestId,
-        data: uarData,
+        ...uarData,
       });
     },
 

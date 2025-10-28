@@ -1,7 +1,17 @@
 import { FastifyInstance } from "fastify";
-import { runCreateOnlySync, scheduleService } from "../modules/Schedule/schedule.service";
-import { updatedUarPic } from "../data/mockup";
-import { initialUarPic } from "../modules/UarPic/uarpic.repository";
+// Updated: Import the new fetch functions and UarPic type
+import {
+  runCreateOnlySync,
+  scheduleService,
+  fetchFromDB1,
+  fetchFromDB2,
+  fetchFromDB3,
+  fetchFromDB4,
+  fetchFromDB5,
+} from "../modules/master_data/schedule/schedule.service";
+import { initialUarPic } from "../modules/master_data/uarpic/uarpic.repository";
+import { UarPic } from "../types/uarPic"; // Added: Path may need adjustment
+import { divisions } from "../data/mockup";
 
 interface UarSystemOwner {
   UAR_PERIOD: string;
@@ -95,12 +105,47 @@ export async function runUarSOSyncWorker(app: FastifyInstance) {
   try {
     app.log.info("Fetching pending UAR SO Sync schedules...");
     const pendingSchedules = await scheduleService.getRunningSyncSchedules(app);
+
     for (const schedule of pendingSchedules) {
       app.log.info(
         `Processing UAR SO Sync for APPLICATION_ID: ${schedule.APPLICATION_ID}`
       );
 
-      await runCreateOnlySync(initialUarPic, updatedUarPic, app);
+      app.log.info(
+        `Grabbing data from 5 sources for ${schedule.APPLICATION_ID}...`
+      );
+
+      const results = await Promise.allSettled([
+        fetchFromDB1(app),
+        fetchFromDB2(app),
+        fetchFromDB3(app),
+        fetchFromDB4(app),
+        fetchFromDB5(app),
+      ]);
+
+      let allSourceData: UarPic[] = [];
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          app.log.info(
+            `Successfully fetched ${result.value.length} records from DB${
+              index + 1
+            }`
+          );
+          allSourceData = allSourceData.concat(result.value);
+        } else {
+          app.log.error(
+            `Failed to fetch from DB ${index + 1}: ${
+              result.reason?.message || result.reason
+            }`
+          );
+        }
+      });
+
+      app.log.info(
+        `Total records grabbed from all sources: ${allSourceData.length}`
+      );
+      await runCreateOnlySync(initialUarPic, allSourceData, app);
+
       await new Promise((resolve) => setTimeout(resolve, 300));
     }
     app.log.info(
@@ -112,5 +157,3 @@ export async function runUarSOSyncWorker(app: FastifyInstance) {
     app.log.error(error, "A fatal error occurred during the run.");
   }
 }
-
-
