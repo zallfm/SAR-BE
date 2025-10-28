@@ -9,6 +9,7 @@ import { AuditLogger } from '../../core/audit/auditLogger';
 import { AuditAction } from '../../core/audit/auditActions';
 import { env } from '../../config/env';
 import { SECURITY_CONFIG } from '../../config/security';
+import { ServiceResponse } from '../../api/common/models/ServiceResponse';
 
 /**
  * Attempt record:
@@ -203,6 +204,40 @@ export const authService = {
 
     return { token, expiresIn: env.TOKEN_EXPIRES_IN, user: publicUser };
   },
+  async getMenu(username: string) {
+    try {
+      const menus = await userRepository.getMenu(username)
+      return ServiceResponse.success('Menu Not Found', menus)
+    } catch (error) {
+      const errorMessage = `Error finding menu : $${(error as Error).message}`;
+      // await 
+      return ServiceResponse.failure(
+        'An error occurred while retrieving menu.',
+        null,
+        500,
+      )
+    }
+  },
+  async getProfile(username: string) {
+    try {
+      const profile = await userRepository.getProfile(username);
+
+      return ServiceResponse.success('Profile found', profile);
+    } catch (ex) {
+      const errorMessage = `Error finding Profile: $${(ex as Error).message}`;
+      // await this.logService.CreateLog(
+      //   'Auth',
+      //   'getProfile',
+      //   'getProfile',
+      //   errorMessage,
+      // );
+      return ServiceResponse.failure(
+        'An error occurred while retrieving profile.',
+        null,
+        500,
+      );
+    }
+  },
   async logout(app: FastifyInstance, token: string, requestId?: string) {
     // masukkan token ke blacklist
     // blacklistToken(token);
@@ -217,6 +252,14 @@ export const authService = {
       description: 'User logged out',
     });
     return true;
+  },
+  async validate(username: string) {
+    try {
+      const user = await userRepository.getProfile(username);
+      return user;
+    } catch (ex) {
+      const errorMessage = `Error validating user: $${(ex as Error).message}`;
+    }
   }
 
 };

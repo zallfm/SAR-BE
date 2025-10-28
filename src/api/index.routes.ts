@@ -15,24 +15,28 @@ export async function indexRoutes(app: FastifyInstance) {
   // app.register(applicationRoutes, { prefix: "/application" });
 
   app.register(async (r) => {
-    r.addHook('preHandler', roleGate(['ADMIN', 'SO']));
+    r.addHook('preHandler', roleGate(['ADMINISTRATOR', 'SO']));
     await scheduleRoutes(r);
   }, { prefix: "/schedules" });
 
   app.register(async (r) => {
-    r.addHook('preHandler', roleGate(['ADMIN', 'DPH']));
+    r.addHook('preHandler', roleGate(['ADMINISTRATOR', 'DPH']));
     await uarRoutes(r);
   }, { prefix: "/uarpic" });
 
   // app.register(async (r) => {
-  //   r.addHook('preHandler', roleGate(['ADMIN', 'DPH', 'SO']));
+  //   r.addHook('preHandler', roleGate(['ADMINISTRATOR', 'DPH', 'SO']));
   //   await logMonitoringRoutes(r);
   // }, { prefix: "/log_monitoring" });
   app.register(logMonitoringRoutes, { prefix: "/log_monitoring" });
-  app.register(systemRoutes, { prefix: "/master_config" });
+  // app.register(systemRoutes, { prefix: "/master_config" });
+  app.register(async (r) => {
+    r.addHook('preHandler', roleGate(['ADMINISTRATOR']));
+    await systemRoutes(r);
+  }, { prefix: "/master_config" });
 
   app.register(async (r) => {
-    r.addHook('preHandler', roleGate(['ADMIN', 'SO', 'DPH']));
+    r.addHook('preHandler', roleGate(['ADMINISTRATOR', 'SO', 'DPH']));
     await applicationRoutes(r);
   }, { prefix: "/application" });
 }

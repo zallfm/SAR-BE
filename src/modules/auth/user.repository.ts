@@ -69,7 +69,7 @@ export const userRepository = {
   async getMenu(username: string) {
     const startTime = Date.now();
     try {
-      const menus = await prismaSC.$queryRaw<MenuRow[]>`
+      const menusQuery = await prismaSC.$queryRaw<MenuRow[]>`
       SELECT
         m.MENU_ID,
         m.MENU_PARENT,
@@ -98,7 +98,9 @@ export const userRepository = {
         CASE WHEN m.MENU_TEXT = 'Dashboard' THEN 0 ELSE 1 END
     `;
 
-      const tree = buildMenuTree(menus);
+      // Group menus by parent
+      const groupedMenus = this.groupMenusByParent(menusQuery);
+
       const executionTime = Date.now() - startTime;
 
       try {
@@ -115,40 +117,25 @@ export const userRepository = {
         });
       } catch { }
 
-      return tree;
+      return groupedMenus;
     } catch (error) {
       throw new Error('Internal Server Error');
     }
   },
 
   async getProfile(username: string) {
-  try {
-    let userMain: any = null;
-
-    const roles = await prismaSC.$queryRaw<Array<{ ID: string; NAME: string; DESCRIPTION: string }>>`
-      SELECT DISTINCT r.ID, r.NAME, r.DESCRIPTION
-      FROM TB_M_ROLE r
-      INNER JOIN TB_M_AUTHORIZATION a ON r.ID = a.ROLE
-      WHERE r.APPLICATION = 'PULLSYS'
-        AND a.USERNAME   = ${username}
-        AND a.APPLICATION = 'PULLSYS'
-    `;
-
-      userMain = await prismaSC.tB_M_COMPANY
-      if (!userMain) {
-        throw new Error('User not found tpm');
-      }
-
-    const userRows = await prismaSC.$queryRaw<Array<{
-      USERNAME: string;
-      FIRST_NAME: string | null;
-      LAST_NAME: string | null;
-      ID: string;
-      REG_NO: string | null;
-      COMPANY: string | null;
-      BIRTH_DATE: Date | string | null;
-      ADDRESS: string | null;
-    }>>`
+    try {
+      // 1) Ambil user basic info (SC)
+      const userRows = await prismaSC.$queryRaw<Array<{
+        USERNAME: string;
+        FIRST_NAME: string | null;
+        LAST_NAME: string | null;
+        ID: string;
+        REG_NO: string | null;
+        COMPANY: string | null;
+        BIRTH_DATE: Date | string | null;
+        ADDRESS: string | null;
+      }>>`
       SELECT
         u.USERNAME,
         u.FIRST_NAME,
@@ -162,71 +149,126 @@ export const userRepository = {
       WHERE u.USERNAME = ${username}
     `;
 
-    const user = userRows[0];
-    if (!user) throw new Error('User not found in SC database');
+      const user = userRows[0];
+      if (!user) {
+        throw new Error('User not found in SC database');
+      }
 
-    const features = await prismaSC.$queryRaw<Array<{ ID: string }>>`
-      SELECT DISTINCT f.ID
-      FROM TB_M_FEATURE f
-      INNER JOIN TB_M_AUTHORIZATION a ON f.ID = a.FEATURE
-      WHERE f.APPLICATION = 'PULLSYS'
-        AND a.USERNAME   = ${username}
-        AND a.APPLICATION = 'PULLSYS'
-    `;
+      // 2) Ambil detail company (jika ada)
+      const company = user.COMPANY
+        ? await prismaSC.tB_M_COMPANY.findFirst({
+          where: { ID: user.COMPANY },
+          select: {
+            ID: true,
+            NAME: true,
+            DESCRIPTION: true
+          },
+        })
+        : null;
 
-    const functions = await prismaSC.$queryRaw<Array<{ ID: string }>>`
-      SELECT DISTINCT f.ID
-      FROM TB_M_FUNCTION f
-      INNER JOIN TB_M_AUTHORIZATION a ON f.ID = a.[FUNCTION]
-      WHERE f.APPLICATION = 'PULLSYS'
-        AND a.USERNAME   = ${username}
-        AND a.APPLICATION = 'PULLSYS'
-    `;
+      // 3) Ambil roles, features, functions (paralel)
+      const [roles, features, functions] = await Promise.all([
+        prismaSC.$queryRaw<Array<{ ID: string; NAME: string; DESCRIPTION: string }>>`
+        SELECT DISTINCT r.ID, r.NAME, r.DESCRIPTION
+        FROM TB_M_ROLE r
+        INNER JOIN TB_M_AUTHORIZATION a ON r.ID = a.ROLE
+        WHERE r.APPLICATION = 'PULLSYS'
+          AND a.USERNAME    = ${username}
+          AND a.APPLICATION = 'PULLSYS'
+      `,
+        prismaSC.$queryRaw<Array<{ ID: string }>>`
+        SELECT DISTINCT f.ID
+        FROM TB_M_FEATURE f
+        INNER JOIN TB_M_AUTHORIZATION a ON f.ID = a.FEATURE
+        WHERE f.APPLICATION = 'PULLSYS'
+          AND a.USERNAME    = ${username}
+          AND a.APPLICATION = 'PULLSYS'
+      `,
+        prismaSC.$queryRaw<Array<{ ID: string }>>`
+        SELECT DISTINCT f.ID
+        FROM TB_M_FUNCTION f
+        INNER JOIN TB_M_AUTHORIZATION a ON f.ID = a.[FUNCTION]
+        WHERE f.APPLICATION = 'PULLSYS'
+          AND a.USERNAME    = ${username}
+          AND a.APPLICATION = 'PULLSYS'
+      `,
+      ]);
 
-    return {
-      user: {
-        username: user.USERNAME,
-        name: `${user.FIRST_NAME ?? ''} ${user.LAST_NAME ?? ''}`.trim(),
-        id: user.ID,
-        regNo: user.REG_NO,
-        company: user.COMPANY,
-        firstName: user.FIRST_NAME,
-        lastName: user.LAST_NAME,
-        birthDate: user.BIRTH_DATE,
-        address: user.ADDRESS,
-        companyInfo: userMain?.COMPANY
-          ? {
-              id: userMain.COMPANY.COMPANY_ID,
-              name: userMain.COMPANY.COMPANY_NAME,
-              code: userMain.COMPANY.COMPANY_CODE,
-              address: userMain.COMPANY.ADDRESS,
-              picName: userMain.COMPANY.PIC_NAME,
-              phoneNumber: userMain.COMPANY.PHONE_NUMBER,
-              officeNumber: userMain.COMPANY.OFFICE_NUMBER,
+      return {
+        user: {
+          username: user.USERNAME,
+          name: `${user.FIRST_NAME ?? ''} ${user.LAST_NAME ?? ''}`.trim(),
+          id: user.ID,
+          regNo: user.REG_NO,
+          company: user.COMPANY,
+          firstName: user.FIRST_NAME,
+          lastName: user.LAST_NAME,
+          birthDate: user.BIRTH_DATE,
+          address: user.ADDRESS,
+          companyInfo: company
+            ? {
+              id: company.ID,
+              name: company.NAME,
+              description: company.DESCRIPTION ?? null
             }
-          : null,
-        area: userMain?.AREA
-          ? {
-              id: userMain.AREA.SYSTEM_ID,
-              description: userMain.AREA.DESCRIPTION,
-              name: userMain.AREA.SYS_VAL_TXT,
-            }
-          : null,
-        division: userMain?.DIVISION
-          ? {
-              id: userMain.DIVISION.SYSTEM_ID,
-              description: userMain.DIVISION.DESCRIPTION,
-              name: userMain.DIVISION.SYS_VAL_TXT,
-            }
-          : null,
-      },
-      features: features.map(f => f.ID),
-      functions: functions.map(fn => fn.ID),
-      roles: roles.map(r => r.ID),
-    };
-  } catch (e) {
-    throw new Error('Internal Server Error');
+            : null,
+          // area/division dihilangkan karena sumbernya tidak tersedia di prisma utama
+        },
+        features: features.map(f => f.ID),
+        functions: functions.map(fn => fn.ID),
+        roles: roles.map(r => r.ID),
+      };
+    } catch {
+      throw new Error('Internal Server Error');
+    }
+  },
+  groupMenusByParent(menus: any[]) {
+    const allMenus: { [key: string]: any } = {};
+    const processedMenus = new Set<string>(); // Track processed menu IDs to prevent duplicates
+
+    // First pass: create a map of all menus
+    menus.forEach((menu) => {
+      const menuKey = `${menu.MENU_PARENT}-${menu.MENU_ID}`;
+      if (processedMenus.has(menuKey)) {
+        return; // Skip if already processed
+      }
+      processedMenus.add(menuKey);
+
+      allMenus[menu.MENU_ID] = {
+        menuId: menu.MENU_ID,
+        menuText: menu.MENU_TEXT,
+        menuTips: menu.MENU_TIPS,
+        isActive: menu.IS_ACTIVE,
+        visibility: menu.VISIBILITY,
+        url: menu.URL,
+        glyph: menu.GLYPH,
+        separator: menu.SEPARATOR,
+        target: menu.TARGET,
+        parent: menu.MENU_PARENT,
+        submenu: [],
+      };
+    });
+
+    // Second pass: build the hierarchy
+    const rootMenus: any[] = [];
+
+    Object.values(allMenus).forEach((menu: any) => {
+      if (menu.parent === 'menu') {
+        // This is a root level menu
+        rootMenus.push(menu);
+      } else {
+        // This is a submenu, find its parent and add it
+        const parent = allMenus[menu.parent];
+        if (parent) {
+          parent.submenu.push(menu);
+        } else {
+          // If parent doesn't exist, treat as root level
+          rootMenus.push(menu);
+        }
+      }
+    });
+
+    return rootMenus;
   }
-}
 
 };
