@@ -115,7 +115,7 @@ export const authService = {
 
 
     // 2) authenticate
-    const user = await userRepository.findByUsername(username);
+    const user = await userRepository.login(username);
     const valid = !!user && safeCompare(password, user.password);
 
     if (!valid) {

@@ -14,9 +14,9 @@ export const env = {
   LOCKOUT_MAX_ATTEMPTS: Number(process.env.LOCKOUT_MAX_ATTEMPTS ?? 5),
   LOCKOUT_WINDOW_MS: Number(process.env.LOCKOUT_WINDOW_MS ?? 15 * 60 * 1000),
 
-  MOCK_USER_ADMIN_USERNAME: process.env.MOCK_USER_ADMIN_USERNAME ?? "admin",
+  MOCK_USER_ADMIN_USERNAME: process.env.MOCK_USER_ADMIN_USERNAME ?? "admin21",
   MOCK_USER_ADMIN_PASSWORD:
-    process.env.MOCK_USER_ADMIN_PASSWORD ?? "password123",
+    process.env.MOCK_USER_ADMIN_PASSWORD ?? "password123212",
   MOCK_USER_ADMIN_NAME: process.env.MOCK_USER_ADMIN_NAME ?? "Admin User",
   MOCK_USER_ADMIN_ROLE: process.env.MOCK_USER_ADMIN_ROLE ?? "Admin",
 } as const;
