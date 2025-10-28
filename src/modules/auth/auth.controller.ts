@@ -18,7 +18,6 @@ export const authController = {
         const { username, password } = req.body;
 
         const result = await authService.login(app, username, password, requestId);
-        // console.log("result",result)
 
         const normalizedRole = toUpperRole(result?.user?.role) ?? 'ADMIN'
         const userOut = {
