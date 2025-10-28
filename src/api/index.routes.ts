@@ -29,7 +29,6 @@ export async function indexRoutes(app: FastifyInstance) {
   //   await logMonitoringRoutes(r);
   // }, { prefix: "/log_monitoring" });
   app.register(logMonitoringRoutes, { prefix: "/log_monitoring" });
-  app.register(applicationRoutes, { prefix: "/application" });
   app.register(systemRoutes, { prefix: "/master_config" });
 
   app.register(async (r) => {
