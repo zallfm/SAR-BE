@@ -25,4 +25,5 @@ export const ERROR_MESSAGES: Record<string, string> = {
   [ERROR_CODES.SYS_DATABASE_ERROR]: "Database error.",
   [ERROR_CODES.SYS_PERMISSION_DENIED]: "Operation not permitted.",
   [ERROR_CODES.APP_NOT_FOUND]: "The specified data was not found.",
+  [ERROR_CODES.APP_ALREADY_EXISTS]: "The specified data already exists.",
 };

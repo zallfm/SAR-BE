@@ -44,24 +44,22 @@ export const uarPicService = {
     const {
       page = 1,
       limit = 10,
-      divisionId, // Added for filtering
+      divisionId, 
       q,
       pic_name,
       startDate,
       endDate,
-      sortBy = "CREATED_DT", // Changed default to CREATED_DT
+      sortBy = "CREATED_DT", 
       order = "desc",
     } = query;
 
     let rows: UarPic[] = initialUarPic.slice();
 
-    // Filter by divisionId
     if (divisionId) {
       rows = rows.filter((r) => r.DIVISION_ID === Number(divisionId));
       console.log("diveision", rows);
     }
 
-    // Filter by general query 'q'
     if (q) {
       const s = String(q).toLowerCase();
       rows = rows.filter(
@@ -77,10 +75,8 @@ export const uarPicService = {
       rows = rows.filter((r) => r.PIC_NAME.toLowerCase().includes(s));
     }
 
-    // Filter by date range (on CREATED_DT)
     if (startDate || endDate) {
       const start = startDate ? new Date(startDate).getTime() : null;
-      // Set end date to end of the day to include all items on that day
       const end = endDate ? new Date(endDate).setHours(23, 59, 59, 999) : null;
 
       rows = rows.filter((r) => {
@@ -172,7 +168,7 @@ export const uarPicService = {
       MAIL: lowerCaseMail,
       CREATED_BY: "Hesti",
       CREATED_DT: new Date().toISOString(),
-      CHANGED_BY: "Hesti",
+      CHANGED_BY: null,
       CHANGED_DT: null,
     };
 
