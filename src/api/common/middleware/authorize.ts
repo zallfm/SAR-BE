@@ -135,7 +135,7 @@ export default fp<AuthOpts>(async function authorizePlugin(app: FastifyInstance,
           .status(401)
           .send(ServiceResponse.failure('Unauthorized', null, 401));
       }
-      if (u.roles?.includes('001')) return; // super admin bypass
+      if (u.roles?.includes('adminsar')) return; // super admin bypass
       const ok = u.features?.includes(permission) || u.functions?.includes(permission);
       if (!ok) {
         return reply
@@ -159,7 +159,7 @@ export default fp<AuthOpts>(async function authorizePlugin(app: FastifyInstance,
           .status(401)
           .send(ServiceResponse.failure('Unauthorized', null, 401));
       }
-      if (u.roles?.includes('001')) return;
+      if (u.roles?.includes('adminsar')) return;
 
       const ok = perms.some(
         (p) => u.features?.includes(p) || u.functions?.includes(p)
@@ -186,7 +186,7 @@ export default fp<AuthOpts>(async function authorizePlugin(app: FastifyInstance,
           .status(401)
           .send(ServiceResponse.failure('Unauthorized', null, 401));
       }
-      if (u.roles?.includes('001')) return;
+      if (u.roles?.includes('adminsar')) return;
 
       const ok = perms.every(
         (p) => u.features?.includes(p) || u.functions?.includes(p)

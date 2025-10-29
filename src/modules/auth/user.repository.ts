@@ -70,32 +70,58 @@ export const userRepository = {
     const startTime = Date.now();
     try {
       const menusQuery = await prismaSC.$queryRaw<MenuRow[]>`
-      SELECT
-        m.MENU_ID,
-        m.MENU_PARENT,
-        m.MENU_TEXT,
-        m.MENU_TIPS,
-        m.IS_ACTIVE,
-        m.VISIBILITY,
-        m.URL,
-        m.GLYPH,
-        m.SEPARATOR,
-        m.TARGET
-      FROM TB_M_MENU m
-      INNER JOIN TB_M_MENU_AUTHORIZATION ma ON m.MENU_ID = ma.MENU_ID
-      INNER JOIN TB_M_AUTHORIZATION a ON (
-        (ma.ROLE_ID IS NOT NULL AND ma.ROLE_ID = a.ROLE) OR
-        (ma.FUNCTION_ID IS NOT NULL AND ma.FUNCTION_ID = a.[FUNCTION]) OR
-        (ma.FEATURE_ID IS NOT NULL AND ma.FEATURE_ID = a.FEATURE)
-      )
-      WHERE m.APP_ID = 'SARSYS'
-        AND ma.APP_ID = 'SARSYS'
-        AND a.USERNAME = ${username}
-        AND a.APPLICATION = 'SARSYS'
-      ORDER BY
-        m.MENU_PARENT,
-        m.MENU_ID,
-        CASE WHEN m.MENU_TEXT = 'Dashboard' THEN 0 ELSE 1 END
+      WITH q AS (
+  SELECT
+    m.MENU_ID,
+    m.MENU_PARENT,
+    m.MENU_TEXT,
+    m.MENU_TIPS,
+    m.IS_ACTIVE,
+    m.VISIBILITY,
+    m.URL,
+    m.GLYPH,
+    m.SEPARATOR,
+    m.TARGET,
+
+    -- nomor urut dari prefix angka (default 9999 jika tak ada angka)
+    TRY_CONVERT(int, NULLIF(SUBSTRING(m.MENU_ID, 1,
+        PATINDEX('%[^0-9]%', m.MENU_ID + 'X') - 1), ''))              AS ORDER_NO,
+
+    -- nomor urut parent dari prefix angka
+    TRY_CONVERT(int, NULLIF(SUBSTRING(m.MENU_PARENT, 1,
+        PATINDEX('%[^0-9]%', m.MENU_PARENT + 'X') - 1), ''))          AS PARENT_ORDER,
+
+    -- ID bersih (tanpa angka)
+    SUBSTRING(m.MENU_ID,
+        PATINDEX('%[^0-9]%', m.MENU_ID + 'X'),
+        LEN(m.MENU_ID))                                               AS MENU_ID_CLEAN,
+
+    -- Parent bersih (biarkan null/'menu' apa adanya)
+    CASE
+      WHEN m.MENU_PARENT IS NULL OR m.MENU_PARENT = 'menu' THEN m.MENU_PARENT
+      ELSE SUBSTRING(m.MENU_PARENT,
+             PATINDEX('%[^0-9]%', m.MENU_PARENT + 'X'),
+             LEN(m.MENU_PARENT))
+    END                                                               AS MENU_PARENT_CLEAN
+  FROM TB_M_MENU m
+  INNER JOIN TB_M_MENU_AUTHORIZATION ma ON m.MENU_ID = ma.MENU_ID
+  INNER JOIN TB_M_AUTHORIZATION a ON (
+    (ma.ROLE_ID     IS NOT NULL AND ma.ROLE_ID     = a.ROLE) OR
+    (ma.FUNCTION_ID IS NOT NULL AND ma.FUNCTION_ID = a.[FUNCTION]) OR
+    (ma.FEATURE_ID  IS NOT NULL AND ma.FEATURE_ID  = a.FEATURE)
+  )
+  WHERE m.APP_ID = 'SARSYS'
+    AND ma.APP_ID = 'SARSYS'
+    AND a.USERNAME = 'admin'
+    AND a.APPLICATION = 'SARSYS'
+)
+SELECT *
+FROM q
+ORDER BY
+  ISNULL(PARENT_ORDER, 9999),
+  ISNULL(ORDER_NO, 9999),
+  MENU_ID_CLEAN;
+
     `;
 
       // Group menus by parent
@@ -172,25 +198,25 @@ export const userRepository = {
         SELECT DISTINCT r.ID, r.NAME, r.DESCRIPTION
         FROM TB_M_ROLE r
         INNER JOIN TB_M_AUTHORIZATION a ON r.ID = a.ROLE
-        WHERE r.APPLICATION = 'PULLSYS'
+        WHERE r.APPLICATION = 'SARSYS'
           AND a.USERNAME    = ${username}
-          AND a.APPLICATION = 'PULLSYS'
+          AND a.APPLICATION = 'SARSYS'
       `,
         prismaSC.$queryRaw<Array<{ ID: string }>>`
         SELECT DISTINCT f.ID
         FROM TB_M_FEATURE f
         INNER JOIN TB_M_AUTHORIZATION a ON f.ID = a.FEATURE
-        WHERE f.APPLICATION = 'PULLSYS'
+        WHERE f.APPLICATION = 'SARSYS'
           AND a.USERNAME    = ${username}
-          AND a.APPLICATION = 'PULLSYS'
+          AND a.APPLICATION = 'SARSYS'
       `,
         prismaSC.$queryRaw<Array<{ ID: string }>>`
         SELECT DISTINCT f.ID
         FROM TB_M_FUNCTION f
         INNER JOIN TB_M_AUTHORIZATION a ON f.ID = a.[FUNCTION]
-        WHERE f.APPLICATION = 'PULLSYS'
+        WHERE f.APPLICATION = 'SARSYS'
           AND a.USERNAME    = ${username}
-          AND a.APPLICATION = 'PULLSYS'
+          AND a.APPLICATION = 'SARSYS'
       `,
       ]);
 
@@ -223,52 +249,56 @@ export const userRepository = {
     }
   },
   groupMenusByParent(menus: any[]) {
-    const allMenus: { [key: string]: any } = {};
-    const processedMenus = new Set<string>(); // Track processed menu IDs to prevent duplicates
+    const strip = (s?: string | null): string | null =>
+      s ? s.replace(/^\d+/, '') : s ?? null;
 
-    // First pass: create a map of all menus
-    menus.forEach((menu) => {
-      const menuKey = `${menu.MENU_PARENT}-${menu.MENU_ID}`;
-      if (processedMenus.has(menuKey)) {
-        return; // Skip if already processed
-      }
-      processedMenus.add(menuKey);
+    const rows = menus.map((m) => {
+      const rawId = m.MENU_ID ?? '';
+      const rawParent = m.MENU_PARENT ?? '';
 
-      allMenus[menu.MENU_ID] = {
-        menuId: menu.MENU_ID,
-        menuText: menu.MENU_TEXT,
-        menuTips: menu.MENU_TIPS,
-        isActive: menu.IS_ACTIVE,
-        visibility: menu.VISIBILITY,
-        url: menu.URL,
-        glyph: menu.GLYPH,
-        separator: menu.SEPARATOR,
-        target: menu.TARGET,
-        parent: menu.MENU_PARENT,
-        submenu: [],
+      const idClean = strip(rawId) ?? '';
+      const parentClean =
+        rawParent === 'menu' || !rawParent ? 'menu' : strip(rawParent) ?? 'menu';
+      const orderNo = parseInt((rawId.match(/^\d+/)?.[0] ?? '9999'), 20);
+
+      return {
+        menuId: idClean,
+        menuText: m.MENU_TEXT ?? '',
+        menuTips: m.MENU_TIPS ?? '',
+        isActive: m.IS_ACTIVE ?? false,
+        visibility: m.VISIBILITY ?? false,
+        url: m.URL ?? '',
+        glyph: m.GLYPH ?? '',
+        separator: m.SEPARATOR ?? '',
+        target: m.TARGET ?? '',
+        parent: parentClean,
+        orderNo,
       };
     });
 
-    // Second pass: build the hierarchy
-    const rootMenus: any[] = [];
+    const byId = new Map<string, any>();
+    for (const r of rows) byId.set(r.menuId, { ...r, submenu: [] });
 
-    Object.values(allMenus).forEach((menu: any) => {
-      if (menu.parent === 'menu') {
-        // This is a root level menu
-        rootMenus.push(menu);
+    const roots: any[] = [];
+    for (const r of rows) {
+      const node = byId.get(r.menuId)!;
+      if (r.parent && r.parent !== 'menu' && byId.has(r.parent)) {
+        byId.get(r.parent)!.submenu.push(node);
       } else {
-        // This is a submenu, find its parent and add it
-        const parent = allMenus[menu.parent];
-        if (parent) {
-          parent.submenu.push(menu);
-        } else {
-          // If parent doesn't exist, treat as root level
-          rootMenus.push(menu);
-        }
+        roots.push(node);
       }
-    });
+    }
 
-    return rootMenus;
+    const sortByOrder = (a: any, b: any) => (a.orderNo ?? 9999) - (b.orderNo ?? 9999);
+    const sortTree = (nodes: any[]) => {
+      nodes.sort(sortByOrder);
+      nodes.forEach(n => n.submenu && n.submenu.length && sortTree(n.submenu));
+    };
+    sortTree(roots);
+
+    return roots;
   }
+
+
 
 };

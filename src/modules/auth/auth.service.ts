@@ -207,7 +207,7 @@ export const authService = {
   async getMenu(username: string) {
     try {
       const menus = await userRepository.getMenu(username)
-      return ServiceResponse.success('Menu Not Found', menus)
+      return ServiceResponse.success('Menu found', menus)
     } catch (error) {
       const errorMessage = `Error finding menu : $${(error as Error).message}`;
       // await 
