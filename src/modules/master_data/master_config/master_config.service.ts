@@ -7,6 +7,16 @@ import { MasterSystem } from "../../../types/master_config";
 
 type SystemWhereInput = Prisma.TB_M_SYSTEMWhereInput;
 
+
+function convertStringToTime(timeString: string): Date {
+  return new Date(`1970-01-01T${timeString}Z`);
+}
+
+
+function convertTimeToString(timeDate: Date): string {
+  return timeDate.toISOString().substring(11, 19);
+}
+
 export const systemService = {
   async getSystem(app: FastifyInstance, query: any) {
     const {
@@ -42,7 +52,7 @@ export const systemService = {
     };
 
     try {
-      const [data, total] = await app.prisma.$transaction([
+      const [rawData, total] = await app.prisma.$transaction([
         app.prisma.tB_M_SYSTEM.findMany({
           where,
           orderBy,
@@ -52,10 +62,18 @@ export const systemService = {
         app.prisma.tB_M_SYSTEM.count({ where }),
       ]);
 
+      const data = rawData.map((record) => {
+        const { VALUE_TIME, ...rest } = record;
+        return {
+          ...rest,
+          VALUE_TIME: VALUE_TIME ? convertTimeToString(VALUE_TIME) : null,
+        };
+      });
+
       const totalPages = Math.max(1, Math.ceil(total / limitNum));
 
       return {
-        data,
+        data, 
         meta: {
           page: pageNum,
           limit: limitNum,
@@ -73,15 +91,26 @@ export const systemService = {
   },
 
   async createSystem(app: FastifyInstance, data: MasterSystem) {
+    const dataForDb: any = { ...data };
+
+    if (typeof dataForDb.VALUE_TIME === "string") {
+      dataForDb.VALUE_TIME = convertStringToTime(dataForDb.VALUE_TIME);
+    }
+
     try {
       const newData = await app.prisma.tB_M_SYSTEM.create({
         data: {
-          ...data,
+          ...dataForDb,
           CREATED_BY: "Hesti",
           CREATED_DT: new Date(),
         },
       });
-      return newData;
+
+      const { VALUE_TIME, ...rest } = newData;
+      return {
+        ...rest,
+        VALUE_TIME: VALUE_TIME ? convertTimeToString(VALUE_TIME) : null,
+      };
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === "P2002") {
@@ -111,6 +140,12 @@ export const systemService = {
       CHANGED_DT: new Date(),
     };
 
+    if (typeof dataForUpdate.VALUE_TIME === "string") {
+      dataForUpdate.VALUE_TIME = convertStringToTime(dataForUpdate.VALUE_TIME);
+    } else if (dataForUpdate.VALUE_TIME === null) {
+      dataForUpdate.VALUE_TIME = null;
+    }
+
     if (NEW_VALID_FROM_DT) {
       dataForUpdate.VALID_FROM_DT = NEW_VALID_FROM_DT;
     }
@@ -126,7 +161,12 @@ export const systemService = {
         },
         data: dataForUpdate,
       });
-      return updatedSystem;
+
+      const { VALUE_TIME, ...rest } = updatedSystem;
+      return {
+        ...rest,
+        VALUE_TIME: VALUE_TIME ? convertTimeToString(VALUE_TIME) : null,
+      };
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === "P2025") {
@@ -169,7 +209,12 @@ export const systemService = {
           },
         },
       });
-      return deletedSystem;
+
+      const { VALUE_TIME, ...rest } = deletedSystem;
+      return {
+        ...rest,
+        VALUE_TIME: VALUE_TIME ? convertTimeToString(VALUE_TIME) : null,
+      };
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === "P2025") {

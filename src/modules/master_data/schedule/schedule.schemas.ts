@@ -9,9 +9,9 @@ export const scheduleSchema = {
     ],
     properties: {
       APPLICATION_ID: { type: "string", maxLength: 20 },
-      SCHEDULE_SYNC_START_DT: { type: "string", maxLength: 5 },
-      SCHEDULE_SYNC_END_DT: { type: "string", maxLength: 5 },
-      SCHEDULE_UAR_DT: { type: "string", maxLength: 5 },
+      SCHEDULE_SYNC_START_DT: { type: "string" },
+      SCHEDULE_SYNC_END_DT: { type: "string" },
+      SCHEDULE_UAR_DT: { type: "string" },
       SCHEDULE_STATUS: { type: "string", maxLength: 1 },
       CREATED_BY: { type: "string", maxLength: 50 },
       CREATED_DT: { type: "string", format: "date-time" },

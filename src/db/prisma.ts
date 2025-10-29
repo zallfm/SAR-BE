@@ -1,4 +1,5 @@
 import { PrismaClient } from "../generated/prisma";
+import { PrismaMssql } from "@prisma/adapter-mssql";
 
 declare global {
   var prisma: PrismaClient | undefined;

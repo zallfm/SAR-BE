@@ -29,34 +29,16 @@ export const scheduleController = {
     async (req: FastifyRequest, reply: FastifyReply) => {
       const requestId = (req.headers["x-request-id"] as string) || req.id;
       const body = req.body as CreateScheduleBody;
-      const schedule = await scheduleService.createSchedule(
-        app,
-        body.APPLICATION_ID,
-        body.SCHEDULE_SYNC_START_DT,
-        body.SCHEDULE_SYNC_END_DT,
-        body.SCHEDULE_UAR_DT,
-        body.CREATED_BY,
-        body.CREATED_DT
-      );
+      const schedule = await scheduleService.createSchedule(app, body);
       return reply.code(201).send({ requestId, data: schedule });
     },
   editSchedule:
     (app: FastifyInstance) =>
     async (req: FastifyRequest, reply: FastifyReply) => {
       const requestId = (req.headers["x-request-id"] as string) || req.id;
-      const ID = (req.params as any).id as string;
+      const key = (req.params as any);
       const body = req.body as CreateScheduleBody;
-      const schedule = await scheduleService.editSchedule(
-        app,
-        ID,
-        body.APPLICATION_ID,
-        body.SCHEDULE_SYNC_START_DT,
-        body.SCHEDULE_SYNC_END_DT,
-        body.SCHEDULE_UAR_DT,
-        body.SCHEDULE_STATUS,
-        body.CREATED_BY,
-        body.CREATED_DT
-      );
+      const schedule = await scheduleService.editSchedule(app, key, body);
       return reply.code(200).send({ requestId, data: schedule });
     },
 
@@ -64,12 +46,13 @@ export const scheduleController = {
     (app: FastifyInstance) =>
     async (req: FastifyRequest, reply: FastifyReply) => {
       const requestId = (req.headers["x-request-id"] as string) || req.id;
-      const ID = (req.params as any).id as string;
+      const compoundId = req.params as any;
       const body = req.body as CreateScheduleBody;
       const schedule = await scheduleService.updateStatusSchedule(
         app,
-        ID,
+        compoundId,
         body.SCHEDULE_STATUS
+        
       );
       return reply.code(200).send({ requestId, data: schedule });
     },

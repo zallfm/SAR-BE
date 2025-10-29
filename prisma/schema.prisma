@@ -233,18 +233,20 @@ model TB_M_FUNCTION {
   CHANGED_DT    DateTime?    @db.Date
   TB_M_MODULE   TB_M_MODULE  @relation(fields: [MODULE_ID], references: [MODULE_ID], onUpdate: NoAction, map: "FK_TB_M_FUNCTION_MODULE")
   TB_R_LOG_D    TB_R_LOG_D[]
+  TB_R_LOG_H    TB_R_LOG_H[]
 
   @@id([MODULE_ID, FUNCTION_ID], map: "PK_TB_M_FUNCTION")
 }
 
 model TB_M_MESSAGE {
-  MESSAGE_ID   String    @id(map: "PK_TB_M_MESSAGE") @db.NVarChar(12)
-  MESSAGE_TYPE String    @db.NVarChar(3)
-  MESSAGE_TEXT String    @db.NVarChar(500)
-  CREATED_BY   String    @db.NVarChar(20)
-  CREATED_DT   DateTime  @db.Date
-  CHANGED_BY   String?   @db.NVarChar(20)
-  CHANGED_DT   DateTime? @db.Date
+  MESSAGE_ID   String       @id(map: "PK_TB_M_MESSAGE") @db.NVarChar(12)
+  MESSAGE_TYPE String       @db.NVarChar(3)
+  MESSAGE_TEXT String       @db.NVarChar(500)
+  CREATED_BY   String       @db.NVarChar(20)
+  CREATED_DT   DateTime     @db.Date
+  CHANGED_BY   String?      @db.NVarChar(20)
+  CHANGED_DT   DateTime?    @db.Date
+  TB_R_LOG_D   TB_R_LOG_D[]
 }
 
 model TB_M_MODULE {
@@ -255,6 +257,8 @@ model TB_M_MODULE {
   CHANGED_BY    String?         @db.NVarChar(20)
   CHANGED_DT    DateTime?       @db.Date
   TB_M_FUNCTION TB_M_FUNCTION[]
+  TB_R_LOG_D    TB_R_LOG_D[]
+  TB_R_LOG_H    TB_R_LOG_H[]
 }
 
 model TB_M_SCHEDULE {
@@ -272,24 +276,8 @@ model TB_M_SCHEDULE {
   @@id([APPLICATION_ID, SCHEDULE_SYNC_START_DT, SCHEDULE_UAR_DT], map: "PK_TB_M_SCHEDULE")
 }
 
-model TB_M_SYSTEM {
-  SYSTEM_TYPE   String    @db.NVarChar(30)
-  SYSTEM_CD     String    @db.NVarChar(30)
-  VALID_FROM_DT DateTime  @db.Date
-  VALID_TO_DT   DateTime  @db.Date
-  VALUE_TEXT    String?
-  VALUE_NUM     Int?
-  VALUE_TIME    DateTime? @db.Date
-  CREATED_BY    String    @db.NVarChar(20)
-  CREATED_DT    DateTime  @db.Date
-  CHANGED_BY    String?   @db.NVarChar(20)
-  CHANGED_DT    DateTime? @db.Date
-
-  @@id([SYSTEM_TYPE, SYSTEM_CD, VALID_FROM_DT], map: "PK_TB_M_SYSTEM")
-}
-
 model TB_M_UAR_PIC {
-  ID            Int           @id(map: "PK_TB_M_UAR_PIC")
+  ID            String        @id(map: "TB_M_UAR_PIC_PK") @db.NVarChar(22)
   PIC_NAME      String        @db.NVarChar(30)
   DIVISION_ID   Int
   MAIL          String        @db.NVarChar(50)
@@ -301,7 +289,7 @@ model TB_M_UAR_PIC {
 }
 
 model TB_R_LOG_D {
-  PROCESS_ID      Int
+  PROCESS_ID      String         @db.NVarChar(30)
   SEQ_NO          Int
   MESSAGE_ID      String         @db.NVarChar(12)
   MESSAGE_TYPE    String         @db.NVarChar(3)
@@ -313,24 +301,28 @@ model TB_R_LOG_D {
   CHANGED_DT      DateTime?      @db.Date
   MODULE_ID       String?        @db.NVarChar(10)
   FUNCTION_ID     String?        @db.NVarChar(20)
-  TB_R_LOG_H      TB_R_LOG_H     @relation(fields: [PROCESS_ID], references: [PROCESS_ID], onUpdate: NoAction, map: "FK_TB_R_LOG_D_PROCESS")
   TB_M_FUNCTION   TB_M_FUNCTION? @relation(fields: [MODULE_ID, FUNCTION_ID], references: [MODULE_ID, FUNCTION_ID], onDelete: NoAction, onUpdate: NoAction, map: "TB_R_LOG_D_TB_M_FUNCTION_FK")
+  TB_M_MODULE     TB_M_MODULE?   @relation(fields: [MODULE_ID], references: [MODULE_ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_TB_R_LOG_D_MODULE")
+  TB_R_LOG_H      TB_R_LOG_H     @relation(fields: [PROCESS_ID], references: [PROCESS_ID], onUpdate: NoAction, map: "FK_TB_R_LOG_D_PROCESS")
+  TB_M_MESSAGE    TB_M_MESSAGE   @relation(fields: [MESSAGE_ID], references: [MESSAGE_ID], onUpdate: NoAction, map: "TB_R_LOG_D_TB_M_MESSAGE_FK")
 
   @@id([PROCESS_ID, SEQ_NO], map: "PK_TB_R_LOG_D")
 }
 
 model TB_R_LOG_H {
-  PROCESS_ID     Int          @id(map: "PK_TB_R_LOG_H")
-  MODULE_ID      String       @db.NVarChar(10)
-  FUNCTION_ID    String       @db.NVarChar(20)
-  START_DT       DateTime     @db.Date
-  END_DT         DateTime?    @db.Date
-  PROCESS_STATUS String?      @db.Char(1)
-  CREATED_BY     String       @db.NVarChar(20)
-  CREATED_DT     DateTime     @db.Date
-  CHANGED_BY     String?      @db.NVarChar(20)
-  CHANGED_DT     DateTime?    @db.Date
+  PROCESS_ID     String        @id(map: "PK_TB_R_LOG_H") @db.NVarChar(30)
+  MODULE_ID      String        @db.NVarChar(10)
+  FUNCTION_ID    String        @db.NVarChar(20)
+  START_DT       DateTime      @db.Date
+  END_DT         DateTime?     @db.Date
+  PROCESS_STATUS String?       @db.Char(1)
+  CREATED_BY     String        @db.NVarChar(20)
+  CREATED_DT     DateTime      @db.Date
+  CHANGED_BY     String?       @db.NVarChar(20)
+  CHANGED_DT     DateTime?     @db.Date
   TB_R_LOG_D     TB_R_LOG_D[]
+  TB_M_FUNCTION  TB_M_FUNCTION @relation(fields: [MODULE_ID, FUNCTION_ID], references: [MODULE_ID, FUNCTION_ID], onUpdate: NoAction, map: "FK_TB_R_LOG_H_FUNCTION")
+  TB_M_MODULE    TB_M_MODULE   @relation(fields: [MODULE_ID], references: [MODULE_ID], onUpdate: NoAction, map: "FK_TB_R_LOG_H_MODULE")
 }
 
 model TB_R_UAR_DIVISION_USER {
@@ -549,4 +541,119 @@ model TB_T_EMPLOYEE_TERMINATION {
   TB_M_DIVISION    TB_M_DIVISION? @relation(fields: [DIVISION_ID], references: [DIVISION_ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_TB_T_EMPLOYEE_TERMINATION_DIVISION")
 
   @@id([NOREG, POSITION_CODE, JOB_CODE, VALID_FROM, VALID_TO, ORG_ID], map: "PK_TB_T_EMPLOYEE_TERMINATION")
+}
+
+model TB_M_SYSTEM {
+  SYSTEM_TYPE   String    @db.NVarChar(30)
+  SYSTEM_CD     String    @db.NVarChar(30)
+  VALID_FROM_DT DateTime  @db.Date
+  VALID_TO_DT   DateTime  @db.Date
+  VALUE_TEXT    String?   @db.NVarChar(30)
+  VALUE_NUM     Int?
+  VALUE_TIME    DateTime? @db.Time
+  CREATED_BY    String    @db.NVarChar(20)
+  CREATED_DT    DateTime  @db.Date
+  CHANGED_BY    String?   @db.NVarChar(20)
+  CHANGED_DT    DateTime? @db.Date
+
+  @@id([SYSTEM_TYPE, SYSTEM_CD, VALID_FROM_DT], map: "PK_TB_M_SYSTEM")
+}
+
+model TB_M_APPLICATION_RUNTIME_PARAM {
+  KEY         String    @id(map: "PK_TB_M_APPLICATION_RUNTIME_PARAM") @db.NVarChar(100)
+  VALUE       String?
+  DESCRIPTION String?   @db.NVarChar(255)
+  CHANGED_DT  DateTime? @db.Date
+}
+
+model TB_M_INTEGRATION_LOG {
+  ID      BigInt   @id(map: "PK_TB_M_INTEGRATION_LOG")
+  LOG_DT  DateTime @db.Date
+  SYSTEM  String   @db.NVarChar(50)
+  LEVEL   String   @db.NVarChar(10)
+  MESSAGE String
+  DETAIL  String?  @db.NVarChar(255)
+}
+
+model TB_M_TEMPLATE {
+  ITEM_CODE   String    @db.NVarChar(20)
+  LOCALE      String    @db.NVarChar(10)
+  CHANNEL     String    @db.NVarChar(20)
+  SUBJECT_TPL String    @db.NVarChar(255)
+  BODY_TPL    String    @db.NVarChar(1)
+  ACTIVE      Boolean
+  CHANGED_DT  DateTime? @db.Date
+
+  @@id([ITEM_CODE, LOCALE, CHANNEL], map: "PK_TB_M_TEMPLATE")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_R_LOG_D_BACKUP {
+  PROCESS_ID      Int
+  SEQ_NO          Int
+  MESSAGE_ID      String    @db.NVarChar(12)
+  MESSAGE_TYPE    String    @db.NVarChar(3)
+  MESSAGE_CONTENT String    @db.NVarChar(200)
+  LOCATION        String    @db.NVarChar(50)
+  CREATED_BY      String    @db.NVarChar(20)
+  CREATED_DT      DateTime  @db.Date
+  CHANGED_BY      String?   @db.NVarChar(20)
+  CHANGED_DT      DateTime? @db.Date
+  MODULE_ID       String?   @db.NVarChar(10)
+  FUNCTION_ID     String?   @db.NVarChar(20)
+
+  @@ignore
+}
+
+model TB_T_CANDIDATE_NOTIFICATION {
+  ID                 BigInt    @id(map: "PK_TB_T_CANDIDATE_NOTIFICATION")
+  REQUEST_ID         String    @db.NVarChar(50)
+  ITEM_CODE          String    @db.NVarChar(20)
+  APPROVER_ID        String    @db.NVarChar(70)
+  RECIPIENT_EMAIL    String?   @db.NVarChar(255)
+  RECIPIENT_TEAMS_ID String?   @db.NVarChar(255)
+  DUE_DATE           DateTime? @db.Date
+  LINK_DETAIL        String?   @db.NVarChar(500)
+  STATUS             String    @db.NVarChar(20)
+  PAYLOAD_HASH       String?   @db.NVarChar(64)
+  CREATED_DT         DateTime  @db.Date
+}
+
+model TB_T_OUTBOUND_EMAIL {
+  ID              BigInt    @id(map: "PK_TB_T_OUTBOUND_EMAIL")
+  REQUEST_ID      String    @db.NVarChar(50)
+  ITEM_CODE       String    @db.NVarChar(20)
+  TO_EMAIL        String    @db.NVarChar(255)
+  CC_EMAIL        String?   @db.NVarChar(500)
+  SUBJECT         String    @db.NVarChar(255)
+  BODY            String    @db.NVarChar(1)
+  DISPATCH_STATUS String    @db.NVarChar(20)
+  MESSAGE_ID      String?   @db.NVarChar(100)
+  CREATED_DT      DateTime  @db.Date
+  SENT_DT         DateTime? @db.Date
+}
+
+model TB_T_PA_TRIGGER {
+  ID             BigInt    @id(map: "PK_TB_T_PA_TRIGGER")
+  CORRELATION_ID String    @db.NVarChar(100)
+  FLOW_ID        String?   @db.NVarChar(100)
+  PAYLOAD        String    @db.NVarChar(1)
+  STATUS         String    @db.NVarChar(20)
+  CREATED_DT     DateTime  @db.Date
+  TRIGGERED_DT   DateTime? @db.Date
+}
+
+model TB_H_NOTIFICATION {
+  ID              BigInt   @id(map: "PK_TB_R_NOTIFICATION_HISTORY")
+  REQUEST_ID      String   @db.NVarChar(50)
+  ITEM_CODE       String   @db.NVarChar(20)
+  CHANNEL         String   @db.NVarChar(20)
+  SYSTEM          String   @db.NVarChar(30)
+  RECIPIENT       String   @db.NVarChar(255)
+  STATUS          String   @db.NVarChar(20)
+  PROVIDER_MSG_ID String?  @db.NVarChar(100)
+  PAYLOAD_HASH    String?  @db.NVarChar(64)
+  SENT_DT         DateTime @db.Date
+  CREATED_BY      String   @db.NVarChar(20)
+  CREATED_DT      DateTime @db.Date
 }

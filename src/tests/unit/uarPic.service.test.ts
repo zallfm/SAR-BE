@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { uarPicService } from "../../modules/master_data/UarPic/uarpic.service";
+import { uarPicService } from "../../modules/master_data/uarpic/uarpic.service";
 import { ApplicationError } from "../../core/errors/applicationError";
 import { ERROR_CODES } from "../../core/errors/errorCodes";
 const mockApp = {} as FastifyInstance;

@@ -1,10 +1,8 @@
 import type { FastifyInstance } from "fastify";
+import { Prisma, TB_M_SCHEDULE } from "../../../generated/prisma";
 import { ApplicationError } from "../../../core/errors/applicationError";
 import { ERROR_CODES } from "../../../core/errors/errorCodes";
 import { ERROR_MESSAGES } from "../../../core/errors/errorMessages";
-import { initialSchedules } from "./schedule.repository";
-import { generateID } from "../../../utils/idHelper";
-import { tempUarPic } from "../uarpic/uarpic.repository";
 import { UarPic } from "../../../types/uarPic";
 import { uarPicSchema } from "../uarpic/uarpic.schemas";
 import {
@@ -17,23 +15,38 @@ import {
 } from "../../../data/mockup";
 import { Schedule } from "../../../types/schedule";
 
-const dateCheck = (date: string) => {
-  const regex = /^(\d{2})\/(\d{2})$/;
-  const result = regex.test(date);
+type ScheduleWhereInput = Prisma.TB_M_SCHEDULEWhereInput;
+type ScheduleCompoundId =
+  Prisma.TB_M_SCHEDULEAPPLICATION_IDSCHEDULE_SYNC_START_DTSCHEDULE_UAR_DTCompoundUniqueInput;
 
-  if (!result) {
-    throw new ApplicationError(
-      ERROR_CODES.VAL_INVALID_FORMAT,
-      ERROR_MESSAGES[ERROR_CODES.VAL_INVALID_FORMAT],
-      400
-    );
+/**
+ * Helper to format schedule data for API responses, converting Dates to ISO strings.
+ */
+const formatSchedule = (
+  schedule: TB_M_SCHEDULE & {
+    TB_M_APPLICATION?: { APPLICATION_NAME: string } | null;
   }
+) => {
+  const { TB_M_APPLICATION, ...rest } = schedule;
+
+  return {
+    ...rest,
+    // Add related data
+    APPLICATION_NAME: TB_M_APPLICATION?.APPLICATION_NAME || null,
+    // Convert Date objects to full ISO strings
+    SCHEDULE_SYNC_START_DT: schedule.SCHEDULE_SYNC_START_DT.toISOString(),
+    SCHEDULE_SYNC_END_DT: schedule.SCHEDULE_SYNC_END_DT.toISOString(),
+    SCHEDULE_UAR_DT: schedule.SCHEDULE_UAR_DT.toISOString(),
+    CREATED_DT: schedule.CREATED_DT.toISOString(),
+    CHANGED_DT: schedule.CHANGED_DT ? schedule.CHANGED_DT.toISOString() : null,
+  };
 };
 
 export type GetSchedulesQuery = {
   APPLICATION_ID?: string;
   SCHEDULE_STATUS?: string;
 };
+
 export const scheduleService = {
   async getSchedules(app: FastifyInstance, query: any) {
     const {
@@ -47,244 +60,521 @@ export const scheduleService = {
       order = "desc",
     } = query;
 
-    let rows: Schedule[] = initialSchedules.slice();
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    const where: ScheduleWhereInput = {};
 
     if (q) {
-      const s = String(q).toLowerCase();
-      rows = rows.filter((r) => r.APPLICATION_ID.toLowerCase().includes(s));
+      where.OR = [
+        { APPLICATION_ID: { contains: q } },
+        {
+          TB_M_APPLICATION: {
+            APPLICATION_NAME: { contains: q },
+          },
+        },
+      ];
     }
 
     if (applicationId) {
-      rows = rows.filter((r) => r.APPLICATION_ID === applicationId);
+      where.APPLICATION_ID = applicationId;
     }
 
     if (applicationName) {
-      const searchName = String(applicationName).toLowerCase();
-
-      const matchingAppIdSet = new Set(
-        applications
-          .filter((app) => app.APP_NAME.toLowerCase().includes(searchName))
-          .map((app) => app.APPLICATION_ID)
-      );
-
-      rows = rows.filter((r) => matchingAppIdSet.has(r.APPLICATION_ID));
+      where.TB_M_APPLICATION = {
+        APPLICATION_NAME: { contains: applicationName },
+      };
     }
 
     if (status) {
-      rows = rows.filter((r) => r.SCHEDULE_STATUS === status);
+      where.SCHEDULE_STATUS = status;
     }
 
-    rows.sort((a, b) => {
-      let va: number | string, vb: number | string;
+    const orderBy: Prisma.TB_M_SCHEDULEOrderByWithRelationInput =
+      sortBy === "APPLICATION_NAME"
+        ? { TB_M_APPLICATION: { APPLICATION_NAME: order } }
+        : { [sortBy]: order };
 
-      switch (sortBy) {
-        case "APPLICATION_ID":
-          va = a.APPLICATION_ID;
-          vb = b.APPLICATION_ID;
-          break;
-        case "SCHEDULE_STATUS":
-          va = a.SCHEDULE_STATUS.toLowerCase();
-          vb = b.SCHEDULE_STATUS.toLowerCase();
-          break;
-        case "CREATED_DT":
-        default: // Default to CREATED_DT
-          va = new Date(a.CREATED_DT).getTime();
-          vb = new Date(b.CREATED_DT).getTime();
-          break;
-      }
+    try {
+      const [rawData, total] = await app.prisma.$transaction([
+        app.prisma.tB_M_SCHEDULE.findMany({
+          where,
+          orderBy,
+          skip,
+          take: limitNum,
+          include: {
+            TB_M_APPLICATION: {
+              select: { APPLICATION_NAME: true },
+            },
+          },
+        }),
+        app.prisma.tB_M_SCHEDULE.count({ where }),
+      ]);
 
-      let diff: number;
-      if (typeof va === "string" && typeof vb === "string") {
-        diff = va.localeCompare(vb);
-      } else {
-        diff = (va as number) - (vb as number);
-      }
+      const data = rawData.map(formatSchedule);
+      console.log("schedData", data);
+      const totalPages = Math.max(1, Math.ceil(total / limitNum));
 
-      return order === "asc" ? diff : -diff;
-    });
-
-    const total = rows.length;
-    const pageNum = Number(page) || 1;
-    const limitNum = Number(limit) || 10;
-    const offset = (pageNum - 1) * limitNum;
-    const data = rows.slice(offset, offset + limitNum);
-
-    return {
-      data,
-      meta: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        totalPages: Math.max(1, Math.ceil(total / limitNum)),
-      },
-    };
-  },
-
-  async getSchedule(app: FastifyInstance, ID: string) {
-    const scheduleIndex = initialSchedules.findIndex((item) => item.ID === ID);
-    if (scheduleIndex === -1) {
+      return {
+        data,
+        meta: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages,
+        },
+      };
+    } catch (e) {
+      app.log.error(e);
       throw new ApplicationError(
-        ERROR_CODES.APP_NOT_FOUND,
-        ERROR_MESSAGES[ERROR_CODES.APP_NOT_FOUND],
-        400
+        ERROR_CODES.SYS_UNKNOWN_ERROR,
+        ERROR_MESSAGES[ERROR_CODES.SYS_UNKNOWN_ERROR]
       );
     }
-    return initialSchedules[scheduleIndex];
   },
+
+  async getSchedule(
+    app: FastifyInstance,
+    key: {
+      APPLICATION_ID: string;
+      SCHEDULE_SYNC_START_DT: string;
+      SCHEDULE_UAR_DT: string;
+    }
+  ) {
+    try {
+      const schedule = await app.prisma.tB_M_SCHEDULE.findUnique({
+        where: {
+          APPLICATION_ID_SCHEDULE_SYNC_START_DT_SCHEDULE_UAR_DT: {
+            APPLICATION_ID: key.APPLICATION_ID,
+            SCHEDULE_SYNC_START_DT: new Date(key.SCHEDULE_SYNC_START_DT),
+            SCHEDULE_UAR_DT: new Date(key.SCHEDULE_UAR_DT),
+          },
+        },
+        include: {
+          TB_M_APPLICATION: {
+            select: { APPLICATION_NAME: true },
+          },
+        },
+      });
+
+      if (!schedule) {
+        throw new ApplicationError(
+          ERROR_CODES.APP_NOT_FOUND,
+          ERROR_MESSAGES[ERROR_CODES.APP_NOT_FOUND],
+          404
+        );
+      }
+      return formatSchedule(schedule);
+    } catch (e) {
+      if (e instanceof ApplicationError) throw e;
+      app.log.error(e);
+      throw new ApplicationError(
+        ERROR_CODES.SYS_UNKNOWN_ERROR,
+        ERROR_MESSAGES[ERROR_CODES.SYS_UNKNOWN_ERROR]
+      );
+    }
+  },
+
   async createSchedule(
     app: FastifyInstance,
-    APPLICATION_ID: string,
-    SCHEDULE_SYNC_START_DT: string,
-    SCHEDULE_SYNC_END_DT: string,
-    SCHEDULE_UAR_DT: string,
-    CREATED_BY: string,
-    CREATED_DT: string
+    data: {
+      APPLICATION_ID: string;
+      SCHEDULE_SYNC_START_DT: string;
+      SCHEDULE_SYNC_END_DT: string;
+      SCHEDULE_UAR_DT: string;
+      SCHEDULE_STATUS: string;
+      CREATED_BY: string;
+    }
   ) {
-    dateCheck(SCHEDULE_SYNC_START_DT);
-    dateCheck(SCHEDULE_SYNC_END_DT);
-    dateCheck(SCHEDULE_UAR_DT);
-    const scheduleData = {
-      ID: generateID(
-        "SCH",
-        "CIO",
-        initialSchedules.map((s) => s.ID)
-      ),
-      APPLICATION_ID,
-      SCHEDULE_SYNC_START_DT,
-      SCHEDULE_SYNC_END_DT,
-      SCHEDULE_UAR_DT,
-      SCHEDULE_STATUS: "1",
-      CREATED_BY,
-      CREATED_DT,
+    console.log("scheddata", data);
+    const dataForDb = {
+      ...data,
+      SCHEDULE_SYNC_START_DT: new Date(data.SCHEDULE_SYNC_START_DT),
+      SCHEDULE_SYNC_END_DT: new Date(data.SCHEDULE_SYNC_END_DT),
+      SCHEDULE_UAR_DT: new Date(data.SCHEDULE_UAR_DT),
+      CREATED_DT: new Date(),
       CHANGED_BY: null,
       CHANGED_DT: null,
     };
-    initialSchedules.push(scheduleData);
-    return scheduleData;
+
+    try {
+      const newSchedule = await app.prisma.tB_M_SCHEDULE.create({
+        data: dataForDb,
+      });
+      return formatSchedule(newSchedule as any); // Cast as any to bypass include
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) {
+        if (e.code === "P2002") {
+          throw new ApplicationError(
+            ERROR_CODES.APP_ALREADY_EXISTS,
+            ERROR_MESSAGES[ERROR_CODES.APP_ALREADY_EXISTS],
+            409
+          );
+        }
+      }
+      app.log.error(e);
+      throw new ApplicationError(
+        ERROR_CODES.SYS_UNKNOWN_ERROR,
+        ERROR_MESSAGES[ERROR_CODES.SYS_UNKNOWN_ERROR]
+      );
+    }
   },
 
   async editSchedule(
     app: FastifyInstance,
-    ID: string,
-    APPLICATION_ID: string,
-    SCHEDULE_SYNC_START_DT: string,
-    SCHEDULE_SYNC_END_DT: string,
-    SCHEDULE_UAR_DT: string,
-    SCHEDULE_STATUS: string,
-    CHANGED_BY: string | null,
-    CHANGED_DT: string | null
+    key: {
+      APPLICATION_ID: string;
+      SCHEDULE_SYNC_START_DT: string;
+      SCHEDULE_UAR_DT: string;
+    },
+    data: {
+      APPLICATION_ID: string; // Can be new or old
+      SCHEDULE_SYNC_START_DT: string; // Can be new or old
+      SCHEDULE_SYNC_END_DT: string;
+      SCHEDULE_UAR_DT: string; // Can be new or old
+      SCHEDULE_STATUS: string;
+      CHANGED_BY: string | null;
+    }
   ) {
-    const schedule = initialSchedules.find((item) => item.ID === ID);
+    const dataForUpdate = {
+      ...data,
+      SCHEDULE_SYNC_START_DT: new Date(data.SCHEDULE_SYNC_START_DT),
+      SCHEDULE_SYNC_END_DT: new Date(data.SCHEDULE_SYNC_END_DT),
+      SCHEDULE_UAR_DT: new Date(data.SCHEDULE_UAR_DT),
+      CHANGED_DT: new Date(),
+    };
 
-    if (!schedule) {
+    try {
+      const updatedSchedule = await app.prisma.tB_M_SCHEDULE.update({
+        where: {
+          APPLICATION_ID_SCHEDULE_SYNC_START_DT_SCHEDULE_UAR_DT: {
+            APPLICATION_ID: key.APPLICATION_ID,
+            SCHEDULE_SYNC_START_DT: new Date(key.SCHEDULE_SYNC_START_DT),
+            SCHEDULE_UAR_DT: new Date(key.SCHEDULE_UAR_DT),
+          },
+        },
+        data: dataForUpdate,
+      });
+
+      return formatSchedule(updatedSchedule as any); // Cast as any to bypass include
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) {
+        if (e.code === "P2025") {
+          throw new ApplicationError(
+            ERROR_CODES.APP_NOT_FOUND,
+            ERROR_MESSAGES[ERROR_CODES.APP_NOT_FOUND],
+            404
+          );
+        }
+        if (e.code === "P2002") {
+          throw new ApplicationError(
+            ERROR_CODES.APP_ALREADY_EXISTS,
+            "The new combination of Application ID, Sync Start Date, and UAR Date already exists.",
+            409
+          );
+        }
+      }
+      app.log.error(e);
       throw new ApplicationError(
-        ERROR_CODES.APP_NOT_FOUND,
-        ERROR_MESSAGES[ERROR_CODES.APP_NOT_FOUND],
-        400
+        ERROR_CODES.SYS_UNKNOWN_ERROR,
+        ERROR_MESSAGES[ERROR_CODES.SYS_UNKNOWN_ERROR]
       );
     }
-    dateCheck(SCHEDULE_SYNC_START_DT);
-    dateCheck(SCHEDULE_SYNC_END_DT);
-    dateCheck(SCHEDULE_UAR_DT);
-
-    const scheduleData = {
-      ID,
-      APPLICATION_ID,
-      SCHEDULE_SYNC_START_DT,
-      SCHEDULE_SYNC_END_DT,
-      SCHEDULE_UAR_DT,
-      SCHEDULE_STATUS,
-      CHANGED_BY,
-      CHANGED_DT,
-    };
-    Object.assign(schedule, scheduleData);
-
-    return scheduleData;
   },
 
   async updateStatusSchedule(
     app: FastifyInstance,
-    ID: string,
+    key: {
+      APPLICATION_ID: string;
+      SCHEDULE_SYNC_START_DT: string;
+      SCHEDULE_UAR_DT: string;
+    },
     SCHEDULE_STATUS: string
   ) {
-    const scheduleIndex = initialSchedules.findIndex((item) => item.ID === ID);
-    if (scheduleIndex === -1) {
+    try {
+      const CHANGED_BY = "Hesti";
+      const updatedSchedule = await app.prisma.tB_M_SCHEDULE.update({
+        where: {
+          APPLICATION_ID_SCHEDULE_SYNC_START_DT_SCHEDULE_UAR_DT: {
+            APPLICATION_ID: key.APPLICATION_ID,
+            SCHEDULE_SYNC_START_DT: new Date(key.SCHEDULE_SYNC_START_DT),
+            SCHEDULE_UAR_DT: new Date(key.SCHEDULE_UAR_DT),
+          },
+        },
+        data: {
+          SCHEDULE_STATUS: SCHEDULE_STATUS,
+          CHANGED_BY: CHANGED_BY,
+          CHANGED_DT: new Date(),
+        },
+      });
+
+      return formatSchedule(updatedSchedule as any); // Cast as any to bypass include
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) {
+        if (e.code === "P2025") {
+          throw new ApplicationError(
+            ERROR_CODES.APP_NOT_FOUND,
+            ERROR_MESSAGES[ERROR_CODES.APP_NOT_FOUND],
+            404
+          );
+        }
+      }
+      app.log.error(e);
       throw new ApplicationError(
-        ERROR_CODES.APP_NOT_FOUND,
-        ERROR_MESSAGES[ERROR_CODES.APP_NOT_FOUND],
-        400
+        ERROR_CODES.SYS_UNKNOWN_ERROR,
+        ERROR_MESSAGES[ERROR_CODES.SYS_UNKNOWN_ERROR]
       );
     }
-    initialSchedules[scheduleIndex].SCHEDULE_STATUS = SCHEDULE_STATUS;
-    return initialSchedules[scheduleIndex];
   },
 
-  async deleteSchedule(app: FastifyInstance, ID: string) {
-    const scheduleIndex = initialSchedules.findIndex((item) => item.ID === ID);
-    if (scheduleIndex === -1) {
+  async deleteSchedule(
+    app: FastifyInstance,
+    key: {
+      APPLICATION_ID: string;
+      SCHEDULE_SYNC_START_DT: string;
+      SCHEDULE_UAR_DT: string;
+    }
+  ) {
+    try {
+      const deletedSchedule = await app.prisma.tB_M_SCHEDULE.delete({
+        where: {
+          APPLICATION_ID_SCHEDULE_SYNC_START_DT_SCHEDULE_UAR_DT: {
+            APPLICATION_ID: key.APPLICATION_ID,
+            SCHEDULE_SYNC_START_DT: new Date(key.SCHEDULE_SYNC_START_DT),
+            SCHEDULE_UAR_DT: new Date(key.SCHEDULE_UAR_DT),
+          },
+        },
+      });
+      return formatSchedule(deletedSchedule as any); // Cast as any to bypass include
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) {
+        if (e.code === "P2025") {
+          throw new ApplicationError(
+            ERROR_CODES.APP_NOT_FOUND,
+            ERROR_MESSAGES[ERROR_CODES.APP_NOT_FOUND],
+            404
+          );
+        }
+      }
+      app.log.error(e);
       throw new ApplicationError(
-        ERROR_CODES.APP_NOT_FOUND,
-        ERROR_MESSAGES[ERROR_CODES.APP_NOT_FOUND],
-        400
+        ERROR_CODES.SYS_UNKNOWN_ERROR,
+        ERROR_MESSAGES[ERROR_CODES.SYS_UNKNOWN_ERROR]
       );
     }
-    initialSchedules.splice(scheduleIndex, 1);
-    return initialSchedules;
   },
 
   async getRunningUarSchedules(app: FastifyInstance) {
     const today = new Date();
-    const runningSchedules = initialSchedules.filter((item) => {
-      const scheduleDate = new Date(item.SCHEDULE_UAR_DT);
-      return (
-        scheduleDate.getFullYear() === today.getFullYear() &&
-        scheduleDate.getMonth() === today.getMonth() &&
-        scheduleDate.getDate() === today.getDate() &&
-        item.SCHEDULE_STATUS === "1"
+    const startOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+    const endOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() + 1
+    );
+
+    try {
+      const runningSchedules = await app.prisma.tB_M_SCHEDULE.findMany({
+        where: {
+          SCHEDULE_UAR_DT: {
+            gte: startOfDay,
+            lt: endOfDay,
+          },
+          SCHEDULE_STATUS: "1",
+        },
+      });
+      return runningSchedules.map((s) => formatSchedule(s as any));
+    } catch (e) {
+      app.log.error(e, "Failed to get running UAR schedules");
+      throw new ApplicationError(
+        ERROR_CODES.SYS_UNKNOWN_ERROR,
+        ERROR_MESSAGES[ERROR_CODES.SYS_UNKNOWN_ERROR]
       );
-    });
-    return runningSchedules;
+    }
   },
 
   async getRunningSyncSchedules(app: FastifyInstance) {
-    // Normalize today to midnight for an accurate date-only comparison
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const currentYear = today.getFullYear();
+    const today = new Date();
+    // Normalize to midnight for date-only comparison
+    const startOfToday = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
 
-    const runningSchedules = initialSchedules.filter((item) => {
-      const [startDay, startMonth] =
-        item.SCHEDULE_SYNC_START_DT.split("/").map(Number);
-      const [endDay, endMonth] =
-        item.SCHEDULE_SYNC_END_DT.split("/").map(Number);
-
-      let startDate = new Date(currentYear, startMonth - 1, startDay);
-      let endDate = new Date(currentYear, endMonth - 1, endDay);
-
-      if (endDate.getTime() < startDate.getTime()) {
-        if (today.getTime() >= startDate.getTime()) {
-          return true;
-        }
-        const lastYearStartDate = new Date(
-          currentYear - 1,
-          startMonth - 1,
-          startDay
-        );
-        if (today.getTime() <= endDate.getTime()) {
-          return today.getTime() >= lastYearStartDate.getTime();
-        }
-      }
-
-      return (
-        today.getTime() >= startDate.getTime() &&
-        today.getTime() <= endDate.getTime()
+    try {
+      const runningSchedules = await app.prisma.tB_M_SCHEDULE.findMany({
+        where: {
+          SCHEDULE_SYNC_START_DT: { lte: startOfToday },
+          SCHEDULE_SYNC_END_DT: { gte: startOfToday },
+          SCHEDULE_STATUS: "1",
+        },
+      });
+      return runningSchedules.map((s) => formatSchedule(s as any));
+    } catch (e) {
+      app.log.error(e, "Failed to get running sync schedules");
+      throw new ApplicationError(
+        ERROR_CODES.SYS_UNKNOWN_ERROR,
+        ERROR_MESSAGES[ERROR_CODES.SYS_UNKNOWN_ERROR]
       );
-    });
-
-    console.log("Running Sync Schedules:", runningSchedules);
-    return runningSchedules;
+    }
   },
 };
+
+export async function runCreateOnlySync(
+  sourcePicList: UarPic[],
+  app: FastifyInstance
+) {
+  app.log.info("--- Starting Create-Only Sync ---");
+
+  try {
+    const databasePicList = await app.prisma.tB_M_UAR_PIC.findMany({
+      select: { ID: true },
+    });
+    app.log.info(
+      `"Database" has ${databasePicList.length} records before sync.`
+    );
+
+    app.log.info("Step 1: In-memory tempUarPic cleaned.");
+    const tempUarPic: UarPic[] = [];
+
+    app.log.info(`Step 2: "Grabbed" ${sourcePicList.length} source records.`);
+
+    const databaseIdMap = new Map(databasePicList.map((pic) => [pic.ID, true]));
+
+    const newTempUarPics = sourcePicList.filter(
+      (sourcePic) => !databaseIdMap.has(sourcePic.ID)
+    );
+    tempUarPic.push(...newTempUarPics);
+    app.log.info(
+      `Step 3: Filtered for new records. ${tempUarPic.length} new records found.`
+    );
+
+    const requiredFields = uarPicSchema.body.required;
+
+    let validatedTempPic = tempUarPic.filter((pic) => {
+      for (const key of requiredFields) {
+        const value = pic[key as keyof UarPic];
+        if (value === null || value === undefined) {
+          app.log.warn(
+            `  Skipping: ${pic.ID} (Reason: Required field ${key} is missing or null).`
+          );
+          return false;
+        }
+      }
+      return true;
+    });
+
+    app.log.info(
+      `Step 4: Validated records. ${validatedTempPic.length} records are valid.`
+    );
+
+    if (validatedTempPic.length > 0) {
+      const dataToCreate = validatedTempPic.map((pic) => ({
+        ...pic,
+        CREATED_DT: new Date(pic.CREATED_DT),
+        CHANGED_DT: pic.CHANGED_DT ? new Date(pic.CHANGED_DT) : null,
+      }));
+      console.log("dttcr", dataToCreate);
+
+      const createResult = await createManyWithManualDuplicateCheck(
+        app,
+        dataToCreate
+      );
+      app.log.info(
+        `Step 5: Pushed ${createResult.count} new records to "database".`
+      );
+    } else {
+      app.log.info("Step 5: No new records to push to database.");
+    }
+
+    const finalCount = await app.prisma.tB_M_UAR_PIC.count();
+    app.log.info(`"Database" has ${finalCount} records after sync.`);
+  } catch (e) {
+    app.log.error(e, "Error during UAR PIC sync process");
+  }
+}
+
+async function createManyWithManualDuplicateCheck(
+  app: any,
+  dataToCreate: any[]
+) {
+  const UNIQUE_KEYS: string[] = ["ID"];
+
+  if (!dataToCreate || dataToCreate.length === 0) {
+    console.log("No data provided to create.");
+    return { count: 0 };
+  }
+
+  const createKey = (item: any) =>
+    UNIQUE_KEYS.map((key) => `${key}_${item[key]}`).join("|");
+
+  const uniqueItemMap = new Map<string, any>();
+  for (const item of dataToCreate) {
+    if (!item.ID) {
+      console.warn("Skipping item with no ID:", item);
+      continue;
+    }
+    const itemKey = createKey(item);
+    if (!uniqueItemMap.has(itemKey)) {
+      uniqueItemMap.set(itemKey, item);
+    }
+  }
+  const uniqueDataToCreate = Array.from(uniqueItemMap.values());
+
+  const originalInputCount = dataToCreate.length;
+  const afterInternalDedupCount = uniqueDataToCreate.length;
+
+  if (afterInternalDedupCount < originalInputCount) {
+    console.log(
+      `Removed ${
+        originalInputCount - afterInternalDedupCount
+      } duplicates from the input data.`
+    );
+  }
+
+  if (uniqueDataToCreate.length === 0) {
+    console.log("No unique data left to create after internal deduplication.");
+    return { count: 0 };
+  }
+
+  const whereClauses = uniqueDataToCreate.map((item) => ({
+    ID: { equals: item.ID },
+  }));
+
+  const existingRecords = await app.prisma.tB_M_UAR_PIC.findMany({
+    where: {
+      OR: whereClauses,
+    },
+    select: {
+      ID: true,
+    },
+  });
+
+  const existingKeySet = new Set(existingRecords.map(createKey));
+
+  const dataToActuallyCreate = uniqueDataToCreate.filter((item) => {
+    const itemKey = createKey(item);
+    return !existingKeySet.has(itemKey);
+  });
+
+  if (dataToActuallyCreate.length > 0) {
+    const createResult = await app.prisma.tB_M_UAR_PIC.createMany({
+      data: dataToActuallyCreate as any,
+    });
+
+    console.log(`Found ${existingRecords.length} existing records in DB.`);
+    console.log(`Created ${createResult.count} new records.`);
+    return createResult;
+  } else {
+    return { count: 0 };
+  }
+}
 
 const randomDelay = (ms = 500) =>
   new Promise((resolve) => setTimeout(resolve, Math.random() * ms));
@@ -328,56 +618,4 @@ export async function fetchFromDB5(app: FastifyInstance): Promise<UarPic[]> {
   await randomDelay(600);
   app.log.info(`Fetched ${uarSO5.length} records from DB5.`);
   return uarSO5;
-}
-
-export async function runCreateOnlySync(
-  databasePicList: UarPic[],
-  sourcePicList: UarPic[],
-  app: FastifyInstance
-) {
-  app.log.info("--- Starting Create-Only Sync ---");
-  app.log.info(`"Database" has ${databasePicList.length} records before sync.`);
-
-  app.log.info("Step 1: tempUarPic cleaned.");
-  tempUarPic.length = 0;
-
-  app.log.info(`Step 2: "Grabbed" ${sourcePicList.length} source records.`);
-
-  const databaseIdMap = new Map(databasePicList.map((pic) => [pic.ID, true]));
-
-  const newTempUarPics = sourcePicList.filter(
-    (sourcePic) => !databaseIdMap.has(sourcePic.ID)
-  );
-  tempUarPic.length = 0;
-  tempUarPic.push(...newTempUarPics);
-  app.log.info(
-    `Step 3: Filtered for new records. ${tempUarPic.length} new records found.`
-  );
-
-  const requiredFields = uarPicSchema.body.required;
-
-  let validatedTempPic = tempUarPic.filter((pic) => {
-    for (const key of requiredFields) {
-      const value = pic[key as keyof UarPic];
-
-      if (value === null || value === undefined) {
-        app.log.warn(
-          `  Skipping: ${pic.ID} (Reason: Required field ${key} is missing or null).`
-        );
-        return false;
-      }
-    }
-    return true;
-  });
-
-  app.log.info(
-    `Step 4: Validated records. ${validatedTempPic.length} records are valid.`
-  );
-
-  databasePicList.push(...validatedTempPic);
-
-  app.log.info(
-    `Step 5: Pushed ${validatedTempPic.length} new records to "database".`
-  );
-  app.log.info(`"Database" has ${databasePicList.length} records after sync.`);
 }
