@@ -55,7 +55,7 @@ export const userRepository = {
         AND a.USERNAME = ${username}
       ORDER BY r.ID
     `;
-
+    console.log("roles", roles)
     // Tentukan role utama (kalau punya lebih dari satu role)
     const primary = roles?.[0];
     const dynamicRole = (primary?.NAME ?? 'Administrator').toUpperCase();
@@ -74,65 +74,67 @@ export const userRepository = {
     const startTime = Date.now();
     try {
       const menusQuery = await prismaSC.$queryRaw<MenuRow[]>`
-      WITH q AS (
-  SELECT
-    m.MENU_ID,
-    m.MENU_PARENT,
-    m.MENU_TEXT,
-    m.MENU_TIPS,
-    m.IS_ACTIVE,
-    m.VISIBILITY,
-    m.URL,
-    m.GLYPH,
-    m.SEPARATOR,
-    m.TARGET,
+      WITH auth AS (
+        SELECT [ROLE], [FUNCTION], [FEATURE]
+        FROM dbo.TB_M_AUTHORIZATION
+        WHERE [USERNAME] = ${username} AND [APPLICATION] = 'SARSYS'
+      ),
+      base AS (
+        SELECT m.*
+        FROM dbo.TB_M_MENU m
+        JOIN dbo.TB_M_MENU_AUTHORIZATION ma ON m.MENU_ID = ma.MENU_ID
+        JOIN auth a ON
+             (ma.ROLE_ID     IS NOT NULL AND ma.ROLE_ID     = a.[ROLE])
+          OR (ma.FUNCTION_ID IS NOT NULL AND ma.FUNCTION_ID = a.[FUNCTION])
+          OR (ma.FEATURE_ID  IS NOT NULL AND ma.FEATURE_ID  = a.[FEATURE])
+        WHERE m.APP_ID = 'SARSYS' AND ma.APP_ID = 'SARSYS'
+      ),
+      q AS (
+        SELECT DISTINCT
+          m.MENU_ID,
+          m.MENU_PARENT,
+          m.MENU_TEXT,
+          m.MENU_TIPS,
+          m.IS_ACTIVE,
+          m.VISIBILITY,
+          m.URL,
+          m.GLYPH,
+          m.SEPARATOR,
+          m.TARGET,
 
-    -- nomor urut dari prefix angka (default 9999 jika tak ada angka)
-    TRY_CONVERT(int, NULLIF(SUBSTRING(m.MENU_ID, 1,
-        PATINDEX('%[^0-9]%', m.MENU_ID + 'X') - 1), ''))              AS ORDER_NO,
+          -- nomor urut dari prefix angka (default 9999 jika tak ada angka)
+          TRY_CONVERT(int, NULLIF(SUBSTRING(m.MENU_ID, 1,
+              PATINDEX('%[^0-9]%', m.MENU_ID + 'X') - 1), ''))        AS ORDER_NO,
 
-    -- nomor urut parent dari prefix angka
-    TRY_CONVERT(int, NULLIF(SUBSTRING(m.MENU_PARENT, 1,
-        PATINDEX('%[^0-9]%', m.MENU_PARENT + 'X') - 1), ''))          AS PARENT_ORDER,
+          -- nomor urut parent dari prefix angka
+          TRY_CONVERT(int, NULLIF(SUBSTRING(m.MENU_PARENT, 1,
+              PATINDEX('%[^0-9]%', m.MENU_PARENT + 'X') - 1), ''))    AS PARENT_ORDER,
 
-    -- ID bersih (tanpa angka)
-    SUBSTRING(m.MENU_ID,
-        PATINDEX('%[^0-9]%', m.MENU_ID + 'X'),
-        LEN(m.MENU_ID))                                               AS MENU_ID_CLEAN,
+          -- ID bersih (tanpa angka)
+          SUBSTRING(m.MENU_ID,
+              PATINDEX('%[^0-9]%', m.MENU_ID + 'X'),
+              LEN(m.MENU_ID))                                         AS MENU_ID_CLEAN,
 
-    -- Parent bersih (biarkan null/'menu' apa adanya)
-    CASE
-      WHEN m.MENU_PARENT IS NULL OR m.MENU_PARENT = 'menu' THEN m.MENU_PARENT
-      ELSE SUBSTRING(m.MENU_PARENT,
-             PATINDEX('%[^0-9]%', m.MENU_PARENT + 'X'),
-             LEN(m.MENU_PARENT))
-    END                                                               AS MENU_PARENT_CLEAN
-  FROM TB_M_MENU m
-  INNER JOIN TB_M_MENU_AUTHORIZATION ma ON m.MENU_ID = ma.MENU_ID
-  INNER JOIN TB_M_AUTHORIZATION a ON (
-    (ma.ROLE_ID     IS NOT NULL AND ma.ROLE_ID     = a.ROLE) OR
-    (ma.FUNCTION_ID IS NOT NULL AND ma.FUNCTION_ID = a.[FUNCTION]) OR
-    (ma.FEATURE_ID  IS NOT NULL AND ma.FEATURE_ID  = a.FEATURE)
-  )
-  WHERE m.APP_ID = 'SARSYS'
-    AND ma.APP_ID = 'SARSYS'
-    AND a.USERNAME = ${username}
-    AND a.APPLICATION = 'SARSYS'
-)
-SELECT *
-FROM q
-ORDER BY
-  ISNULL(PARENT_ORDER, 9999),
-  ISNULL(ORDER_NO, 9999),
-  MENU_ID_CLEAN;
-
+          -- Parent bersih (biarkan null/'menu' apa adanya)
+          CASE
+            WHEN m.MENU_PARENT IS NULL OR m.MENU_PARENT = 'menu' THEN m.MENU_PARENT
+            ELSE SUBSTRING(m.MENU_PARENT,
+                   PATINDEX('%[^0-9]%', m.MENU_PARENT + 'X'),
+                   LEN(m.MENU_PARENT))
+          END                                                         AS MENU_PARENT_CLEAN
+        FROM base m
+      )
+      SELECT *
+      FROM q
+      ORDER BY
+        ISNULL(PARENT_ORDER, 9999),
+        ISNULL(ORDER_NO, 9999),
+        MENU_ID_CLEAN;
     `;
 
-      // Group menus by parent
       const groupedMenus = this.groupMenusByParent(menusQuery);
 
       const executionTime = Date.now() - startTime;
-
       try {
         await prismaSC.tB_R_AUDIT_TRAIL.create({
           data: {
@@ -148,10 +150,13 @@ ORDER BY
       } catch { }
 
       return groupedMenus;
-    } catch (error) {
+    } catch (err) {
+      // Saat dev, bagusnya log detail error
+      console.error('getMenu error:', err);
       throw new Error('Internal Server Error');
     }
   },
+
 
   async getProfile(username: string) {
     try {

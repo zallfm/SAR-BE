@@ -256,6 +256,7 @@ export const authService = {
   async validate(username: string) {
     try {
       const user = await userRepository.getProfile(username);
+      // console.log('>>> PROFILE VALIDATE', JSON.stringify(user, null, 2)); 
       return user;
     } catch (ex) {
       const errorMessage = `Error validating user: $${(ex as Error).message}`;
