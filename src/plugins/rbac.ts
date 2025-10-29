@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { ERROR_CODES } from '../core/errors/errorCodes';
 import { ERROR_MESSAGES } from '../core/errors/errorMessages';
-export type AppRole = 'ADMIN' | 'SO' | 'DPH';
+export type AppRole = 'ADMINISTRATOR' | 'SO' | 'DPH';
 
 export const roleGate =
   (allowed: AppRole[]) =>

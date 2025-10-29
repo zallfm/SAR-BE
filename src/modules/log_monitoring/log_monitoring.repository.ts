@@ -136,7 +136,7 @@ export const logRepository = {
       ...header,
       DETAILS: details,
     };
-    console.log("result", result);
+    // console.log("result", result);
 
     return result;
   },

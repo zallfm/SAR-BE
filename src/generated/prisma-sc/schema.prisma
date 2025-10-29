@@ -1,0 +1,311 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../src/generated/prisma-sc"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DB_CONNECTION_SC")
+}
+
+model TB_M_APPLICATION {
+  ID                    String                  @id(map: "PK_TB_M_APPLICATION_1") @db.VarChar(50)
+  NAME                  String                  @db.VarChar(50)
+  TYPE                  String                  @db.VarChar(30)
+  RUNTIME               String                  @db.VarChar(Max)
+  DESCRIPTION           String?                 @db.VarChar(200)
+  CREATED_BY            String                  @db.VarChar(70)
+  CREATED_DATE          DateTime                @db.DateTime
+  CHANGED_BY            String?                 @db.VarChar(70)
+  CHANGED_DATE          DateTime?               @db.DateTime
+  FA_ICON               String?                 @db.VarChar(50)
+  TB_M_FEATURE          TB_M_FEATURE[]
+  TB_M_FUNCTION         TB_M_FUNCTION[]
+  TB_M_ROLE             TB_M_ROLE[]
+  TB_M_USER_APPLICATION TB_M_USER_APPLICATION[]
+}
+
+model TB_M_APPLICATION_RUNTIME_PARAM {
+  APPLICATION  String    @db.VarChar(50)
+  KEY          String    @db.VarChar(50)
+  VALUE        String    @db.VarChar(50)
+  CREATED_BY   String    @db.VarChar(70)
+  CREATED_DATE DateTime  @db.DateTime
+  CHANGED_BY   String?   @db.VarChar(50)
+  CHANGED_DATE DateTime? @db.DateTime
+
+  @@id([APPLICATION, KEY, VALUE], map: "PK_TB_M_APPLICATION_RUNTIME_PARAM_1")
+}
+
+model TB_M_AUTHORIZATION {
+  USERNAME                 String    @db.VarChar(70)
+  APPLICATION              String    @db.VarChar(50)
+  ROLE                     String    @db.VarChar(50)
+  FUNCTION                 String    @db.VarChar(50)
+  FEATURE                  String    @db.VarChar(50)
+  QUALIFIER_KEY            String    @db.VarChar(50)
+  QUALIFIER_VALUE          String    @db.VarChar(50)
+  CREATED_BY               String    @db.VarChar(70)
+  CREATED_DATE             DateTime  @db.DateTime
+  CHANGED_BY               String?   @db.VarChar(70)
+  CHANGED_DATE             DateTime? @db.DateTime
+  ID                       String?   @db.VarChar(50)
+  REG_NO                   String?   @db.VarChar(50)
+  COMPANY                  Int?
+  PASSWORD                 String?   @db.VarChar(50)
+  PASSWORD_EXPIRATION_DATE String?   @db.VarChar(50)
+  PASSWORD_RESET           Int?
+  ACCOUNT_VALIDITY_DATE    String?   @db.VarChar(50)
+  FIRST_NAME               String?   @db.VarChar(50)
+  LAST_NAME                String?   @db.VarChar(50)
+  GENDER                   String?   @db.VarChar(50)
+  BIRTH_DATE               String?   @db.VarChar(50)
+  ADDRESS                  String?   @db.VarChar(50)
+  IN_ACTIVE_DIRECTORY      Int?
+  SESSION_TIMEOUT          Int?
+  LOCK_TIMEOUT             Int?
+  MAX_CONCURRENT_LOGIN     Int?
+  TB_M_USER                TB_M_USER @relation(fields: [USERNAME], references: [USERNAME], onUpdate: NoAction, map: "FK__TB_M_AUTH__USERN__5AEE82B9")
+
+  @@id([USERNAME, APPLICATION, ROLE, FUNCTION, FEATURE, QUALIFIER_KEY, QUALIFIER_VALUE], map: "PK_TB_M_AUTHORIZATION")
+}
+
+model TB_M_COMPANY {
+  ID           String      @id(map: "PK_TB_M_COMPANY_1") @db.VarChar(50)
+  NAME         String      @db.VarChar(100)
+  DESCRIPTION  String?     @db.VarChar(200)
+  CREATED_BY   String      @db.VarChar(70)
+  CREATED_DATE DateTime    @db.DateTime
+  CHANGED_BY   String?     @db.VarChar(70)
+  CHANGED_DATE DateTime?   @db.DateTime
+  TB_M_USER    TB_M_USER[]
+}
+
+model TB_M_FEATURE {
+  APPLICATION      String           @db.VarChar(50)
+  ID               String           @db.VarChar(50)
+  NAME             String           @db.VarChar(100)
+  DESCRIPTION      String?          @db.VarChar(200)
+  CREATED_BY       String           @db.VarChar(70)
+  CREATED_DATE     DateTime         @db.DateTime
+  CHANGED_BY       String?          @db.VarChar(70)
+  CHANGED_DATE     DateTime?        @db.DateTime
+  TB_M_APPLICATION TB_M_APPLICATION @relation(fields: [APPLICATION], references: [ID], onUpdate: NoAction, map: "FK__TB_M_FEAT__APPLI__5BE2A6F2")
+
+  @@id([APPLICATION, ID], map: "PK_TB_M_FEATURE")
+}
+
+model TB_M_FUNCTION {
+  APPLICATION      String           @db.VarChar(50)
+  ID               String           @db.VarChar(50)
+  NAME             String           @db.VarChar(100)
+  DESCRIPTION      String?          @db.VarChar(200)
+  CREATED_BY       String           @db.VarChar(70)
+  CREATED_DATE     DateTime         @db.DateTime
+  CHANGED_BY       String?          @db.VarChar(70)
+  CHANGED_DATE     DateTime?        @db.DateTime
+  TB_M_APPLICATION TB_M_APPLICATION @relation(fields: [APPLICATION], references: [ID], onUpdate: NoAction, map: "FK__TB_M_FUNC__APPLI__5CD6CB2B")
+
+  @@id([ID, APPLICATION], map: "PK_TB_M_FUNCTION")
+}
+
+model TB_M_MENU {
+  APP_ID      String    @db.VarChar(50)
+  MENU_ID     String    @db.VarChar(50)
+  MENU_PARENT String    @db.VarChar(50)
+  MENU_TEXT   String    @db.VarChar(50)
+  MENU_TIPS   String    @db.VarChar(200)
+  IS_ACTIVE   String    @db.VarChar(1)
+  VISIBILITY  String    @db.VarChar(1)
+  URL         String    @db.VarChar(50)
+  GLYPH       String    @db.VarChar(20)
+  CREATED_BY  String    @db.VarChar(20)
+  CREATED_DT  DateTime  @db.DateTime
+  CHANGED_BY  String?   @db.VarChar(20)
+  CHANGED_DT  DateTime? @db.DateTime
+  SEPARATOR   String    @db.VarChar(6)
+  TARGET      String?   @db.VarChar(50)
+
+  @@id([APP_ID, MENU_ID, MENU_PARENT], map: "PK_TB_M_MENU_1")
+}
+
+model TB_M_MENU_AUTHORIZATION {
+  APP_ID      String    @db.VarChar(50)
+  MENU_ID     String    @db.VarChar(50)
+  AUTH_TYPE   String    @db.VarChar(50)
+  ROLE_ID     String?   @db.VarChar(50)
+  FUNCTION_ID String?   @db.VarChar(50)
+  FEATURE_ID  String?   @db.VarChar(50)
+  AUTH_ID     String    @db.VarChar(50)
+  AUTH_VALUE  String?   @db.VarChar(50)
+  CREATED_BY  String    @db.VarChar(20)
+  CREATED_DT  DateTime  @db.DateTime
+  CHANGED_BY  String?   @db.VarChar(20)
+  CHANGED_DT  DateTime? @db.DateTime
+
+  @@id([APP_ID, MENU_ID, AUTH_TYPE, AUTH_ID], map: "PK_TB_M_MENU_AUTHORIZATION")
+}
+
+model TB_M_ROLE {
+  APPLICATION      String           @db.VarChar(50)
+  ID               String           @db.VarChar(50)
+  NAME             String           @db.VarChar(100)
+  DESCRIPTION      String           @db.VarChar(200)
+  SESSION_TIMEOUT  Int
+  LOCK_TIMEOUT     Int
+  CREATED_BY       String           @db.VarChar(70)
+  CREATED_DATE     DateTime         @db.DateTime
+  CHANGED_BY       String?          @db.VarChar(70)
+  CHANGED_DATE     DateTime?        @db.DateTime
+  TB_M_APPLICATION TB_M_APPLICATION @relation(fields: [APPLICATION], references: [ID], onUpdate: NoAction, map: "FK__TB_M_ROLE__APPLI__5DCAEF64")
+
+  @@id([APPLICATION, ID], map: "PK_TB_M_ROLE_1")
+}
+
+model TB_M_USER {
+  USERNAME                 String                  @id(map: "PK_TB_M_USER_1") @db.VarChar(70)
+  ID                       String                  @db.VarChar(50)
+  REG_NO                   String                  @db.VarChar(50)
+  COMPANY                  String?                 @db.VarChar(50)
+  PASSWORD                 String                  @db.VarChar(130)
+  PASSWORD_EXPIRATION_DATE DateTime                @db.DateTime
+  PASSWORD_RESET           Boolean
+  ACCOUNT_VALIDITY_DATE    DateTime                @db.DateTime
+  FIRST_NAME               String                  @db.VarChar(20)
+  LAST_NAME                String?                 @db.VarChar(20)
+  GENDER                   String                  @db.VarChar(10)
+  BIRTH_DATE               DateTime                @db.DateTime
+  ADDRESS                  String?                 @db.VarChar(Max)
+  IN_ACTIVE_DIRECTORY      Boolean
+  SESSION_TIMEOUT          Int
+  LOCK_TIMEOUT             Int
+  MAX_CONCURRENT_LOGIN     Int
+  CREATED_BY               String                  @db.VarChar(70)
+  CREATED_DATE             DateTime                @db.DateTime
+  CHANGED_BY               String?                 @db.VarChar(70)
+  CHANGED_DATE             DateTime?               @db.DateTime
+  TB_M_AUTHORIZATION       TB_M_AUTHORIZATION[]
+  TB_M_COMPANY             TB_M_COMPANY?           @relation(fields: [COMPANY], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "FK__TB_M_USER__COMPA__5EBF139D")
+  TB_M_USER_APPLICATION    TB_M_USER_APPLICATION[]
+}
+
+model TB_M_USER_APPLICATION {
+  ID               BigInt           @id(map: "PK_TB_M_USER_APPLICATION") @default(autoincrement())
+  USERNAME         String           @db.VarChar(70)
+  APPLICATION      String           @db.VarChar(50)
+  IS_DEFAULT       Boolean
+  CREATED_BY       String           @db.VarChar(70)
+  CREATED_DATE     DateTime         @db.DateTime
+  CHANGED_BY       String?          @db.VarChar(70)
+  CHANGED_DATE     DateTime?        @db.DateTime
+  TB_M_APPLICATION TB_M_APPLICATION @relation(fields: [APPLICATION], references: [ID], onUpdate: NoAction, map: "FK__TB_M_USER__APPLI__5FB337D6")
+  TB_M_USER        TB_M_USER        @relation(fields: [USERNAME], references: [USERNAME], onUpdate: NoAction, map: "FK__TB_M_USER__USERN__60A75C0F")
+}
+
+model TB_M_USER_EMAIL {
+  ID           BigInt    @id(map: "PK_TB_M_USER_EMAIL") @default(autoincrement())
+  USERNAME     String    @db.VarChar(70)
+  EMAIL        String    @db.VarChar(255)
+  CREATED_BY   String    @db.VarChar(70)
+  CREATED_DATE DateTime  @db.DateTime
+  CHANGED_BY   String?   @db.VarChar(70)
+  CHANGED_DATE DateTime? @db.DateTime
+}
+
+model TB_M_USER_PHONE_NUMBER {
+  ID           BigInt    @id(map: "PK_TB_M_USER_PHONE") @default(autoincrement())
+  USERNAME     String    @db.VarChar(70)
+  NUMBER       String    @db.VarChar(50)
+  CATEGORY     String    @db.VarChar(20)
+  CREATED_BY   String    @db.VarChar(70)
+  CREATED_DATE DateTime  @db.DateTime
+  CHANGED_BY   String?   @db.VarChar(70)
+  CHANGED_DATE DateTime? @db.DateTime
+}
+
+model TB_R_ANNOUNCEMENT {
+  ID              BigInt    @id(map: "PK__TB_R_ANN__3214EC273B44CDBC")
+  TITLE           String    @db.VarChar(200)
+  MESSAGE         String    @db.VarChar(Max)
+  IMAGE           String?   @db.VarChar(255)
+  ACTIVE_DATE     DateTime  @db.Date
+  EXPIRED_DATE    DateTime  @db.Date
+  VISIBLE_FOR     Int       @db.TinyInt
+  SEND_EMAIL      Int?      @db.TinyInt
+  EMAIL_RECIPIENT String?   @db.VarChar(Max)
+  CREATED_BY      String    @db.VarChar(64)
+  CREATED_DATE    DateTime  @db.DateTime
+  CHANGED_BY      String?   @db.VarChar(64)
+  CHANGED_DATE    DateTime? @db.DateTime
+}
+
+model TB_R_AUDIT_FLAG {
+  TABLE_ID     String    @id(map: "PK_TB_R_AUDIT_FLAG") @db.VarChar(40)
+  TABLE_NAME   String    @db.VarChar(50)
+  TABLE_ITEM   String    @db.VarChar(100)
+  CREATED_BY   String?   @db.VarChar(64)
+  CREATED_DATE DateTime? @db.DateTime
+  CHANGED_BY   String?   @db.VarChar(64)
+  CHANGED_DATE DateTime? @db.DateTime
+}
+
+model TB_R_AUDIT_TRAIL {
+  ID            BigInt   @id(map: "PK_TB_R_AUDIT_TRAIL") @default(autoincrement())
+  ACTION_TYPE   String   @db.VarChar(1)
+  TABLE_NAME    String   @db.VarChar(50)
+  TABLE_ITEM    String   @db.VarChar(100)
+  VALUE_BEFORE  String?  @db.VarChar(255)
+  VALUE_AFTER   String?  @db.VarChar(255)
+  MODIFIED_BY   String?  @db.VarChar(64)
+  MODIFIED_DATE DateTime @db.DateTime
+}
+
+model TB_R_POA {
+  SYSTEM_ID  String    @db.VarChar(50)
+  POA_NO     String    @db.VarChar(8)
+  GRANTOR    String    @db.VarChar(50)
+  ATTORNEY   String    @db.VarChar(50)
+  VALID_FROM DateTime  @db.Date
+  VALID_TO   DateTime  @db.Date
+  REASON     String    @db.VarChar(255)
+  CREATED_DT DateTime  @db.Date
+  CREATED_BY String    @db.VarChar(50)
+  UPDATED_DT DateTime? @db.Date
+  UPDATED_BY String?   @db.VarChar(50)
+
+  @@id([SYSTEM_ID, POA_NO], map: "PK_TB_R_POA")
+}
+
+model TB_R_SYSTEM {
+  FUNCTION_ID   String    @db.VarChar(20)
+  SYSTEM_CD     String    @db.VarChar(30)
+  SYSTEM_VALUE  String?   @db.VarChar(2000)
+  SYSTEM_REMARK String?   @db.VarChar(100)
+  CREATED_BY    String    @db.VarChar(64)
+  CREATED_DT    DateTime  @db.DateTime
+  CHANGED_BY    String?   @db.VarChar(64)
+  CHANGED_DT    DateTime? @db.DateTime
+
+  @@id([FUNCTION_ID, SYSTEM_CD], map: "PK__TB_R_SYS__5C0F99D3EE962EB6")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_R_USER_SESSION {
+  USERNAME    String?   @db.VarChar(70)
+  NOREG       String?   @db.VarChar(70)
+  APPLICATION String?   @db.VarChar(50)
+  SESSION_ID  String?   @db.VarChar(50)
+  CREATED_BY  String?   @db.VarChar(70)
+  CREATED_DT  DateTime? @db.DateTime
+
+  @@ignore
+}
+
+model TB_T_COUNTER {
+  ID             String   @id(map: "PK__TB_T_COU__3214EC2708B25F44") @db.VarChar(40)
+  APPLICATION_ID String   @db.VarChar(50)
+  SCREEN_ID      String   @db.VarChar(50)
+  ACCESS_USER    String   @db.VarChar(50)
+  ACCESS_NAME    String   @db.VarChar(100)
+  ACCESS_DATE    DateTime @db.DateTime
+}

@@ -13,6 +13,7 @@ import { logMonitoringRoutes } from "./api/logging_monitoring/log_monitoring.rou
 import prisma from "./plugins/prisma";
 import { indexRoutes } from "./api/index.routes";
 import { SECURITY_CONFIG } from "./config/security";
+import authorize from "./api/common/middleware/authorize";
 
 export async function buildApp() {
   const app = Fastify({
@@ -64,6 +65,27 @@ export async function buildApp() {
   // ==========================================
   // 🚀 3️⃣ Register Routes
   // ==========================================
+
+  // await app.register(authorize, {
+  //   publicPaths: [
+  //     "/health",              // health check
+  //     "/api/auth/login",
+  //     "/api/auth/refresh-token",
+  //     // tambah path publik lain kalau ada
+  //   ],
+  //   autoRegisterJwt: false,   // JWT sudah diregister di atas
+  //   // jwtSecret: env.JWT_SECRET, // tidak perlu karena kita sudah register JWT
+  //   // prefixBase: '',             // isi kalau kamu pasang base prefix konsisten
+  // });
+  await app.register(authorize, {
+    publicPaths: [
+      "/health",
+      "/api/auth/login",
+      "/api/auth/refresh-token",
+    ],
+    prefixBase: "", // optional
+  });
+
 
   await app.register(authRoutes, { prefix: "/api/auth" });
   await app.register(indexRoutes, { prefix: "/api/sar" });

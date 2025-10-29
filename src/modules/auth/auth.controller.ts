@@ -10,6 +10,7 @@ const toUpperRole = (val: unknown): AppRole | undefined => {
   return String(val).toUpperCase() as AppRole;
 };
 
+type UsernameQuery = { username?: string };
 export const authController = {
   login:
     (app: FastifyInstance) =>
@@ -35,7 +36,7 @@ export const authController = {
             const payload = {
               sub: decoded.sub ?? username,
               name: decoded.name ?? result.user?.username ?? username,
-              role: normalizedRole
+              role: normalizedRole,
             };
             finalToken = app.jwt.sign(payload, { expiresIn: finalExpires })
           } else {
@@ -93,4 +94,50 @@ export const authController = {
           requestId,
         });
       },
+
+  getMenu:
+    (_app: FastifyInstance) =>
+      async (req: FastifyRequest, reply: FastifyReply) => {
+        const requestId = (req.headers['x-request-id'] as string) || req.id;
+
+        // Ambil username dari query ?username= atau dari JWT (req.user.sub)
+        const query = (req.query ?? {}) as { username?: string };
+        const tokenUsername = (req as any).user?.sub as string | undefined;
+        const username = query.username ?? tokenUsername;
+
+        if (!username) {
+          return reply.status(400).send({
+            code: 'BAD_REQUEST',
+            message: 'username is required (query ?username= or via JWT)',
+            requestId,
+          });
+        }
+
+        const res = await authService.getMenu(username);
+        // ServiceResponse sudah siap kirim apa adanya
+        return reply.status(res.statusCode ?? 200).send(res);
+      },
+
+  // ------------------ GET PROFILE ------------------
+  getProfile:
+    (_app: FastifyInstance) =>
+      async (req: FastifyRequest, reply: FastifyReply) => {
+        const requestId = (req.headers['x-request-id'] as string) || req.id;
+
+        const query = (req.query ?? {}) as { username?: string };
+        const tokenUsername = (req as any).user?.sub as string | undefined;
+        const username = query.username ?? tokenUsername;
+
+        if (!username) {
+          return reply.status(400).send({
+            code: 'BAD_REQUEST',
+            message: 'username is required (query ?username= or via JWT)',
+            requestId,
+          });
+        }
+
+        const res = await authService.getProfile(username);
+        return reply.status(res.statusCode ?? 200).send(res);
+      },
+
 };
