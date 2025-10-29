@@ -5,7 +5,6 @@ import { uarRoutes } from "./master_data/uarpic/uarpic.routes";
 import { logMonitoringRoutes } from "./logging_monitoring/log_monitoring.routes";
 import { applicationRoutes } from "./master_data/application/application";
 import { systemRoutes } from "./master_data/master_config/master_config.routes";
-import { roleGate } from "../plugins/rbac";
 
 export async function indexRoutes(app: FastifyInstance) {
   app.register(async (r) => {

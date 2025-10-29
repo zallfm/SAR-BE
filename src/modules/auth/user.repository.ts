@@ -40,29 +40,33 @@ export const userRepository = {
   async login(username: string): Promise<InternalUser | null> {
     const dbUser = await prismaSC.tB_M_USER.findFirst({
       where: { USERNAME: username },
-      select: {
-        ID: true,
-        USERNAME: true,
-        PASSWORD: true,
-      },
+      select: { ID: true, USERNAME: true, PASSWORD: true },
     });
+
     if (!dbUser) return null;
+
+    // Ambil semua role user dari TB_M_AUTHORIZATION + TB_M_ROLE (aplikasi SARSYS)
     const roles = await prismaSC.$queryRaw<Array<{ ID: string; NAME: string }>>`
       SELECT DISTINCT r.ID, r.NAME
       FROM TB_M_ROLE r
       INNER JOIN TB_M_AUTHORIZATION a ON r.ID = a.ROLE
       WHERE r.APPLICATION = 'SARSYS'
+        AND a.APPLICATION = 'SARSYS'
+        AND a.USERNAME = ${username}
+      ORDER BY r.ID
     `;
-    // console.log("roles", roles)
 
-    const primaryRoleName = roles?.[0]?.NAME ?? 'ADMIN';
+    // Tentukan role utama (kalau punya lebih dari satu role)
+    const primary = roles?.[0];
+    const dynamicRole = (primary?.NAME ?? 'Administrator').toUpperCase();
 
+    // Return hasil dinamis
     return {
       id: dbUser.ID,
       username: dbUser.USERNAME,
       password: dbUser.PASSWORD,
       name: dbUser.USERNAME,
-      role: primaryRoleName as User['role'],
+      role: dynamicRole as User['role'], // contoh: "DPH", "SO", "ADMINISTRATOR"
     };
   },
 
@@ -112,7 +116,7 @@ export const userRepository = {
   )
   WHERE m.APP_ID = 'SARSYS'
     AND ma.APP_ID = 'SARSYS'
-    AND a.USERNAME = 'admin'
+    AND a.USERNAME = ${username}
     AND a.APPLICATION = 'SARSYS'
 )
 SELECT *
