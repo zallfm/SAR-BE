@@ -10,6 +10,18 @@ export interface LogEntry {
   DETAILS: LogDetail[];
 }
 
+// types/log-monitoring.ts
+export type ListLogsQuery = {
+  page?: number;
+  limit?: number;
+  status?: any;
+  module?: string;
+  q?: string;
+  startDate?: string;
+  endDate?: string;
+  sortBy?: any;
+  order?: any;
+};
 export interface LogDetail {
   ID: number;
   PROCESS_ID: string;

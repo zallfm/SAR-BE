@@ -8,7 +8,7 @@ import { systemRoutes } from "./master_data/master_config/master_config.routes";
 
 export async function indexRoutes(app: FastifyInstance) {
   app.register(async (r) => {
-    r.addHook('preHandler', app.requireAnyPermission(['SCHEDULE_VIEW','SCHEDULE_MANAGE']));
+    r.addHook('preHandler', app.requireAnyPermission(['SCHEDULE_VIEW', 'SCHEDULE_MANAGE']));
     await scheduleRoutes(r);
   }, { prefix: "/schedules" });
 
@@ -17,10 +17,7 @@ export async function indexRoutes(app: FastifyInstance) {
     await uarRoutes(r);
   }, { prefix: "/uarpic" });
 
-  app.register(async (r) => {
-    r.addHook('preHandler', app.requirePermission('LOG_MONITORING_VIEW'));
-    await logMonitoringRoutes(r);
-  }, { prefix: "/log_monitoring" });
+  app.register(logMonitoringRoutes, { prefix: "/log_monitoring" });
 
   app.register(async (r) => {
     r.addHook('preHandler', app.requirePermission('MASTER_CONFIG_MANAGE'));
@@ -28,7 +25,7 @@ export async function indexRoutes(app: FastifyInstance) {
   }, { prefix: "/master_config" });
 
   app.register(async (r) => {
-    r.addHook('preHandler', app.requireAnyPermission(['APPLICATION_READ','APPLICATION_MANAGE']));
+    r.addHook('preHandler', app.requireAnyPermission(['APPLICATION_READ', 'APPLICATION_MANAGE']));
     await applicationRoutes(r);
   }, { prefix: "/application" });
 }
