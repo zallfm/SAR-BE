@@ -1,5 +1,5 @@
 import { LogDetail, LogEntry } from "../../types/log_monitoring";
-import { mockLogDetails, mockLogs } from "./mock";
+import { prisma } from "../../db/prisma";
 
 type Order = "asc" | "desc";
 type SortBy = "NO" | "START_DATE" | "END_DATE";
@@ -17,20 +17,17 @@ export interface ListLogsQuery {
   order?: Order;
 }
 
-let seqNO = (mockLogs?.[0]?.NO ?? 0) + 1;
-
 const parseDate = (s: string): Date => {
-  if (!s) return new Date(); // fallback
+  if (!s) return new Date();
   try {
-    // Normalisasi semua pemisah jadi "-"
-    const safe = s.replace(/[\/]/g, "-");
+    const safe = s.replace(/\//g, "-").replace(/\\/g, "-");
     const [d, m, rest] = safe.split("-");
-    const [y, time] = rest.split(" ");
-    const [hh, mm, ss] = time.split(":").map(Number);
+    const [y, time] = (rest ?? "").split(" ");
+    const [hh, mm, ss] = (time ?? "00:00:00").split(":").map(Number);
     return new Date(Number(y), Number(m) - 1, Number(d), hh, mm, ss);
   } catch (err) {
     console.error("[parseDate ERROR]", s, err);
-    return new Date(); // fallback supaya nggak crash
+    return new Date();
   }
 };
 
@@ -41,6 +38,20 @@ function withinRange(dt?: string, start?: string, end?: string): boolean {
   if (end && t > parseDate(end).getTime()) return false;
   return true;
 }
+
+const toGB = (d?: Date | null): string => {
+  if (!d) return "";
+  return d.toLocaleString("en-GB", { hour12: false }).replace(",", "");
+};
+
+const normalizeStatusFromDb = (s?: string | null): LogEntry["STATUS"] => {
+  const v = (s ?? "").toUpperCase();
+  if (v === "S") return "Success";
+  if (v === "E" || v === "F") return "Error";
+  if (v === "W") return "Warning";
+  if (v === "P") return "InProgress";
+  return "Success";
+};
 
 export const logRepository = {
   async listLogs(params: ListLogsQuery) {
@@ -57,63 +68,71 @@ export const logRepository = {
       order = "desc",
     } = params;
 
-    let rows: LogEntry[] = mockLogs.slice();
-
-    if (status) rows = rows.filter((r) => r.STATUS === status);
-    if (module)
-      rows = rows.filter(
-        (r) => r.MODULE.toLowerCase() === module.toLowerCase()
-      );
-    if (userId)
-      rows = rows.filter(
-        (r) => r.USER_ID.toLowerCase() === userId.toLowerCase()
-      );
-    if (q) {
-      const s = q.toLowerCase();
-      rows = rows.filter(
-        (r) =>
-          // r.DETAILS.toLowerCase().includes(s) ||
-          r.FUNCTION_NAME.toLowerCase().includes(s) ||
-          r.MODULE.toLowerCase().includes(s) ||
-          r.PROCESS_ID.toLowerCase().includes(s)
-      );
+    const where: any = {};
+    if (status) {
+      const map: Record<LogEntry["STATUS"], string> = {
+        Success: "S",
+        Error: "E",
+        Warning: "W",
+        InProgress: "P",
+      };
+      where.PROCESS_STATUS = map[status];
+    }
+    if (module) {
+      // filter by module name via relation
+      where.TB_M_MODULE = { MODULE_NAME: { equals: module } };
+    }
+    if (userId) {
+      where.CREATED_BY = { equals: userId };
     }
     if (startDate || endDate) {
-      rows = rows.filter((r) => withinRange(r.START_DATE, startDate, endDate));
+      where.START_DT = {};
+      if (startDate) where.START_DT.gte = parseDate(startDate);
+      if (endDate) where.START_DT.lte = parseDate(endDate);
+    }
+    if (q) {
+      const s = q;
+      where.OR = [
+        { PROCESS_ID: { contains: s } },
+        { TB_M_MODULE: { MODULE_NAME: { contains: s } } },
+        { TB_M_FUNCTION: { FUNCTION_NAME: { contains: s } } },
+      ];
     }
 
-    // sort
-    rows.sort((a, b) => {
-      let va: number | string, vb: number | string;
-      if (sortBy === "NO") {
-        va = a.NO;
-        vb = b.NO;
-      } else if (sortBy === "START_DATE") {
-        va = parseDate(a.START_DATE).getTime();
-        vb = parseDate(b.START_DATE).getTime();
-      } else {
-        va = parseDate(a.END_DATE).getTime();
-        vb = parseDate(b.END_DATE).getTime();
-      }
-      const diff = (va as number) - (vb as number);
-      return order === "asc" ? diff : -diff;
-    });
+    const orderBy: any = (() => {
+      if (sortBy === "NO") return { PROCESS_ID: order };
+      if (sortBy === "END_DATE") return { END_DT: order };
+      return { START_DT: order };
+    })();
 
-    // paginate
-    const total = rows.length;
-    const offset = (page - 1) * limit;
-    const data = rows.slice(offset, offset + limit);
-    // console.log("data", data);
+    const [total, rows] = await Promise.all([
+      prisma.tB_R_LOG_H.count({ where }),
+      prisma.tB_R_LOG_H.findMany({
+        where,
+        include: {
+          TB_M_MODULE: true,
+          TB_M_FUNCTION: true,
+        },
+        orderBy,
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
 
-    const mapped = data.map((r) => ({
-      ...r,
-      DETAILS: mockLogDetails
-        .filter((d: LogDetail) => d.PROCESS_ID === r.PROCESS_ID)
-        .sort((a, b) => a.ID - b.ID),
+    const data: LogEntry[] = rows.map((h, idx) => ({
+      NO: (page - 1) * limit + idx + 1,
+      PROCESS_ID: h.PROCESS_ID,
+      USER_ID: h.CREATED_BY,
+      MODULE: h.TB_M_MODULE?.MODULE_NAME ?? h.MODULE_ID,
+      FUNCTION_NAME: h.TB_M_FUNCTION?.FUNCTION_NAME ?? h.FUNCTION_ID,
+      START_DATE: toGB(h.START_DT),
+      END_DATE: toGB(h.END_DT ?? null),
+      STATUS: normalizeStatusFromDb(h.PROCESS_STATUS),
+      DETAILS: [],
     }));
 
     return {
-      data: mapped,
+      data,
       meta: {
         page,
         limit,
@@ -124,54 +143,123 @@ export const logRepository = {
   },
 
   async getLogByProcessId(processId: string) {
-    // console.log(processId)
-    const header = mockLogs.find((r) => r.PROCESS_ID === processId);
-    if (!header) return null;
+    const h = await prisma.tB_R_LOG_H.findUnique({
+      where: { PROCESS_ID: processId },
+      include: {
+        TB_M_MODULE: true,
+        TB_M_FUNCTION: true,
+        TB_R_LOG_D: true,
+      },
+    });
+    if (!h) return null;
 
-    const details: LogDetail[] = mockLogDetails
-      .filter((d) => d.PROCESS_ID === processId)
-      .sort((a, b) => a.ID - b.ID);
+    const details: LogDetail[] = (h.TB_R_LOG_D ?? [])
+      .sort((a, b) => a.SEQ_NO - b.SEQ_NO)
+      .map((d) => ({
+        ID: d.SEQ_NO,
+        PROCESS_ID: d.PROCESS_ID,
+        MESSAGE_DATE_TIME: toGB(d.CREATED_DT),
+        LOCATION: d.LOCATION,
+        MESSAGE_DETAIL: d.MESSAGE_CONTENT,
+      }));
 
     const result: LogEntry = {
-      ...header,
+      NO: 1,
+      PROCESS_ID: h.PROCESS_ID,
+      USER_ID: h.CREATED_BY,
+      MODULE: h.TB_M_MODULE?.MODULE_NAME ?? h.MODULE_ID,
+      FUNCTION_NAME: h.TB_M_FUNCTION?.FUNCTION_NAME ?? h.FUNCTION_ID,
+      START_DATE: toGB(h.START_DT),
+      END_DATE: toGB(h.END_DT ?? null),
+      STATUS: normalizeStatusFromDb(h.PROCESS_STATUS),
       DETAILS: details,
     };
-    // console.log("result", result);
-
     return result;
   },
 
   async insertLog(newLog: LogEntry) {
-    // Tambah nomor otomatis (increment)
-    newLog.NO =
-      mockLogs.length > 0 ? Math.max(...mockLogs.map((l) => l.NO)) + 1 : 1;
+    const statusToDb: Record<LogEntry["STATUS"], string> = {
+      Success: "S",
+      Error: "E",
+      Warning: "W",
+      InProgress: "P",
+    };
 
-    // Tambahkan ke array mock
-    mockLogs.push(newLog);
-
-    if (newLog.DETAILS?.length) {
-      mockLogDetails.push(...newLog.DETAILS);
+    // Resolve MODULE_ID and FUNCTION_ID from names if possible
+    const moduleRow = await prisma.tB_M_MODULE.findFirst({
+      where: { MODULE_NAME: newLog.MODULE },
+    });
+    if (!moduleRow) {
+      throw new Error(`MODULE_NAME not found: ${newLog.MODULE}`);
     }
 
-    console.log(
-      "[✅ MOCK INSERTED]",
-      newLog.PROCESS_ID,
-      newLog.MODULE,
-      newLog.FUNCTION_NAME
-    );
+    const functionRow = await prisma.tB_M_FUNCTION.findFirst({
+      where: { MODULE_ID: moduleRow.MODULE_ID, FUNCTION_NAME: newLog.FUNCTION_NAME },
+    });
+    if (!functionRow) {
+      throw new Error(`FUNCTION_NAME not found for module ${moduleRow.MODULE_ID}: ${newLog.FUNCTION_NAME}`);
+    }
+
+    const startDt = parseDate(newLog.START_DATE);
+    const endDt = newLog.END_DATE ? parseDate(newLog.END_DATE) : null;
+
+    await prisma.$transaction(async (tx) => {
+      // Header
+      await tx.tB_R_LOG_H.create({
+        data: {
+          PROCESS_ID: newLog.PROCESS_ID,
+          MODULE_ID: moduleRow.MODULE_ID,
+          FUNCTION_ID: functionRow.FUNCTION_ID,
+          START_DT: startDt,
+          END_DT: endDt,
+          PROCESS_STATUS: statusToDb[newLog.STATUS],
+          CREATED_BY: newLog.USER_ID,
+          CREATED_DT: new Date(),
+        },
+      });
+
+      // Details
+      if (newLog.DETAILS?.length) {
+        await tx.tB_R_LOG_D.createMany({
+          data: newLog.DETAILS.map((d) => ({
+            PROCESS_ID: newLog.PROCESS_ID,
+            SEQ_NO: d.ID,
+            MESSAGE_ID: "", // optional/not provided by API
+            MESSAGE_TYPE: "", // optional/not provided by API
+            MESSAGE_CONTENT: d.MESSAGE_DETAIL,
+            LOCATION: d.LOCATION,
+            CREATED_BY: newLog.USER_ID,
+            CREATED_DT: parseDate(d.MESSAGE_DATE_TIME),
+            MODULE_ID: moduleRow.MODULE_ID,
+            FUNCTION_ID: functionRow.FUNCTION_ID,
+          })),
+          skipDuplicates: true,
+        });
+      }
+    });
+
     return newLog;
   },
 
   async listDetailsByProcessId(processId: string, page = 1, limit = 20) {
-    const rows: LogDetail[] = mockLogDetails.filter(
-      (d) => d.PROCESS_ID === processId
-    );
+    const where = { PROCESS_ID: processId } as const;
+    const [total, rows] = await Promise.all([
+      prisma.tB_R_LOG_D.count({ where }),
+      prisma.tB_R_LOG_D.findMany({
+        where,
+        orderBy: { SEQ_NO: "asc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
 
-    rows.sort((a, b) => a.ID - b.ID);
-
-    const total = rows.length;
-    const offset = (page - 1) * limit;
-    const data = rows.slice(offset, offset + limit);
+    const data: LogDetail[] = rows.map((d) => ({
+      ID: d.SEQ_NO,
+      PROCESS_ID: d.PROCESS_ID,
+      MESSAGE_DATE_TIME: toGB(d.CREATED_DT),
+      LOCATION: d.LOCATION,
+      MESSAGE_DETAIL: d.MESSAGE_CONTENT,
+    }));
 
     return {
       data,
