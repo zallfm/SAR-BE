@@ -103,7 +103,7 @@ export const logRepository = {
     const total = rows.length;
     const offset = (page - 1) * limit;
     const data = rows.slice(offset, offset + limit);
-    console.log("data", data);
+    // console.log("data", data);
 
     const mapped = data.map((r) => ({
       ...r,

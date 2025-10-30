@@ -3,7 +3,7 @@ import { authService } from './auth.service';
 import { AuditAction } from '../../core/audit/auditActions';
 
 type LoginBody = { username: string; password: string };
-type AppRole = 'ADMIN' | 'SO' | 'DPH';
+type AppRole = 'admin' | 'so' | 'dph';
 
 const toUpperRole = (val: unknown): AppRole | undefined => {
   if (!val) return undefined;

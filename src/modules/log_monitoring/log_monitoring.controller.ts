@@ -55,9 +55,10 @@ export const logMonitoringController = {
       req: FastifyRequest<{ Params: { processId: string } }>,
       reply: FastifyReply
     ) => {
-      console.log("req.params.processId", req.params.processId);
+      // console.log("req.params.processId", req.params.processId);
       const data = await logMonitoringService.getLog(req.params.processId);
       if (!data) return reply.status(404).send({ message: "Log not found" });
+      // console.log("data", data)
       return reply.status(200).send({ data });
     },
 
