@@ -4,6 +4,8 @@ import { ApplicationError } from "../../../core/errors/applicationError";
 import { ERROR_CODES } from "../../../core/errors/errorCodes";
 import { ERROR_MESSAGES } from "../../../core/errors/errorMessages";
 import { MasterSystem } from "../../../types/master_config";
+import { publishMonitoringLog } from "../../log_monitoring/log_publisher";
+import { currentRequestId, currentUserId } from "../../../core/requestContext";
 
 type SystemWhereInput = Prisma.TB_M_SYSTEMWhereInput;
 
@@ -16,6 +18,8 @@ function convertStringToTime(timeString: string): Date {
 function convertTimeToString(timeDate: Date): string {
   return timeDate.toISOString().substring(11, 19);
 }
+const userId = currentUserId();
+const reqId = currentRequestId()
 
 export const systemService = {
   async getSystem(app: FastifyInstance, query: any) {
@@ -73,7 +77,7 @@ export const systemService = {
       const totalPages = Math.max(1, Math.ceil(total / limitNum));
 
       return {
-        data, 
+        data,
         meta: {
           page: pageNum,
           limit: limitNum,
@@ -107,6 +111,14 @@ export const systemService = {
       });
 
       const { VALUE_TIME, ...rest } = newData;
+      publishMonitoringLog(globalThis.app as any, {
+        userId,
+        module: "SO",
+        action: "SYSTEM_MASTER_CREATE",
+        status: "Success",
+        description: `Create system master ${newData.SYSTEM_TYPE}`,
+        location: "/applications"
+      }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
       return {
         ...rest,
         VALUE_TIME: VALUE_TIME ? convertTimeToString(VALUE_TIME) : null,
@@ -163,6 +175,14 @@ export const systemService = {
       });
 
       const { VALUE_TIME, ...rest } = updatedSystem;
+      publishMonitoringLog(globalThis.app as any, {
+        userId,
+        module: "SO",
+        action: "SYSTEM_MASTER_UPDATE",
+        status: "Success",
+        description: `Update system master ${updatedSystem.SYSTEM_TYPE}`,
+        location: "/applications"
+      }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
       return {
         ...rest,
         VALUE_TIME: VALUE_TIME ? convertTimeToString(VALUE_TIME) : null,
@@ -211,6 +231,14 @@ export const systemService = {
       });
 
       const { VALUE_TIME, ...rest } = deletedSystem;
+      publishMonitoringLog(globalThis.app as any, {
+        userId,
+        module: "SO",
+        action: "SYSTEM_MASTER_DELETE",
+        status: "Success",
+        description: `Delete system master ${deletedSystem.SYSTEM_TYPE}`,
+        location: "/applications"
+      }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
       return {
         ...rest,
         VALUE_TIME: VALUE_TIME ? convertTimeToString(VALUE_TIME) : null,

@@ -104,7 +104,7 @@ export const authService = {
       // 🔎 monitoring (non-blocking)
       publishMonitoringLog(app, {
         userId: username,
-        module: "authentication",
+        module: "AUTH",
         action: "LOGIN_FAILED",
         status: "Error",
         description: "Account locked due to too many failed attempts",
@@ -145,7 +145,7 @@ export const authService = {
 
         publishMonitoringLog(app, {
           userId: username,
-          module: "authentication",
+          module: "AUTH",
           action: "LOGIN_FAILED",
           status: "Error",
           description: "Account locked (threshold reached)",
@@ -182,14 +182,12 @@ export const authService = {
 
       publishMonitoringLog(app, {
         userId: username,
-        module: "authentication",
+        module: "AUTH",
         action: "LOGIN_FAILED",
         status: "Error",
         description: `Invalid credentials (${remaining} attempts left)`,
         location: "/login"
       }).catch(e => app.log.warn({ err: e }, "monitoring log failed (invalid)"));
-
-
 
       const message =
         remaining > 0
@@ -236,7 +234,7 @@ export const authService = {
     });
     publishMonitoringLog(app, {
       userId: user!.username,
-      module: "authentication",
+      module: "AUTH",
       action: "LOGIN_SUCCESS",
       status: "Success",
       description: "User logged in successfully",
@@ -291,11 +289,11 @@ export const authService = {
       requestId,
       description: 'User logged out',
     });
-    // console.log('decoded', decoded)
+    console.log('decoded', decoded)
     publishMonitoringLog(app, {
       userId: decoded.name,
-      module: "authentication",
-      action: "LOGOUT_SUCCESS",
+      module: "AUTH",
+      action: "Logout Test Function",
       status: "Success",
       description: "User loggout in successfully",
       location: "/logout"

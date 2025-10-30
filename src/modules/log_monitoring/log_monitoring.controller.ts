@@ -4,6 +4,7 @@ import { mockLogDetails } from "./mock";
 import ExcelJS from "exceljs";
 import { logRepository } from "./log_monitoring.repository";
 import { ListLogsQuery, LogEntry } from "../../types/log_monitoring";
+import fs from "fs";
 
 const toGB = (d: Date) =>
   d.toLocaleString("en-GB", { hour12: false }).replace(",", "");
@@ -18,12 +19,23 @@ const normalizeStatus = (s?: string): LogEntry["STATUS"] => {
   return "Success";
 };
 let seqCounter = 0;
-function generateProcessId() {
+const seqFile = "./seq.json";
+
+try {
+  if (fs.existsSync(seqFile)) {
+    const saved = JSON.parse(fs.readFileSync(seqFile, "utf8"));
+    seqCounter = saved.seq ?? 0;
+  }
+} catch {}
+
+export function generateProcessId() {
   const now = new Date();
   const yyyy = now.getFullYear();
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
-  const seq = String(seqCounter++).padStart(5, "0"); // 00001, 00002, ...
+  const seq = String(seqCounter++).padStart(5, "0");
+
+  fs.writeFileSync(seqFile, JSON.stringify({ seq: seqCounter }));
   return `${yyyy}${mm}${dd}${seq}`;
 }
 export const logMonitoringController = {
@@ -97,6 +109,8 @@ export const logMonitoringController = {
                 MESSAGE_DETAIL: String(
                   body.description ?? "Action logged by frontend"
                 ),
+                MESSAGE_ID: undefined,
+                MESSAGE_TYPE: undefined
               },
             ],
           };

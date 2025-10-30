@@ -1,10 +1,14 @@
 import { ApplicationError } from "../../../core/errors/applicationError.js";
 import { ERROR_CODES } from "../../../core/errors/errorCodes.js";
+import { currentRequestId, currentUserId } from "../../../core/requestContext.js";
+import { publishMonitoringLog } from "../../log_monitoring/log_publisher.js";
 import { applicationRepository as repo } from "./application.repository.js";
 import { validateOwnerAndCustodian } from "./application.validator.js";
 
 type SortField = "APPLICATION_ID" | "APPLICATION_NAME" | "CREATED_DT" | "CHANGED_DT";
 type SortOrder = "asc" | "desc";
+const userId = currentUserId();
+const reqId = currentRequestId()
 
 export const applicationService = {
   async list(params: {
@@ -83,6 +87,14 @@ export const applicationService = {
     if (!(await repo.isValidSecurityCenter(input.SECURITY_CENTER))) {
       throw new ApplicationError(ERROR_CODES.APP_INVALID_DATA, "Invalid Security Center");
     }
+    publishMonitoringLog(globalThis.app as any, {
+      userId,
+      module: "APPLICATION",
+      action: "APPLICATION_CREATE",
+      status: "Success",
+      description: `Create application ${input.APPLICATION_NAME}`,
+      location: "/applications"
+    }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
 
     return repo.create(input as any);
   },
@@ -144,6 +156,14 @@ export const applicationService = {
     if (!updated) {
       throw new ApplicationError(ERROR_CODES.APP_UPDATE_FAILED, "Failed to update application");
     }
+    publishMonitoringLog(globalThis.app as any, {
+      userId,
+      module: "APPLICATION",
+      action: "APPLICATION_UPDATE",
+      status: "Success",
+      description: `Update application ${id}`,
+      location: "/applications"
+    }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
     return updated;
   },
 

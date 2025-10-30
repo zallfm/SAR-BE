@@ -20,7 +20,7 @@ export async function publishMonitoringLog(app: FastifyInstance, input: PublishL
   const processId = String(generateProcessId());
 
   const newLog: LogEntry = {
-    NO: 0, // repo/DB yang set auto-number
+    NO: 0,
     PROCESS_ID: processId,
     USER_ID: String(input.userId ?? "anonymous"),
     MODULE: String(input.module ?? "Unknown"),
@@ -35,9 +35,12 @@ export async function publishMonitoringLog(app: FastifyInstance, input: PublishL
         MESSAGE_DATE_TIME: toGB(now),
         LOCATION: String(input.location ?? input.module ?? "Unknown"),
         MESSAGE_DETAIL: String(input.description ?? "Action logged"),
+        MESSAGE_ID: undefined,
+        MESSAGE_TYPE: undefined
       },
     ],
   };
+  console.log("newLog di pulisher", newLog)
 
   await logRepository.insertLog(newLog);
   return newLog;
