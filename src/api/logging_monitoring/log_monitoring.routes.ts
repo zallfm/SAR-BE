@@ -6,16 +6,25 @@ import {
   listLogsSchema,
 } from "../../modules/log_monitoring/log_monitoring.schema";
 import { logMonitoringController } from "../../modules/log_monitoring/log_monitoring.controller";
+import { ListLogsQuery } from "../../types/log_monitoring";
+
+type ProcessParams = { processId: string };
 
 export async function logMonitoringRoutes(app: FastifyInstance) {
-  app.get(
+  app.get<{ Querystring: ListLogsQuery }>(
     "",
-    { schema: listLogsSchema },
+    {
+      schema: listLogsSchema,
+      preHandler: app.requirePermission("LOG_MONITORING_VIEW"),
+    },
     logMonitoringController.listLogs(app)
   );
-  app.get(
+  app.get<{ Params: ProcessParams }>(
     "/:processId",
-    { schema: getLogSchema },
+    {
+      schema: getLogSchema,
+      preHandler: app.requirePermission("LOG_MONITORING_VIEW_DETAIL"),
+    },
     logMonitoringController.getLog(app)
   );
   app.get(

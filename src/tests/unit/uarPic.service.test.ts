@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { uarPicService } from "../../modules/UarPic/uarpic.service";
+import { uarPicService } from "../../modules/master_data/uarpic/uarpic.service";
 import { ApplicationError } from "../../core/errors/applicationError";
 import { ERROR_CODES } from "../../core/errors/errorCodes";
 const mockApp = {} as FastifyInstance;
@@ -18,7 +18,7 @@ describe("uarPicService", () => {
         mail
       );
 
-      expect(result.ID).toBe("SARPICCIO202510220004");
+      expect(result.ID).toBe("SARPICCIO202510270001");
       expect(result.PIC_NAME).toBe(picName);
       expect(result.DIVISION_ID).toBe(divisionId);
       expect(result.MAIL).toBe(mail);

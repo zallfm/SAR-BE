@@ -1,4 +1,4 @@
-import { UarPic } from "../../types/uarPic";
+import { UarPic } from "../../../types/uarPic";
 
 export const initialUarPic = [
   {
@@ -34,6 +34,3 @@ export const initialUarPic = [
 ] as UarPic[];
 
 export const tempUarPic: UarPic[] = [];
-
-
-

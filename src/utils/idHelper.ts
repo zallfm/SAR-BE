@@ -1,3 +1,5 @@
+import { LogEntry } from "../types/log_monitoring";
+
 const BASE_PREFIX = "SAR";
 
 export function generateID(
@@ -37,3 +39,25 @@ export function generateID(
   const paddedNumber = String(nextNumber).padStart(padLength, "0");
   return `${fullPrefix}${paddedNumber}`;
 }
+let seqCounter = 0;
+export function generateProcessId() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const seq = String(seqCounter++).padStart(5, "0"); // 00001, 00002, ...
+  return `${yyyy}${mm}${dd}${seq}`;
+}
+
+export const toGB = (d: Date) =>
+  d.toLocaleString("en-GB", { hour12: false }).replace(",", "");
+export const normalizeStatus = (s?: string): LogEntry["STATUS"] => {
+  if (!s) return "Success";
+  const v = String(s).toLowerCase().trim();
+  if (v === "success") return "Success";
+  if (v === "failure" || v === "error") return "Error";
+  if (v === "warning") return "Warning";
+  if (v === "inprogress" || v === "in progress") return "InProgress";
+  // fallback aman
+  return "Success";
+};

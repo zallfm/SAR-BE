@@ -1,6 +1,5 @@
 import type { FastifyRequest, FastifyReply, FastifyInstance } from "fastify";
 import { scheduleService } from "./schedule.service";
-import { initialSchedules } from "./schedule.repository";
 
 type CreateScheduleBody = {
   APPLICATION_ID: string;
@@ -19,10 +18,10 @@ export const scheduleController = {
     (app: FastifyInstance) =>
     async (req: FastifyRequest, reply: FastifyReply) => {
       const requestId = (req.headers["x-request-id"] as string) || req.id;
-      const schedules = await scheduleService.getSchedules(app);
+      const schedules = await scheduleService.getSchedules(app, req.query);
       return reply.code(200).send({
         requestId,
-        data: schedules,
+        ...schedules,
       });
     },
   createSchedule:
@@ -30,34 +29,30 @@ export const scheduleController = {
     async (req: FastifyRequest, reply: FastifyReply) => {
       const requestId = (req.headers["x-request-id"] as string) || req.id;
       const body = req.body as CreateScheduleBody;
-      const schedule = await scheduleService.createSchedule(
-        app,
-        body.APPLICATION_ID,
-        body.SCHEDULE_SYNC_START_DT,
-        body.SCHEDULE_SYNC_END_DT,
-        body.SCHEDULE_UAR_DT,
-        body.SCHEDULE_STATUS,
-        body.CREATED_BY,
-        body.CREATED_DT
-      );
+      const schedule = await scheduleService.createSchedule(app, body);
       return reply.code(201).send({ requestId, data: schedule });
     },
   editSchedule:
     (app: FastifyInstance) =>
     async (req: FastifyRequest, reply: FastifyReply) => {
       const requestId = (req.headers["x-request-id"] as string) || req.id;
-      const ID = (req.params as any).id as string;
+      const key = (req.params as any);
       const body = req.body as CreateScheduleBody;
-      const schedule = await scheduleService.editSchedule(
+      const schedule = await scheduleService.editSchedule(app, key, body);
+      return reply.code(200).send({ requestId, data: schedule });
+    },
+
+  updateStatusSchedule:
+    (app: FastifyInstance) =>
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      const requestId = (req.headers["x-request-id"] as string) || req.id;
+      const compoundId = req.params as any;
+      const body = req.body as CreateScheduleBody;
+      const schedule = await scheduleService.updateStatusSchedule(
         app,
-        ID,
-        body.APPLICATION_ID,
-        body.SCHEDULE_SYNC_START_DT,
-        body.SCHEDULE_SYNC_END_DT,
-        body.SCHEDULE_UAR_DT,
-        body.SCHEDULE_STATUS,
-        body.CREATED_BY,
-        body.CREATED_DT
+        compoundId,
+        body.SCHEDULE_STATUS
+        
       );
       return reply.code(200).send({ requestId, data: schedule });
     },
