@@ -247,7 +247,7 @@ export const authService = {
   async getMenu(username: string) {
     try {
       const menus = await userRepository.getMenu(username)
-      publishMonitoringLog
+      // publishMonitoringLog
       return ServiceResponse.success('Menu found', menus)
     } catch (error) {
       const errorMessage = `Error finding menu : $${(error as Error).message}`;
@@ -291,8 +291,9 @@ export const authService = {
       requestId,
       description: 'User logged out',
     });
+    // console.log('decoded', decoded)
     publishMonitoringLog(app, {
-      userId: decoded.sub,
+      userId: decoded.name,
       module: "authentication",
       action: "LOGOUT_SUCCESS",
       status: "Success",

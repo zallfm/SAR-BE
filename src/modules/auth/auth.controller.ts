@@ -1,6 +1,7 @@
 import type { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
 import { authService } from './auth.service';
 import { AuditAction } from '../../core/audit/auditActions';
+import { env } from '../../config/env';
 
 type LoginBody = { username: string; password: string };
 type AppRole = 'admin' | 'so' | 'dph';
@@ -28,7 +29,7 @@ export const authController = {
         }
 
         let finalToken = result.token;
-        let finalExpires = result.expiresIn ?? 15 * 60;
+        let finalExpires = env.TOKEN_EXPIRES_IN;
 
         try {
           if (result.token) {

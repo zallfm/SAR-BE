@@ -55,7 +55,7 @@ export const userRepository = {
         AND a.USERNAME = ${username}
       ORDER BY r.ID
     `;
-    console.log("roles", roles)
+    // console.log("roles", roles)
     // Tentukan role utama (kalau punya lebih dari satu role)
     const primary = roles?.[0];
     const dynamicRole = (primary?.NAME ?? 'Administrator').toUpperCase();
