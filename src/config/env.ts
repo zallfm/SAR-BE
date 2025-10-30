@@ -8,7 +8,7 @@ export const env = {
   DB_PASSWORD: process.env.DB_PASSWORD ?? "",
 
   JWT_SECRET: process.env.JWT_SECRET ?? "changeme",
-  TOKEN_EXPIRES_IN: Number(process.env.TOKEN_EXPIRES_IN ?? 90000),
+  TOKEN_EXPIRES_IN: Number(process.env.TOKEN_EXPIRES_IN ?? 8 * 60 * 60),
 
   RATE_LIMIT_PER_MINUTE: Number(process.env.RATE_LIMIT_PER_MINUTE ?? 60),
   LOCKOUT_MAX_ATTEMPTS: Number(process.env.LOCKOUT_MAX_ATTEMPTS ?? 5),
