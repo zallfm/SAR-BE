@@ -10,6 +10,7 @@ import { AuditAction } from '../../core/audit/auditActions';
 import { env } from '../../config/env';
 import { SECURITY_CONFIG } from '../../config/security';
 import { ServiceResponse } from '../../api/common/models/ServiceResponse';
+import { publishMonitoringLog } from '../log_monitoring/log_publisher';
 
 /**
  * Attempt record:
@@ -100,6 +101,17 @@ export const authService = {
         description: 'Account locked due to too many failed attempts'
       });
 
+      // 🔎 monitoring (non-blocking)
+      publishMonitoringLog(app, {
+        userId: username,
+        module: "authentication",
+        action: "LOGIN_FAILED",
+        status: "Error",
+        description: "Account locked due to too many failed attempts",
+        location: "/login"
+      }).catch(e => app.log.warn({ err: e }, "monitoring log failed (account locked)"));
+
+
       throw new ApplicationError(
         ERROR_CODES.AUTH_ACCOUNT_LOCKED,
         ERROR_MESSAGES[ERROR_CODES.AUTH_ACCOUNT_LOCKED],
@@ -131,6 +143,16 @@ export const authService = {
           description: 'Account locked due to too many failed attempts (threshold reached)'
         });
 
+        publishMonitoringLog(app, {
+          userId: username,
+          module: "authentication",
+          action: "LOGIN_FAILED",
+          status: "Error",
+          description: "Account locked (threshold reached)",
+          location: "/login"
+        }).catch(e => app.log.warn({ err: e }, "monitoring log failed (threshold reached)"));
+
+
         throw new ApplicationError(
           ERROR_CODES.AUTH_ACCOUNT_LOCKED,
           ERROR_MESSAGES[ERROR_CODES.AUTH_ACCOUNT_LOCKED],
@@ -157,6 +179,17 @@ export const authService = {
         requestId,
         description: `Invalid credentials (${remaining} attempt${remaining === 1 ? '' : 's'} left)`
       });
+
+      publishMonitoringLog(app, {
+        userId: username,
+        module: "authentication",
+        action: "LOGIN_FAILED",
+        status: "Error",
+        description: `Invalid credentials (${remaining} attempts left)`,
+        location: "/login"
+      }).catch(e => app.log.warn({ err: e }, "monitoring log failed (invalid)"));
+
+
 
       const message =
         remaining > 0
@@ -201,12 +234,20 @@ export const authService = {
       requestId,
       description: 'User logged in successfully'
     });
-
+    publishMonitoringLog(app, {
+      userId: user!.username,
+      module: "authentication",
+      action: "LOGIN_SUCCESS",
+      status: "Success",
+      description: "User logged in successfully",
+      location: "/login"
+    }).catch(e => app.log.warn({ err: e }, "monitoring log failed (success)"));
     return { token, expiresIn: env.TOKEN_EXPIRES_IN, user: publicUser };
   },
   async getMenu(username: string) {
     try {
       const menus = await userRepository.getMenu(username)
+      publishMonitoringLog
       return ServiceResponse.success('Menu found', menus)
     } catch (error) {
       const errorMessage = `Error finding menu : $${(error as Error).message}`;
@@ -221,7 +262,6 @@ export const authService = {
   async getProfile(username: string) {
     try {
       const profile = await userRepository.getProfile(username);
-
       return ServiceResponse.success('Profile found', profile);
     } catch (ex) {
       const errorMessage = `Error finding Profile: $${(ex as Error).message}`;
@@ -251,6 +291,14 @@ export const authService = {
       requestId,
       description: 'User logged out',
     });
+    publishMonitoringLog(app, {
+      userId: decoded.sub,
+      module: "authentication",
+      action: "LOGOUT_SUCCESS",
+      status: "Success",
+      description: "User loggout in successfully",
+      location: "/logout"
+    }).catch(e => app.log.warn({ err: e }, "monitoring log failed (success)"));
     return true;
   },
   async validate(username: string) {

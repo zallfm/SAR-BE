@@ -25,7 +25,7 @@ export async function indexRoutes(app: FastifyInstance) {
   }, { prefix: "/master_config" });
 
   app.register(async (r) => {
-    r.addHook('preHandler', app.requireAnyPermission(['APPLICATION_READ', 'APPLICATION_MANAGE']));
+    r.addHook('preHandler', app.requireAnyPermission(['APPLICATION_VIEW', 'APPLICATION_MANAGE']));
     await applicationRoutes(r);
   }, { prefix: "/application" });
 }
