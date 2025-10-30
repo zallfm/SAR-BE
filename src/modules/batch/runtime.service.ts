@@ -18,7 +18,7 @@ export const runtimeParamService = {
       limit = 10,
       q,
       key,
-      sortBy = "KEY", // Default sort by PK
+      sortBy = "KEY", 
       order = "asc",
     } = query;
 
@@ -76,13 +76,11 @@ export const runtimeParamService = {
 
   async createRuntimeParam(app: FastifyInstance, data: RuntimeParamData) {
     try {
-      // This table does not have CREATED_BY or CREATED_DT
       const newData = await app.prisma.tB_M_APPLICATION_RUNTIME_PARAM.create({
         data: {
           KEY: data.KEY,
           VALUE: data.VALUE,
           DESCRIPTION: data.DESCRIPTION,
-          // CHANGED_DT is for updates
         },
       });
 

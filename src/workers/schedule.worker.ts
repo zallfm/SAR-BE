@@ -10,6 +10,7 @@ import {
 } from "../modules/master_data/schedule/schedule.service";
 import { UarPic } from "../types/uarPic";
 import { Prisma, TB_R_UAR_SYSTEM_OWNER } from "../../src/generated/prisma"; // Assuming Prisma client is generated
+import { TB_M_EMPLOYEE } from "../../src/generated/prisma";
 import {
   notificationService,
   REMINDER_CODES,
@@ -34,52 +35,83 @@ export async function runUarSOWorker(app: FastifyInstance) {
       const accessMappings = await app.prisma.tB_M_AUTH_MAPPING.findMany({
         where: {
           APPLICATION_ID: schedule.APPLICATION_ID,
-          UAR_PROCESS_STATUS: "1",
+          UAR_PROCESS_STATUS: "0",
         },
       });
 
       if (accessMappings.length === 0) {
         app.log.warn(
-          `No active access mappings found for ${schedule.APPLICATION_ID}`
+          `No active access mappings found for ${schedule.APPLICATION_ID} with status '0'.`
         );
         continue;
       }
 
+      const noregs = [
+        ...new Set(accessMappings.map((m) => m.NOREG).filter(Boolean)),
+      ] as string[];
+
+      const employeeData = await app.prisma.tB_M_EMPLOYEE.findMany({
+        where: {
+          NOREG: { in: noregs },
+          VALID_TO: { gte: now },
+        },
+        orderBy: {
+          VALID_TO: "desc",
+        },
+      });
+
+      const employeeMap = new Map<string, TB_M_EMPLOYEE>();
+      for (const emp of employeeData) {
+        if (!employeeMap.has(emp.NOREG)) {
+          employeeMap.set(emp.NOREG, emp);
+        }
+      }
+      app.log.info(
+        `Enriched ${employeeMap.size} employee records from prisma_sc.`
+      );
+
       const uarPeriod = `${now.getFullYear()}${(now.getMonth() + 1)
         .toString()
         .padStart(2, "0")}`;
-      const uarId = `UAR_${uarPeriod}_${schedule.APPLICATION_ID}`;
-
+      const uarId = `UAR_${uarPeriod.substring(2)}_${
+        schedule.APPLICATION_ID
+      }`.substring(0, 20);
       const newUarTasks: Prisma.TB_R_UAR_SYSTEM_OWNERCreateManyInput[] =
-        accessMappings.map((mapping) => ({
-          UAR_PERIOD: uarPeriod,
-          UAR_ID: uarId,
-          USERNAME: mapping.USERNAME,
-          NOREG: mapping.NOREG,
-          NAME: `${mapping.FIRST_NAME} ${mapping.LAST_NAME}`,
-          POSITION_NAME: null, // You would join with TB_M_EMPLOYEE to get this
-          DIVISION_ID: null, // You would join with TB_M_EMPLOYEE to get this
-          DEPARTMENT_ID: null, // You would join with TB_M_EMPLOYEE to get this
-          SECTION_ID: null, // You would join with TB_M_EMPLOYEE to get this
-          ORG_CHANGED_STATUS: null,
-          COMPANY_CD: mapping.COMPANY_CD,
-          APPLICATION_ID: mapping.APPLICATION_ID,
-          ROLE_ID: mapping.ROLE_ID,
-          REVIEWER_NOREG: null,
-          REVIEWER_NAME: null,
-          REVIEW_STATUS: null,
-          REVIEWED_BY: null,
-          REVIEWED_DT: null,
-          SO_APPROVAL_STATUS: "0",
-          SO_APPROVAL_BY: null,
-          SO_APPROVAL_DT: null,
-          REMEDIATED_STATUS: null,
-          REMEDIATED_DT: null,
-          CREATED_BY: "system.UarSOWorker",
-          CREATED_DT: now,
-          CHANGED_BY: null,
-          CHANGED_DT: null,
-        }));
+        accessMappings.map((mapping) => {
+          const employee = employeeMap.get(mapping.NOREG ?? "");
+
+          return {
+            UAR_PERIOD: uarPeriod,
+            UAR_ID: uarId,
+            USERNAME: mapping.USERNAME,
+            NOREG: mapping.NOREG,
+            NAME: `${mapping.FIRST_NAME} ${mapping.LAST_NAME}`,
+
+            POSITION_NAME: employee?.POSITION_NAME ?? null,
+            DIVISION_ID: employee?.DIVISION_ID ?? null,
+            DEPARTMENT_ID: employee?.DEPARTMENT_ID ?? null,
+            SECTION_ID: employee?.SECTION_ID ?? null,
+
+            ORG_CHANGED_STATUS: null,
+            COMPANY_CD: mapping.COMPANY_CD,
+            APPLICATION_ID: mapping.APPLICATION_ID,
+            ROLE_ID: mapping.ROLE_ID,
+            REVIEWER_NOREG: null,
+            REVIEWER_NAME: null,
+            REVIEW_STATUS: null,
+            REVIEWED_BY: null,
+            REVIEWED_DT: null,
+            SO_APPROVAL_STATUS: "0",
+            SO_APPROVAL_BY: null,
+            SO_APPROVAL_DT: null,
+            REMEDIATED_STATUS: null,
+            REMEDIATED_DT: null,
+            CREATED_BY: "system.UarSOWorker",
+            CREATED_DT: now,
+            CHANGED_BY: null,
+            CHANGED_DT: null,
+          };
+        });
 
       const createResult = await app.prisma.tB_R_UAR_SYSTEM_OWNER.createMany({
         data: newUarTasks,
@@ -87,6 +119,24 @@ export async function runUarSOWorker(app: FastifyInstance) {
 
       app.log.info(`Created ${createResult.count} new UAR tasks.`);
       totalNewUarTasks += createResult.count;
+
+      if (createResult.count > 0) {
+        app.log.info(
+          `Updating ${accessMappings.length} source auth mappings to 'In Progress' (1)...`
+        );
+        await app.prisma.tB_M_AUTH_MAPPING.updateMany({
+          where: {
+            APPLICATION_ID: schedule.APPLICATION_ID,
+            UAR_PROCESS_STATUS: "0",
+          },
+          data: {
+            UAR_PROCESS_STATUS: "1",
+            CHANGED_BY: "system.UarSOWorker",
+            CHANGED_DT: now,
+          },
+        });
+        app.log.info(`Updated source mappings for ${schedule.APPLICATION_ID}.`);
+      }
 
       await notificationService.triggerInitialNotifications(
         app,
@@ -119,7 +169,7 @@ export async function runUarDailyReminderWorker(app: FastifyInstance) {
         USERNAME: string;
         ROLE_ID: string;
         APPLICATION_ID: string;
-        NOREG_SYSTEM_OWNER: string; // The approver
+        NOREG_SYSTEM_OWNER: string;
         DAYS_PENDING: number;
         LAST_REMINDER_CODE: string | null;
       }[]
@@ -159,12 +209,11 @@ export async function runUarDailyReminderWorker(app: FastifyInstance) {
       );
 
       if (nextReminderCode) {
-        // 2. Queue the next reminder
         await notificationService.queueNotification(app, {
           REQUEST_ID: `${task.UAR_ID}${task.USERNAME}${task.ROLE_ID}`,
           ITEM_CODE: nextReminderCode,
-          APPROVER_ID: task.NOREG_SYSTEM_OWNER, // The approver
-          DUE_DATE: null, // Reminders don't have a due date
+          APPROVER_ID: task.NOREG_SYSTEM_OWNER,
+          DUE_DATE: null,
         });
         remindersQueued++;
       }
@@ -178,8 +227,41 @@ export async function runUarDailyReminderWorker(app: FastifyInstance) {
   }
 }
 
-export async function runNotificationSenderWorker(app: FastifyInstance) {
-  app.log.info("Running Notification Sender Worker...");
+export async function runPaPusherWorker(app: FastifyInstance) {
+  app.log.info("Running Notification Pusher Worker...");
+
+  let paFlowUrl: string | null = null;
+  let defaultCc: string | null = null;
+
+  try {
+    const configs = await app.prisma.tB_M_SYSTEM.findMany({
+      where: {
+        OR: [
+          { SYSTEM_TYPE: "PA_FLOW_URL", SYSTEM_CD: "DEFAULT" },
+          { SYSTEM_TYPE: "EMAIL", SYSTEM_CD: "DEFAULT_CC" },
+        ],
+        VALID_TO_DT: { gte: new Date() },
+      },
+    });
+
+    paFlowUrl =
+      configs.find(
+        (c) => c.SYSTEM_TYPE === "PA_FLOW_URL" && c.SYSTEM_CD === "DEFAULT"
+      )?.VALUE_TEXT ??
+      "https://default47c7b16bd4824147b21a04936dd898.75.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/5230e06d1da946f59186c47029a77355/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=-jG539opTKLd4PgrzJgrNTFlfJ5sIG0zKBEp406dpss";
+    defaultCc =
+      configs.find(
+        (c) => c.SYSTEM_TYPE === "EMAIL" && c.SYSTEM_CD === "DEFAULT_CC"
+      )?.VALUE_TEXT ?? null;
+
+    if (!paFlowUrl) {
+      app.log.error("PA_FLOW_URL is not set in TB_M_SYSTEM. Worker stopping.");
+      return;
+    }
+  } catch (error) {
+    app.log.error(error, "Failed to fetch config from TB_M_SYSTEM.");
+    return;
+  }
 
   let candidates = [];
   try {
@@ -191,7 +273,7 @@ export async function runNotificationSenderWorker(app: FastifyInstance) {
     });
 
     if (candidates.length === 0) {
-      app.log.info("No pending notifications to send.");
+      app.log.info("No pending notifications to push.");
       return;
     }
 
@@ -208,70 +290,118 @@ export async function runNotificationSenderWorker(app: FastifyInstance) {
       },
     });
 
+    // --- 4. Process Each Job ---
     for (const job of candidates) {
-      try {
-        const employee = await app.prisma.tB_M_EMPLOYEE.findFirst({
-          where: {
-            NOREG: job.APPROVER_ID,
-          },
-          select: {
-            MAIL: true,
-          },
-        });
+      let finalPayload: Record<string, any> = {};
 
-        if (!employee || !employee.MAIL) {
-          throw new Error(`No valid email found for NOREG: ${job.APPROVER_ID}`);
+      try {
+        // --- 5. Enrich: Get Recipient Email/Teams ID (INLINE) ---
+        let recipientEmail: string | null = null;
+        let recipientTeamsId: string | null = null; // Assuming Teams ID is email
+
+        if (job.ITEM_CODE.startsWith("PIC_")) {
+          // Logic 1: Get PIC UAR Email
+          const pic = await app.prisma.tB_M_UAR_PIC.findFirst({
+            where: {
+              DIVISION_ID: parseInt(job.APPROVER_ID), // APPROVER_ID is Division ID
+            },
+          });
+          recipientEmail = pic?.MAIL ?? null;
+          recipientTeamsId = pic?.MAIL ?? null;
+        } else {
+          // Logic 2: Get Employee (System Owner/Div User) Email
+          if (!app.prisma) {
+            throw new Error("Prisma client 'prisma_sc' is not available.");
+          }
+          const employee = await app.prisma.tB_M_EMPLOYEE.findFirst({
+            where: {
+              NOREG: job.APPROVER_ID, // APPROVER_ID is NOREG
+              VALID_TO: { gte: new Date() },
+            },
+            orderBy: {
+              VALID_TO: "desc",
+            },
+          });
+          recipientEmail = employee?.MAIL ?? null;
+          recipientTeamsId = employee?.MAIL ?? null;
         }
 
-        const template = await app.prisma.tB_M_TEMPLATE.findUnique({
-          where: {
-            ITEM_CODE_LOCALE_CHANNEL: {
-              ITEM_CODE: job.ITEM_CODE,
-              LOCALE: "en-US",
-              CHANNEL: "EMAIL",
-            },
-          },
-        });
-
-        if (!template) {
+        if (!recipientEmail) {
           throw new Error(
-            `No email template found for ITEM_CODE: ${job.ITEM_CODE}`
+            `No email recipient found for ITEM_CODE ${job.ITEM_CODE} and APPROVER_ID ${job.APPROVER_ID}`
           );
         }
 
-        await app.prisma.tB_T_OUTBOUND_EMAIL.create({
-          data: {
-            ID: BigInt(Date.now()),
-            REQUEST_ID: job.REQUEST_ID,
+        // --- 6. Enrich: Get Templates from TB_M_TEMPLATE (INLINE) ---
+        const allTemplates = await app.prisma.tB_M_TEMPLATE.findMany({
+          where: {
             ITEM_CODE: job.ITEM_CODE,
-            TO_EMAIL: employee.MAIL,
-            SUBJECT: template.SUBJECT_TPL,
-            BODY: template.BODY_TPL,
-            DISPATCH_STATUS: "PENDING",
-            CREATED_DT: new Date(),
-          } as Prisma.TB_T_OUTBOUND_EMAILUncheckedCreateInput,
+            LOCALE: "en-US",
+            ACTIVE: true,
+          },
         });
 
-        await app.prisma.tB_R_NOTIFICATION_HISTORY.create({
+        const emailTemplate = allTemplates.find((t) => t.CHANNEL === "EMAIL");
+        const teamsTemplate = allTemplates.find((t) => t.CHANNEL === "TEAMS");
+
+        if (!emailTemplate && !teamsTemplate) {
+          throw new Error(
+            `No active EMAIL or TEAMS templates found for ITEM_CODE: ${job.ITEM_CODE}`
+          );
+        }
+
+        // --- 7. Build Final Payload for Power Automate ---
+        finalPayload = {
+          recipientEmail: recipientEmail,
+          recipientTeamsId: recipientTeamsId,
+          ccEmail: defaultCc ?? "",
+          emailSubject: emailTemplate?.SUBJECT_TPL ?? "",
+          emailBodyCode: emailTemplate?.BODY_TPL ?? "",
+          teamsSubject: teamsTemplate?.SUBJECT_TPL ?? "",
+          teamsBodyCode: teamsTemplate?.BODY_TPL ?? "",
+          itemCode: job.ITEM_CODE,
+          requestId: job.REQUEST_ID,
+          dueDate: job.DUE_DATE ?? "null",
+        };
+
+        console.log("notifResponse", finalPayload);
+
+        const response = await fetch(paFlowUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(finalPayload),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(
+            `Power Automate call failed with status ${response.status}: ${errorText}`
+          );
+        }
+
+        await app.prisma.tB_H_NOTIFICATION.create({
           data: {
-            ID: BigInt(Date.now()),
+            ID: job.ID,
             REQUEST_ID: job.REQUEST_ID,
             ITEM_CODE: job.ITEM_CODE,
-            CHANNEL: "EMAIL",
-            SYSTEM: "SAR_DB",
+            CHANNEL: "EMAIL_TEAMS_PA", // Log the new combined channel
+            SYSTEM: "SAR_DB_WORKER",
             RECIPIENT: job.APPROVER_ID,
-            STATUS: "SENT",
+            STATUS: "SENT_TO_PA",
             SENT_DT: new Date(),
-            CREATED_BY: "system_sender_worker",
+            CREATED_BY: "system.PusherWorker",
             CREATED_DT: new Date(),
           },
         });
 
+        // --- 10. Mark candidate as SENT ---
         await app.prisma.tB_T_CANDIDATE_NOTIFICATION.update({
           where: { ID: job.ID },
           data: { STATUS: "SENT" },
         });
+        app.log.info(`Successfully processed and pushed job ID: ${job.ID}`);
       } catch (jobError: any) {
+        // --- 11. Handle Job Failure ---
         app.log.error(jobError, `Failed to process job ID: ${job.ID}`);
         await app.prisma.tB_T_CANDIDATE_NOTIFICATION.update({
           where: { ID: job.ID },

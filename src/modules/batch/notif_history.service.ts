@@ -4,10 +4,83 @@ import { ApplicationError } from "../../core/errors/applicationError";
 import { ERROR_CODES } from "../../core/errors/errorCodes";
 import { ERROR_MESSAGES } from "../../core/errors/errorMessages";
 
-// Placeholder type for create/update payloads
-type NotificationHistoryData =
-  Prisma.TB_H_NOTIFICATIONUncheckedCreateInput;
+type NotificationHistoryData = Prisma.TB_H_NOTIFICATIONUncheckedCreateInput;
 type NotificationHistoryWhereInput = Prisma.TB_H_NOTIFICATIONWhereInput;
+
+export const SYSTEM_KEYS = {
+  EMAIL_CC: "EMAIL_CC_LIST",
+  SUBJECT_UAR_CREATED: "EMAIL_SUBJECT_UAR_CREATED",
+  BODY_UAR_CREATED: "EMAIL_BODY_UAR_CREATED",
+  SUBJECT_UAR_REMINDER: "EMAIL_SUBJECT_UAR_REMINDER",
+  BODY_UAR_REMINDER: "EMAIL_BODY_UAR_REMINDER",
+  SUBJECT_UAR_COMPLETED: "EMAIL_SUBJECT_UAR_COMPLETED",
+  BODY_UAR_COMPLETED: "EMAIL_BODY_UAR_COMPLETED",
+};
+
+export const configService = {
+  async getConfigValue(
+    app: FastifyInstance,
+    key: string
+  ): Promise<string | null> {
+    try {
+      const config = await app.prisma.tB_M_SYSTEM.findFirst({
+        where: {
+          SYSTEM_TYPE: "EMAIL", // Use a type to group your configs
+          SYSTEM_CD: key,
+          VALID_TO_DT: { gte: new Date() }, // Ensure it's a valid config
+        },
+      });
+      return config?.VALUE_TEXT || null;
+    } catch (error) {
+      app.log.error(error, `Failed to get config value for key: ${key}`);
+      return null;
+    }
+  },
+
+  /**
+   * Fetches the email subject and body for a given item code.
+   */
+  async getEmailTemplate(
+    app: FastifyInstance,
+    itemCode: string
+  ): Promise<{ subject: string; body: string } | null> {
+    let subjectKey: string;
+    let bodyKey: string;
+
+    switch (itemCode) {
+      case "UAR_CREATED":
+        subjectKey = SYSTEM_KEYS.SUBJECT_UAR_CREATED;
+        bodyKey = SYSTEM_KEYS.BODY_UAR_CREATED;
+        break;
+      case "UAR_COMPLETED":
+        subjectKey = SYSTEM_KEYS.SUBJECT_UAR_COMPLETED;
+        bodyKey = SYSTEM_KEYS.BODY_UAR_COMPLETED;
+        break;
+      default: // All reminders use the same template
+        if (itemCode.startsWith("UAR_REMINDER_")) {
+          subjectKey = SYSTEM_KEYS.SUBJECT_UAR_REMINDER;
+          bodyKey = SYSTEM_KEYS.BODY_UAR_REMINDER;
+        } else {
+          app.log.error(`Unknown itemCode for template: ${itemCode}`);
+          return null;
+        }
+    }
+
+    const [subject, body] = await Promise.all([
+      this.getConfigValue(app, subjectKey),
+      this.getConfigValue(app, bodyKey),
+    ]);
+
+    if (!subject || !body) {
+      app.log.error(
+        `Email template for ${itemCode} is missing from TB_M_SYSTEM.`
+      );
+      return null;
+    }
+
+    return { subject, body };
+  },
+};
 
 export const notificationHistoryService = {
   async getNotificationHistory(app: FastifyInstance, query: any) {
@@ -222,7 +295,7 @@ export const notificationService = {
     candidate: {
       REQUEST_ID: string;
       ITEM_CODE: string;
-      APPROVER_ID: string; // Note: This is the recipient NOREG
+      APPROVER_ID: string;
       DUE_DATE: Date | null;
     },
     checkDuplicates = true
@@ -268,6 +341,7 @@ export const notificationService = {
     const appIds = [...new Set(newUarTasks.map((task) => task.APPLICATION_ID))];
 
     // Fetch all relevant approvers in one query
+    console.log("appids", appIds);
     const applications = await app.prisma.tB_M_APPLICATION.findMany({
       where: {
         APPLICATION_ID: { in: appIds as string[] },
