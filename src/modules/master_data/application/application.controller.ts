@@ -46,13 +46,15 @@ export const applicationController = {
 
   create: (_app: FastifyInstance) =>
     async (req: FastifyRequest<{ Body: ApplicationCreateDTO }>, reply: FastifyReply) => {
-      const created = await svc.create(req.body);
+      const username = req.auth?.username ?? (req as any).user?.sub ?? "system";
+      const created = await svc.create(req.body, username);
       return reply.code(201).send({ message: "Application created", data: created });
     },
 
   update: (_app: FastifyInstance) =>
     async (req: FastifyRequest<{ Params: { id: string }; Body: ApplicationUpdateDTO }>, reply: FastifyReply) => {
-      const updated = await svc.update(req.params.id, req.body);
+      const username = req.auth?.username ?? (req as any).user?.sub ?? "system";
+      const updated = await svc.update(req.params.id, req.body, username);
       return reply.send({ message: "Application updated", data: updated });
     },
 

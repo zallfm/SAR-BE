@@ -36,7 +36,7 @@ export type ApplicationRow = {
   NOREG_SYSTEM_OWNER: string; // ref SystemUser.ID
   NOREG_SYSTEM_CUST: string;  // ref SystemUser.ID
   SECURITY_CENTER: string;    // ref securityCenters item
-  APPLICATION_STATUS: "Aktif" | "Inactive";
+  APPLICATION_STATUS: "Active" | "Inactive";
   CREATED_BY: string;
   CREATED_DT: string; // ISO
   CHANGED_BY: string;
@@ -51,7 +51,7 @@ export const mockApplications: ApplicationRow[] = [
     NOREG_SYSTEM_OWNER: "00123456", // Okubo (BOTH)
     NOREG_SYSTEM_CUST: "00234567",  // Tanaka (CUST)
     SECURITY_CENTER: "SC",
-    APPLICATION_STATUS: "Aktif",
+    APPLICATION_STATUS: "Active",
     CREATED_BY: "system",
     CREATED_DT: "2024-07-20T10:30:00.000Z",
     CHANGED_BY: "system",
@@ -64,7 +64,7 @@ export const mockApplications: ApplicationRow[] = [
     NOREG_SYSTEM_OWNER: "00234568", // Sato (BOTH)
     NOREG_SYSTEM_CUST: "00345679",  // Takahashi (CUST)
     SECURITY_CENTER: "Global SC",
-    APPLICATION_STATUS: "Aktif",
+    APPLICATION_STATUS: "Active",
     CREATED_BY: "system",
     CREATED_DT: "2024-07-19T09:00:00.000Z",
     CHANGED_BY: "system",

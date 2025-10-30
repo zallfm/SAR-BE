@@ -17,7 +17,7 @@ export interface SystemUser {
 export type SecurityCenter = "SC" | "Global SC" | "TMMINRole" | "LDAP";
 
 // --- Status aplikasi
-export type ApplicationStatus = "Aktif" | "Inactive";
+export type ApplicationStatus = "Active" | "Inactive";
 
 // --- Application model utama (DB/Repository)
 export interface Application {

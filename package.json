@@ -9,7 +9,10 @@
     "start": "node dist/server.js",
     "test": "jest --passWithNoTests",
     "test:unit": "jest tests/unit --runInBand",
-    "test:integration": "jest tests/integration --runInBand"
+    "test:integration": "jest tests/integration --runInBand",
+    "prisma:gen:sar": "prisma generate --schema=prisma/sar/schema.prisma",
+    "prisma:gen:sc": "prisma generate --schema=prisma/sc/schema_sc.prisma",
+    "prisma:gen:all": "npm run prisma:gen:sar && npm run prisma:gen:sc"
   },
   "dependencies": {
     "@fastify/cors": "^10",
@@ -42,6 +45,7 @@
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.1",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "prisma": "^6.17.1"
   }
 }
