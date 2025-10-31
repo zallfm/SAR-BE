@@ -53,7 +53,7 @@ export const applicationRepository = {
     const [dataRaw] = await Promise.all([
       prisma.tB_M_APPLICATION.findMany({
         where: {
-          APPLICATION_STATUS: "1"
+          APPLICATION_STATUS: "0"
         },
 
       }),
