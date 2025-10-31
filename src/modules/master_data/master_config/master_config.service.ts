@@ -18,8 +18,6 @@ function convertStringToTime(timeString: string): Date {
 function convertTimeToString(timeDate: Date): string {
   return timeDate.toISOString().substring(11, 19);
 }
-const userId = currentUserId();
-const reqId = currentRequestId()
 
 export const systemService = {
   async getSystem(app: FastifyInstance, query: any) {
@@ -111,6 +109,8 @@ export const systemService = {
       });
 
       const { VALUE_TIME, ...rest } = newData;
+      const userId = currentUserId();
+      const reqId = currentRequestId()
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "SO",
@@ -175,6 +175,8 @@ export const systemService = {
       });
 
       const { VALUE_TIME, ...rest } = updatedSystem;
+      const userId = currentUserId();
+      const reqId = currentRequestId()
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "SO",
@@ -231,6 +233,8 @@ export const systemService = {
       });
 
       const { VALUE_TIME, ...rest } = deletedSystem;
+      const userId = currentUserId();
+      const reqId = currentRequestId()
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "SO",

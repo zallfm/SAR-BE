@@ -48,8 +48,7 @@ export type GetSchedulesQuery = {
   APPLICATION_ID?: string;
   SCHEDULE_STATUS?: string;
 };
-const userId = currentUserId();
-const reqId = currentRequestId()
+
 export const scheduleService = {
   async getSchedules(app: FastifyInstance, query: any) {
     const {
@@ -205,6 +204,8 @@ export const scheduleService = {
       const newSchedule = await app.prisma.tB_M_SCHEDULE.create({
         data: dataForDb,
       });
+      const userId = currentUserId();
+      const reqId = currentRequestId()
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "SCHE",
@@ -267,6 +268,8 @@ export const scheduleService = {
         },
         data: dataForUpdate,
       });
+      const userId = currentUserId();
+      const reqId = currentRequestId()
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "SCHE",
@@ -326,6 +329,8 @@ export const scheduleService = {
           CHANGED_DT: new Date(),
         },
       });
+      const userId = currentUserId();
+      const reqId = currentRequestId()
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "SCHE",
@@ -371,6 +376,8 @@ export const scheduleService = {
           },
         },
       });
+      const userId = currentUserId();
+      const reqId = currentRequestId()
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "SCHE",

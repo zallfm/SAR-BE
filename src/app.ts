@@ -109,6 +109,6 @@ export async function buildApp() {
       return { status: "error", db: "unavailable" };
     }
   });
-
+  
   return app;
 }

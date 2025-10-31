@@ -7,8 +7,6 @@ import { validateOwnerAndCustodian } from "./application.validator.js";
 
 type SortField = "APPLICATION_ID" | "APPLICATION_NAME" | "CREATED_DT" | "CHANGED_DT";
 type SortOrder = "asc" | "desc";
-const userId = currentUserId();
-const reqId = currentRequestId()
 
 export const applicationService = {
   // Normalisasi status dari berbagai bentuk input FE
@@ -98,6 +96,8 @@ export const applicationService = {
     if (!(await repo.isValidSecurityCenter(input.SECURITY_CENTER))) {
       throw new ApplicationError(ERROR_CODES.APP_INVALID_DATA, "Invalid Security Center");
     }
+    const userId = currentUserId();
+    const reqId = currentRequestId()
     publishMonitoringLog(globalThis.app as any, {
       userId,
       module: "APPLI",
@@ -173,7 +173,8 @@ export const applicationService = {
     if (!updated) {
       throw new ApplicationError(ERROR_CODES.APP_UPDATE_FAILED, "Failed to update application");
     }
-    console.log("userIdss", userId)
+    const userId = currentUserId();
+    const reqId = currentRequestId()
     publishMonitoringLog(globalThis.app as any, {
       userId,
       module: "APPLI",
