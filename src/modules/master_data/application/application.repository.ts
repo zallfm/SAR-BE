@@ -48,8 +48,6 @@ async function getDbNow(): Promise<Date> {
 
 export const applicationRepository = {
   async activeList() {
-
-
     const [dataRaw] = await Promise.all([
       prisma.tB_M_APPLICATION.findMany({
         where: {
@@ -58,7 +56,6 @@ export const applicationRepository = {
 
       }),
     ]);
-
     const data = dataRaw.map(mapRowDbToDto);
     return { data };
   },
@@ -106,6 +103,47 @@ export const applicationRepository = {
       where: { APPLICATION_ID: id },
     });
     return row ? mapRowDbToDto(row) : null;
+  },
+
+  async existsByOwnerNoreg(ownerNoreg: string) {
+    const noreg = String(ownerNoreg).trim().toUpperCase();
+    const count = await prisma.tB_M_APPLICATION.count({
+      where: { NOREG_SYSTEM_OWNER: noreg },
+    });
+    return count > 0;
+  },
+
+  async existsByOwnerNoregExceptApp(appId: string, ownerNoreg: string) {
+    const noreg = String(ownerNoreg).trim().toUpperCase();
+    const id = String(appId).trim().toUpperCase();
+    const count = await prisma.tB_M_APPLICATION.count({
+      where: {
+        APPLICATION_ID: { not: id },
+        NOREG_SYSTEM_OWNER: noreg,
+      },
+    });
+    return count > 0;
+  },
+  async existsByName(name: string) {
+    const appName = String(name).trim().toUpperCase();
+    const count = await prisma.tB_M_APPLICATION.count({
+      where: {
+        APPLICATION_NAME: appName,
+      },
+    });
+    return count > 0;
+  },
+
+  async existsByNameExceptApp(appId: string, name: string) {
+    const appName = String(name).trim().toUpperCase();
+    const appIdNorm = String(appId).trim().toUpperCase();
+    const count = await prisma.tB_M_APPLICATION.count({
+      where: {
+        APPLICATION_ID: { not: appIdNorm },
+        APPLICATION_NAME: appName,
+      },
+    });
+    return count > 0;
   },
 
   // Alias pencarian code (identik dengan findById di model ini)
