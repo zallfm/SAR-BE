@@ -26,7 +26,7 @@ export const systemService = {
       systemType,
       systemCode,
       sortBy = "CREATED_DT",
-      order = "asc",
+      order = "desc",
     } = query;
 
     const pageNum = Number(page) || 1;
@@ -50,7 +50,7 @@ export const systemService = {
     const orderBy: Prisma.TB_M_SYSTEMOrderByWithRelationInput = {
       [sortBy]: order,
     };
-
+    console.log("orderbay", orderBy)
     try {
       const [rawData, total] = await app.prisma.$transaction([
         app.prisma.tB_M_SYSTEM.findMany({
@@ -73,7 +73,7 @@ export const systemService = {
       const totalPages = Math.max(1, Math.ceil(total / limitNum));
 
       return {
-        data, 
+        data,
         meta: {
           page: pageNum,
           limit: limitNum,
@@ -101,7 +101,6 @@ export const systemService = {
       const newData = await app.prisma.tB_M_SYSTEM.create({
         data: {
           ...dataForDb,
-          CREATED_BY: "Hesti",
           CREATED_DT: new Date(),
         },
       });
@@ -136,7 +135,6 @@ export const systemService = {
 
     const dataForUpdate: any = {
       ...otherData,
-      CHANGED_BY: "Hesti",
       CHANGED_DT: new Date(),
     };
 

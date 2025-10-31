@@ -24,7 +24,7 @@ export const scheduleRoutes = async (app: FastifyInstance) => {
     }
   );
   app.put<{ Params: { id: string }; Body: CreateScheduleBody }>(
-    "/:id",
+    "/:APPLICATION_ID/:SCHEDULE_SYNC_START_DT/:SCHEDULE_UAR_DT",
     { schema: scheduleSchema, errorHandler },
     async (req, reply) => {
       return scheduleController.editSchedule(app)(req, reply);
