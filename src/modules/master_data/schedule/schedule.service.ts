@@ -187,7 +187,7 @@ export const scheduleService = {
       SCHEDULE_UAR_DT: string;
       SCHEDULE_STATUS: string;
       CREATED_BY: string;
-    }
+    },
   ) {
     console.log("scheddata", data);
     const dataForDb = {
@@ -217,6 +217,7 @@ export const scheduleService = {
       return formatSchedule(newSchedule as any); // Cast as any to bypass include
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
+
         if (e.code === "P2002") {
           throw new ApplicationError(
             ERROR_CODES.APP_ALREADY_EXISTS,
@@ -224,7 +225,16 @@ export const scheduleService = {
             409
           );
         }
+
+        if (e.code === "P2003") {
+          throw new ApplicationError(
+            ERROR_CODES.APP_NOT_FOUND,
+            ERROR_MESSAGES[ERROR_CODES.APP_NOT_FOUND],
+            404
+          );
+        }
       }
+
       app.log.error(e);
       throw new ApplicationError(
         ERROR_CODES.SYS_UNKNOWN_ERROR,

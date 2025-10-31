@@ -19,6 +19,10 @@ export const applicationService = {
     if (s === "inactive" || s === "inaktif" || s === "i" || s === "1") return "Inactive";
     return undefined;
   },
+
+  async activeList() {
+    return repo.activeList()
+  },
   async list(params: {
     page: number;
     limit: number;

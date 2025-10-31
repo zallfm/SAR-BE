@@ -175,7 +175,8 @@ export const uarPicService = {
     app: FastifyInstance,
     PIC_NAME: string,
     DIVISION_ID: number,
-    MAIL: string
+    MAIL: string,
+    CREATED_BY: string,
   ) {
     const lowerCaseMail = MAIL.toLowerCase();
 
@@ -219,7 +220,7 @@ export const uarPicService = {
       PIC_NAME,
       DIVISION_ID,
       MAIL: lowerCaseMail,
-      CREATED_BY: "Hesti", // Hardcoded as per original
+      CREATED_BY, // Hardcoded as per original
       CREATED_DT: new Date(),
       CHANGED_BY: null,
       CHANGED_DT: null,
@@ -269,7 +270,8 @@ export const uarPicService = {
     ID: string,
     PIC_NAME: string,
     DIVISION_ID: number,
-    MAIL: string
+    MAIL: string,
+    CHANGED_BY: string
   ) {
     const lowerCaseMail = MAIL.toLowerCase();
 
@@ -299,7 +301,7 @@ export const uarPicService = {
       PIC_NAME,
       DIVISION_ID,
       MAIL: lowerCaseMail,
-      CHANGED_BY: "Hesti", // Hardcoded as per original
+      CHANGED_BY, // Hardcoded as per original
       CHANGED_DT: new Date(),
     };
 

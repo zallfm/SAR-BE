@@ -296,7 +296,7 @@ model TB_R_LOG_D {
   MESSAGE_CONTENT String         @db.NVarChar(200)
   LOCATION        String         @db.NVarChar(50)
   CREATED_BY      String         @db.NVarChar(20)
-  CREATED_DT      DateTime       @db.Date
+  CREATED_DT      DateTime?
   CHANGED_BY      String?        @db.NVarChar(20)
   CHANGED_DT      DateTime?      @db.Date
   MODULE_ID       String?        @db.NVarChar(10)
@@ -313,8 +313,8 @@ model TB_R_LOG_H {
   PROCESS_ID     String        @id(map: "PK_TB_R_LOG_H") @db.NVarChar(30)
   MODULE_ID      String        @db.NVarChar(10)
   FUNCTION_ID    String        @db.NVarChar(20)
-  START_DT       DateTime      @db.Date
-  END_DT         DateTime?     @db.Date
+  START_DT       DateTime?
+  END_DT         DateTime?
   PROCESS_STATUS String?       @db.Char(1)
   CREATED_BY     String        @db.NVarChar(20)
   CREATED_DT     DateTime      @db.Date
@@ -552,7 +552,7 @@ model TB_M_SYSTEM {
   VALUE_NUM     Int?
   VALUE_TIME    DateTime? @db.Time
   CREATED_BY    String    @db.NVarChar(20)
-  CREATED_DT    DateTime  @db.Date
+  CREATED_DT    DateTime  @db.DateTime
   CHANGED_BY    String?   @db.NVarChar(20)
   CHANGED_DT    DateTime? @db.Date
 

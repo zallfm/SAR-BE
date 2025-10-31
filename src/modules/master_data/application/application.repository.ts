@@ -47,6 +47,23 @@ async function getDbNow(): Promise<Date> {
 }
 
 export const applicationRepository = {
+  async activeList() {
+
+
+    const [dataRaw] = await Promise.all([
+      prisma.tB_M_APPLICATION.findMany({
+        where: {
+          APPLICATION_STATUS: "0"
+        },
+
+      }),
+    ]);
+
+    const data = dataRaw.map(mapRowDbToDto);
+    return { data };
+  },
+
+
   // List aplikasi dengan pencarian, sorting, dan pagination
   async list(params: {
     page: number;
