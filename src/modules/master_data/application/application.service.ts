@@ -11,6 +11,16 @@ const userId = currentUserId();
 const reqId = currentRequestId()
 
 export const applicationService = {
+  // Normalisasi status dari berbagai bentuk input FE
+  normalizeStatus(input: any): "Active" | "Inactive" | undefined {
+    const raw = input?.APPLICATION_STATUS ?? input?.status ?? input?.appStatus ?? input?.applicationStatus;
+    if (raw === undefined) return undefined;
+    if (typeof raw === "boolean") return raw ? "Active" : "Inactive";
+    const s = String(raw).trim().toLowerCase();
+    if (s === "active" || s === "aktif" || s === "a" || s === "0") return "Active";
+    if (s === "inactive" || s === "inaktif" || s === "i" || s === "1") return "Inactive";
+    return undefined;
+  },
   async list(params: {
     page: number;
     limit: number;
@@ -42,8 +52,8 @@ export const applicationService = {
     NOREG_SYSTEM_OWNER: string;
     NOREG_SYSTEM_CUST: string;
     SECURITY_CENTER: string;
-    APPLICATION_STATUS: "Aktif" | "Inactive";
-  }) {
+    APPLICATION_STATUS: "Active" | "Inactive";
+  }, auditUser: string) {
     // console.log("input", input)
 
     const existingApp = await repo.findByCode(input.APPLICATION_ID.toLowerCase());
@@ -96,7 +106,10 @@ export const applicationService = {
       location: "/applications"
     }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
 
-    return repo.create(input as any);
+    // Koersi status jika FE kirim varian lain
+    const norm = this.normalizeStatus(input);
+    if (norm) (input as any).APPLICATION_STATUS = norm;
+    return repo.create(input as any, auditUser);
   },
 
   async update(id: string, updates: Partial<{
@@ -105,8 +118,8 @@ export const applicationService = {
     NOREG_SYSTEM_OWNER: string;
     NOREG_SYSTEM_CUST: string;
     SECURITY_CENTER: string;
-    APPLICATION_STATUS: "Aktif" | "Inactive";
-  }>) {
+    APPLICATION_STATUS: "Active" | "Inactive";
+  }>, auditUser: string) {
     const existing = await repo.findById(id);
     if (!existing) {
       throw new ApplicationError(
@@ -152,7 +165,10 @@ export const applicationService = {
       }
     }
 
-    const updated = await repo.update(id, updates as any);
+    // Koersi status jika FE kirim varian lain
+    const norm = this.normalizeStatus(updates as any);
+    if (norm) (updates as any).APPLICATION_STATUS = norm;
+    const updated = await repo.update(id, updates as any, auditUser);
     if (!updated) {
       throw new ApplicationError(ERROR_CODES.APP_UPDATE_FAILED, "Failed to update application");
     }
