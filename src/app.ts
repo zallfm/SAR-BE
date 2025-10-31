@@ -14,6 +14,7 @@ import prisma from "./plugins/prisma";
 import { indexRoutes } from "./api/index.routes";
 import { SECURITY_CONFIG } from "./config/security";
 import authorize from "./api/common/middleware/authorize";
+import requestContextPlugin from "./plugins/requestContext"
 
 export async function buildApp() {
   const app = Fastify({
@@ -24,7 +25,7 @@ export async function buildApp() {
       },
     },
   });
-
+  globalThis.app = app;
   // ==========================================
   // 🔒 1️⃣ Register Security & Utility Plugins
   // ==========================================
@@ -58,6 +59,7 @@ export async function buildApp() {
   // Plugin internal
   await app.register(requestIdPlugin);
   await app.register(securityPlugin);
+  await app.register(requestContextPlugin);
 
   // Custom Error Handler (optional)
   // app.setErrorHandler(errorHandler);
