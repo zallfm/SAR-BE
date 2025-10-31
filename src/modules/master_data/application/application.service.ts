@@ -162,40 +162,24 @@ export const applicationService = {
         if (nameUsed) {
           throw new ApplicationError(
             ERROR_CODES.VAL_DUPLICATE_ENTRY,
-            "Duplicate field",
-            {
-              errors: {
-                APPLICATION_NAME: {
-                  code: "ALREADY_EXISTS",
-                  message: "Application Name already exists",
-                  value: updates.APPLICATION_NAME,
-                },
-              },
-            },
-            currentRequestId(),
-            409
+            "APPLICATION_NAME already exists",
+            { errors: { APPLICATION_NAME: { code: "APPLICATION_NAME already existst", value: updates.APPLICATION_NAME } } },
+            // { APPLICATION_NAME: input.APPLICATION_NAME },
+            undefined,
+            400
           );
         }
       }
-
-
       const ownerReg = String(owner.NOREG).trim().toUpperCase();
       const usedByOther = await repo.existsByOwnerNoregExceptApp(id, ownerReg);
       if (usedByOther) {
         throw new ApplicationError(
           ERROR_CODES.VAL_DUPLICATE_ENTRY,
-          "Duplicate field",
-          {
-            errors: {
-              NOREG_SYSTEM_OWNER: {
-                code: "ALREADY_EXISTS",
-                message: "This System Owner is already assigned to another application",
-                value: ownerReg,
-              },
-            },
-          },
-          currentRequestId(),
-          409
+          "This System Owner is already assigned to another applicationtoh",
+          { errors: { NOREG_SYSTEM_OWNER: { code: "This System Owner is already assigned to another applicationtoh", value: ownerReg } } },
+          // { NOREG_SYSTEM_OWNER: ownerReg },
+          undefined,
+          400
         );
       }
     }
