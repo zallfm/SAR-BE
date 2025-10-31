@@ -19,8 +19,8 @@ export async function publishMonitoringLog(app: FastifyInstance, input: PublishL
   const startAt = input.timestamp ?? new Date();
   const endAt = new Date();
   const processId = String(generateProcessId());
-  console.log("toGB(startAt)", toGB(startAt))
-  console.log("toGB(endAt)", toGB(endAt))
+  // console.log("toGB(startAt)", toGB(startAt))
+  // console.log("toGB(endAt)", toGB(endAt))
 
   const newLog: LogEntry = {
     NO: 0,
@@ -43,7 +43,7 @@ export async function publishMonitoringLog(app: FastifyInstance, input: PublishL
       },
     ],
   };
-  console.log("newLog di pulisher", newLog)
+  // console.log("newLog di pulisher", newLog)
 
   await logRepository.insertLog(newLog);
   return newLog;

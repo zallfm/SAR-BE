@@ -122,6 +122,7 @@ export const applicationRepository = {
   // - CREATED_DT/CHANGED_DT bertipe Date pada SQL Server; Prisma akan memetakannya
   async create(payload: Omit<ApplicationRow, "CREATED_BY" | "CREATED_DT" | "CHANGED_BY" | "CHANGED_DT">, auditUser: string) {
     const now = await getDbNow();
+    console.log("payloadss", payload)
     const created = await prisma.tB_M_APPLICATION.create({
       data: {
         APPLICATION_ID: payload.APPLICATION_ID,
@@ -138,6 +139,7 @@ export const applicationRepository = {
         CHANGED_DT: now as unknown as any,
       },
     });
+    console.log("createds", created)
     return mapRowDbToDto(created);
   },
 
@@ -176,6 +178,7 @@ export const applicationRepository = {
       orderBy: { VALID_TO: "desc" },
       select: {
         NOREG: true,
+        DIVISION_ID: true,
         PERSONNEL_NAME: true,
         DIVISION_NAME: true,
         MAIL: true,
@@ -185,6 +188,7 @@ export const applicationRepository = {
     if (!row) return null;
     return {
       NOREG: row.NOREG,
+      DIVISION_ID: row.DIVISION_ID ?? undefined,
       PERSONAL_NAME: row.PERSONNEL_NAME ?? "",
       DIVISION_NAME: row.DIVISION_NAME ?? "",
       MAIL: row.MAIL ?? "",
@@ -217,6 +221,7 @@ export const applicationRepository = {
         skip: offset,
         take: limit,
         select: {
+          DIVISION_ID: true,
           NOREG: true,
           PERSONNEL_NAME: true,
           DIVISION_NAME: true,
@@ -229,6 +234,7 @@ export const applicationRepository = {
 
     const items: SystemUser[] = rows.map((r) => ({
       NOREG: r.NOREG,
+      DIVISION_ID: r.DIVISION_ID,
       PERSONAL_NAME: r.PERSONNEL_NAME ?? "",
       DIVISION_NAME: r.DIVISION_NAME ?? "",
       MAIL: r.MAIL ?? "",
@@ -236,7 +242,7 @@ export const applicationRepository = {
       canBeOwner: true,
       canBeCustodian: true,
     }));
-
+    // console.log("items", items)
     return { items, total };
   },
   // Validasi Security Center: minimal sudah pernah digunakan oleh satu aplikasi
