@@ -6,6 +6,8 @@ import { ERROR_MESSAGES } from "../../../core/errors/errorMessages";
 // Removed: import { initialUarPic } from "./uarpic.repository";
 // Removed: import { UarPic } from "../../../types/uarPic";
 import { generateID } from "../../../utils/idHelper";
+import { publishMonitoringLog } from "../../log_monitoring/log_publisher";
+import { currentRequestId, currentUserId } from "../../../core/requestContext";
 
 // --- Prisma Type Definitions ---
 // Assumes Prisma model is named 'TB_M_UAR_PIC'
@@ -67,11 +69,14 @@ async function dupeCheck(
     throw new ApplicationError(
       ERROR_CODES.APP_ALREADY_EXISTS,
       ERROR_MESSAGES[ERROR_CODES.APP_ALREADY_EXISTS] ||
-        "UAR PIC with this MAIL already exists",
+      "UAR PIC with this MAIL already exists",
       400 // 400 (Bad Request) or 409 (Conflict) are appropriate
     );
   }
 }
+const userId = currentUserId();
+const reqId = currentRequestId()
+
 
 export const uarPicService = {
   /**
@@ -228,6 +233,14 @@ export const uarPicService = {
       const newData = await app.prisma.tB_M_UAR_PIC.create({
         data: uarPicData,
       });
+      publishMonitoringLog(globalThis.app as any, {
+        userId,
+        module: "UAR_PIC",
+        action: "UAR_PIC_CREATE",
+        status: "Success",
+        description: `Create UAR PIC ${newData.PIC_NAME}`,
+        location: "/applications"
+      }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
       return newData;
     } catch (e: any) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
@@ -297,6 +310,14 @@ export const uarPicService = {
         where: { ID },
         data: uarPicData,
       });
+      publishMonitoringLog(globalThis.app as any, {
+        userId,
+        module: "UAR_PIC",
+        action: "UAR_PIC_UPDATE",
+        status: "Success",
+        description: `Create UAR PIC ${updatedUarPic.PIC_NAME}`,
+        location: "/applications"
+      }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
       return updatedUarPic;
     } catch (e: any) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
@@ -335,6 +356,14 @@ export const uarPicService = {
       const deletedUarPic = await app.prisma.tB_M_UAR_PIC.delete({
         where: { ID },
       });
+      publishMonitoringLog(globalThis.app as any, {
+        userId,
+        module: "UAR_PIC",
+        action: "UAR_PIC_DELETE",
+        status: "Success",
+        description: `Create UAR PIC ${deletedUarPic.PIC_NAME}`,
+        location: "/applications"
+      }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
       return deletedUarPic; // Return deleted item
     } catch (e: any) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {

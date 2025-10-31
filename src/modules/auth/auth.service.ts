@@ -293,7 +293,7 @@ export const authService = {
     publishMonitoringLog(app, {
       userId: decoded.name,
       module: "AUTH",
-      action: "Logout Test Function",
+      action: "LOGOUT_SUCESS",
       status: "Success",
       description: "User loggout in successfully",
       location: "/logout"

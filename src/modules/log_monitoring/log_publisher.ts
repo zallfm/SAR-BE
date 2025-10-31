@@ -16,8 +16,11 @@ type PublishLogInput = {
 };
 
 export async function publishMonitoringLog(app: FastifyInstance, input: PublishLogInput) {
-  const now = new Date();
+  const startAt = input.timestamp ?? new Date();
+  const endAt = new Date();
   const processId = String(generateProcessId());
+  console.log("toGB(startAt)", toGB(startAt))
+  console.log("toGB(endAt)", toGB(endAt))
 
   const newLog: LogEntry = {
     NO: 0,
@@ -25,14 +28,14 @@ export async function publishMonitoringLog(app: FastifyInstance, input: PublishL
     USER_ID: String(input.userId ?? "anonymous"),
     MODULE: String(input.module ?? "Unknown"),
     FUNCTION_NAME: String(input.action ?? "Unknown"),
-    START_DATE: toGB(input.timestamp ?? now),
-    END_DATE: toGB(now),
+    START_DATE: toGB(startAt),
+    END_DATE: toGB(endAt),
     STATUS: normalizeStatus(input.status ?? "Success"),
     DETAILS: [
       {
         ID: 1,
         PROCESS_ID: processId,
-        MESSAGE_DATE_TIME: toGB(now),
+        MESSAGE_DATE_TIME: toGB(new Date()),
         LOCATION: String(input.location ?? input.module ?? "Unknown"),
         MESSAGE_DETAIL: String(input.description ?? "Action logged"),
         MESSAGE_ID: undefined,
