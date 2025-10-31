@@ -310,6 +310,7 @@ export const uarPicService = {
         where: { ID },
         data: uarPicData,
       });
+      console.log("userId", userId)
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "UAR_PIC",

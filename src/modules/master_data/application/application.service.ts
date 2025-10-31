@@ -68,6 +68,7 @@ export const applicationService = {
     }
 
     // 2) Validate owner/custodian existence + eligibility
+    console.log("inputss", input)
     validateOwnerAndCustodian(input.NOREG_SYSTEM_OWNER, input.NOREG_SYSTEM_CUST);
     const owner = await repo.getUserByNoreg(input.NOREG_SYSTEM_OWNER);
     if (!owner) {
@@ -99,7 +100,7 @@ export const applicationService = {
     }
     publishMonitoringLog(globalThis.app as any, {
       userId,
-      module: "APPLICATION",
+      module: "APPLI",
       action: "APPLICATION_CREATE",
       status: "Success",
       description: `Create application ${input.APPLICATION_NAME}`,
@@ -172,9 +173,10 @@ export const applicationService = {
     if (!updated) {
       throw new ApplicationError(ERROR_CODES.APP_UPDATE_FAILED, "Failed to update application");
     }
+    console.log("userIdss", userId)
     publishMonitoringLog(globalThis.app as any, {
       userId,
-      module: "APPLICATION",
+      module: "APPLI",
       action: "APPLICATION_UPDATE",
       status: "Success",
       description: `Update application ${id}`,
