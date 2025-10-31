@@ -74,9 +74,6 @@ async function dupeCheck(
     );
   }
 }
-const userId = currentUserId();
-const reqId = currentRequestId()
-
 
 export const uarPicService = {
   /**
@@ -234,6 +231,8 @@ export const uarPicService = {
       const newData = await app.prisma.tB_M_UAR_PIC.create({
         data: uarPicData,
       });
+      const userId = currentUserId();
+      const reqId = currentRequestId()
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "UAR_PIC",
@@ -312,7 +311,8 @@ export const uarPicService = {
         where: { ID },
         data: uarPicData,
       });
-      console.log("userId", userId)
+      const userId = currentUserId();
+      const reqId = currentRequestId()
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "UAR_PIC",
@@ -359,6 +359,8 @@ export const uarPicService = {
       const deletedUarPic = await app.prisma.tB_M_UAR_PIC.delete({
         where: { ID },
       });
+      const userId = currentUserId();
+            const reqId = currentRequestId()
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "UAR_PIC",

@@ -4,7 +4,7 @@ import { extractUserFromRequest, runWithRequestContext } from "../core/requestCo
 // import { extractUserFromRequest, runWithRequestContext } from "../core/context/requestContext";
 
 export default fp(async function requestContextPlugin(app: FastifyInstance) {
-  app.addHook("onRequest", async (req, reply) => {
+  app.addHook("onRequest", (req, reply, done) => {
     // requestId dari header atau dari fastify
     const requestId = (req.headers["x-request-id"] as string) || req.id;
 
@@ -15,7 +15,7 @@ export default fp(async function requestContextPlugin(app: FastifyInstance) {
     runWithRequestContext(
       { userId: user.userId, role: user.role, username: user.username, requestId },
       () => {
-        // kita sengaja tidak menunggu apa-apa di sini; hook lanjut ke handler
+        done()
       }
     );
   });
