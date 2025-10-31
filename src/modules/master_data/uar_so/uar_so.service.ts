@@ -7,6 +7,7 @@ import { ERROR_MESSAGES } from "../../../core/errors/errorMessages";
 export const systemService = {
   async uarApprovalBatch(req: FastifyInstance) {
     try {
+      
     } catch (e) {}
   },
 };
