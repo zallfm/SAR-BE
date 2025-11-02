@@ -3,7 +3,7 @@ import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import fastifyJWT from "@fastify/jwt";
 import rateLimit from "@fastify/rate-limit";
-
+import fastifyCookie from "@fastify/cookie";
 import { env } from "./config/env";
 import { securityPlugin } from "./plugins/securityHeaders";
 import { requestIdPlugin } from "./core/observability/requestId";
@@ -53,8 +53,16 @@ export async function buildApp() {
   // 🧠 Tambahkan Helmet setelah CORS
   await app.register(helmet, { contentSecurityPolicy: false });
 
+  await app.register(fastifyCookie);
+
   // JWT
-  await app.register(fastifyJWT, { secret: env.JWT_SECRET });
+  await app.register(fastifyJWT, {
+    secret: env.JWT_SECRET,
+    cookie: {
+      cookieName: "access",
+      signed: false,        // ← WAJIB ditambahkan
+    },
+  });
 
   // Plugin internal
   await app.register(requestIdPlugin);
@@ -109,6 +117,6 @@ export async function buildApp() {
       return { status: "error", db: "unavailable" };
     }
   });
-  
+
   return app;
 }

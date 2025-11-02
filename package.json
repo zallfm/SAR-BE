@@ -15,6 +15,7 @@
     "prisma:gen:all": "npm run prisma:gen:sar && npm run prisma:gen:sc"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^10",
     "@fastify/helmet": "^13.0.2",
     "@fastify/jwt": "^9",
@@ -22,6 +23,7 @@
     "@fastify/rate-limit": "^10.3.0",
     "@prisma/adapter-mssql": "^6.17.1",
     "@prisma/client": "^6.17.1",
+    "axios": "^1.13.1",
     "dotenv": "^16.4.5",
     "exceljs": "^4.4.0",
     "fastify": "^5.6.1",
@@ -42,10 +44,10 @@
     "@types/multer": "^2.0.0",
     "@types/node-schedule": "^2.1.8",
     "jest": "^29.7.0",
+    "prisma": "^6.17.1",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.1",
-    "typescript": "^5.6.3",
-    "prisma": "^6.17.1"
+    "typescript": "^5.6.3"
   }
 }

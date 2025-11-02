@@ -1,6 +1,7 @@
 import { prismaSC } from '../../db/prisma';
 import type { User } from '../../types/auth.js';
 import { TB_M_USER } from '../../generated/prisma-sc/index';
+import { hrPortalClient } from './hrPortal';
 
 type InternalUser = User & { password: string; id?: string | number };
 
@@ -37,13 +38,39 @@ function buildMenuTree(rows: MenuRow[]): MenuNode[] {
   return roots;
 }
 export const userRepository = {
-  async login(username: string): Promise<InternalUser | null> {
+  async login(username: string, password: string): Promise<InternalUser | null> {
     const dbUser = await prismaSC.tB_M_USER.findFirst({
-      where: { USERNAME: username },
-      select: { ID: true, USERNAME: true, PASSWORD: true },
+      where: {
+        USERNAME: username,
+        TB_M_USER_APPLICATION: {
+          some: {
+            APPLICATION: 'SARSYS'
+          }
+        }
+      },
+      // select: { ID: true, USERNAME: true, PASSWORD: true },
     });
 
-    if (!dbUser) return null;
+    if (!dbUser) {
+      throw new Error("Username or password incorrect")
+    }
+
+    if (dbUser.IN_ACTIVE_DIRECTORY) {
+      console.log(`User ${username} has IN_ACTIVE_DIRECTORY=1, authenticating via HR Portal`)
+      const hrPortalAuth = await hrPortalClient.checkSCMobile(
+        username,
+        password,
+      );
+
+      if (!hrPortalAuth.success) {
+        throw new Error('Username or password incorrect');
+      }
+    } else {
+      console.log(`User ${username} has IN_ACTIVE_DIRECTORY=0, using local password verification`)
+      if (dbUser.PASSWORD !== password) {
+        throw new Error('Username or password incorrect');
+      }
+    }
 
     // Ambil semua role user dari TB_M_AUTHORIZATION + TB_M_ROLE (aplikasi SARSYS)
     const roles = await prismaSC.$queryRaw<Array<{ ID: string; NAME: string }>>`
