@@ -220,6 +220,8 @@ export const logRepository = {
         MESSAGE_DATE_TIME: toGB(d.CREATED_DT),
         LOCATION: d.LOCATION,
         MESSAGE_DETAIL: d.MESSAGE_CONTENT,
+        MESSAGE_ID: d.MESSAGE_ID,
+        MESSAGE_TYPE: d.MESSAGE_TYPE
       }));
 
     const result: LogEntry = {
@@ -327,6 +329,8 @@ export const logRepository = {
       MESSAGE_DATE_TIME: toGB(d.CREATED_DT),
       LOCATION: d.LOCATION,
       MESSAGE_DETAIL: d.MESSAGE_CONTENT,
+      MESSAGE_ID: d.MESSAGE_ID,
+      MESSAGE_TYPE: d.MESSAGE_TYPE
     }));
 
     return {

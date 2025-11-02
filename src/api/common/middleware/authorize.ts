@@ -9,8 +9,8 @@ type JwtPayload = {
   sub: string;    // username disimpan di 'sub'
   name?: string;
   role?: string;
-  iat: number;
-  exp: number;
+  // iat: number;
+  // exp: number;
 };
 
 // Profil yang diperkaya dari DB untuk guard permission
