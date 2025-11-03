@@ -426,8 +426,7 @@ const SchedulePage: React.FC = () => {
                     {schedule.APPLICATION_NAME ?? ""}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    {formatDisplayDateToDdMm(schedule.SCHEDULE_SYNC_START_DT)} -
-                    {formatDisplayDateToDdMm(schedule.SCHEDULE_SYNC_END_DT)}
+                    {formatDisplayDateToDdMm(schedule.SCHEDULE_SYNC_START_DT)}{"- "}{formatDisplayDateToDdMm(schedule.SCHEDULE_SYNC_END_DT)}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
                     {formatDisplayDateToDdMm(schedule.SCHEDULE_UAR_DT)}

@@ -49,14 +49,12 @@ export const formatDisplayDateToDdMm = (dateString: string): string => {
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return "";
 
-  // 'id-ID' specifies the Indonesian locale to get "Januari"
-  // For English, you would use 'en-US' to get "January"
   const options: Intl.DateTimeFormatOptions = {
-    day: 'numeric', // "29" or "5"
-    month: 'long',  // "Januari" or "January"
+    month: 'long',
+    day: '2-digit',
   };
 
-  return date.toLocaleString('en-EN', options);
+  return date.toLocaleString('en-GB', options);
 };
 
 /**
