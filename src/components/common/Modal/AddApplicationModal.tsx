@@ -509,7 +509,7 @@ const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
               setOwnerQuery(user.NOREG);
               clearError("owner");
             }}
-            error={errors.owner}
+            // error={errors.owner}
           />
           <UserDetailsDisplay user={selectedOwner} />
 
@@ -528,7 +528,7 @@ const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
               setCustodianQuery(user.NOREG);
               clearError("custodian");
             }}
-            error={errors.custodian}
+            // error={errors.custodian}
           />
           <UserDetailsDisplay user={selectedCustodian} />
 
