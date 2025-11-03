@@ -128,7 +128,7 @@ export const authService = {
 
 
     // 2) authenticate
-    const user = await userRepository.login(username);
+    const user = await userRepository.login(username, password);
     const valid = !!user && safeCompare(password, user.password);
 
     if (!valid) {
@@ -173,7 +173,7 @@ export const authService = {
         0
       );
 
-      console.log("remaining", remaining)
+      // console.log("remaining", remaining)
       AuditLogger.logFailure(AuditAction.LOGIN_FAILED, ERROR_CODES.AUTH_INVALID_CREDENTIALS, {
         userId: username,
         requestId,
