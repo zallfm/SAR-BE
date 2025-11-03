@@ -92,18 +92,18 @@ export const applicationService = {
         400
       );
     }
-    const ownerReg = String(owner.NOREG).trim().toUpperCase();
-    const alreadyUsed = await repo.existsByOwnerNoreg(ownerReg);
-    if (alreadyUsed) {
-      throw new ApplicationError(
-        ERROR_CODES.VAL_DUPLICATE_ENTRY,
-        "This System Owner is already assigned to another applicationtoh",
-        { errors: { NOREG_SYSTEM_OWNER: { code: "This System Owner is already assigned to another applicationtoh", value: ownerReg } } },
-        // { NOREG_SYSTEM_OWNER: ownerReg },
-        undefined,
-        400
-      );
-    }
+    // const ownerReg = String(owner.NOREG).trim().toUpperCase();
+    // const alreadyUsed = await repo.existsByOwnerNoreg(ownerReg);
+    // if (alreadyUsed) {
+    //   throw new ApplicationError(
+    //     ERROR_CODES.VAL_DUPLICATE_ENTRY,
+    //     "This System Owner is already assigned to another applicationtoh",
+    //     { errors: { NOREG_SYSTEM_OWNER: { code: "This System Owner is already assigned to another applicationtoh", value: ownerReg } } },
+    //     // { NOREG_SYSTEM_OWNER: ownerReg },
+    //     undefined,
+    //     400
+    //   );
+    // }
 
     // 3) Security center validity
     if (!(await repo.isValidSecurityCenter(input.SECURITY_CENTER))) {
@@ -170,18 +170,18 @@ export const applicationService = {
           );
         }
       }
-      const ownerReg = String(owner.NOREG).trim().toUpperCase();
-      const usedByOther = await repo.existsByOwnerNoregExceptApp(id, ownerReg);
-      if (usedByOther) {
-        throw new ApplicationError(
-          ERROR_CODES.VAL_DUPLICATE_ENTRY,
-          "This System Owner is already assigned to another applicationtoh",
-          { errors: { NOREG_SYSTEM_OWNER: { code: "This System Owner is already assigned to another applicationtoh", value: ownerReg } } },
-          // { NOREG_SYSTEM_OWNER: ownerReg },
-          undefined,
-          400
-        );
-      }
+      // const ownerReg = String(owner.NOREG).trim().toUpperCase();
+      // const usedByOther = await repo.existsByOwnerNoregExceptApp(id, ownerReg);
+      // if (usedByOther) {
+      //   throw new ApplicationError(
+      //     ERROR_CODES.VAL_DUPLICATE_ENTRY,
+      //     "This System Owner is already assigned to another applicationtoh",
+      //     { errors: { NOREG_SYSTEM_OWNER: { code: "This System Owner is already assigned to another applicationtoh", value: ownerReg } } },
+      //     // { NOREG_SYSTEM_OWNER: ownerReg },
+      //     undefined,
+      //     400
+      //   );
+      // }
     }
 
     if (updates.NOREG_SYSTEM_CUST) {
