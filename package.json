@@ -10,9 +10,14 @@
     "test": "jest --passWithNoTests",
     "test:unit": "jest tests/unit --runInBand",
     "test:integration": "jest tests/integration --runInBand",
+    "test:watch": "jest --watch",
+    "test:watch:unit": "jest tests/unit --watch",
+    "test:coverage": "jest --coverage",
+    "test:coverage:unit": "jest tests/unit --coverage",
+    "test:tdd": "jest --watch --coverage",
     "prisma:gen:sar": "prisma generate --schema=prisma/sar/schema.prisma",
     "prisma:gen:sc": "prisma generate --schema=prisma/sc/schema_sc.prisma",
-    "prisma:gen:all": "npm run prisma:gen:sar && npm run prisma:gen:sc"
+    "prisma:gen:all": "pnpm run prisma:gen:sar && pnpm run prisma:gen:sc"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
