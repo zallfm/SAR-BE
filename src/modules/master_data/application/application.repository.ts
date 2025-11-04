@@ -260,6 +260,7 @@ export const applicationRepository = {
         take: limit,
         select: {
           DIVISION_ID: true,
+          DEPARTMENT_ID: true,
           NOREG: true,
           PERSONNEL_NAME: true,
           DIVISION_NAME: true,
@@ -273,6 +274,7 @@ export const applicationRepository = {
     const items: SystemUser[] = rows.map((r) => ({
       NOREG: r.NOREG,
       DIVISION_ID: r.DIVISION_ID,
+      DEPARTMENT_ID: r.DEPARTMENT_ID,
       PERSONAL_NAME: r.PERSONNEL_NAME ?? "",
       DIVISION_NAME: r.DIVISION_NAME ?? "",
       MAIL: r.MAIL ?? "",
