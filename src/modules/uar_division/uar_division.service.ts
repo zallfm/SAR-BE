@@ -60,16 +60,19 @@ export const uarDivisionService = {
             const wf = wfStatusMap.get(r.UAR_ID);
             const stats = percentMap.get(r.UAR_ID);
 
-            let percentComplete = 0;
-            if (stats && stats.total > 0) {
-                percentComplete = Math.round((stats.completed / stats.total) * 100);
+            let percentCompleteString = "100% (0 of 0)"; // Default if no items
+            if (stats) {
+                const total = stats.total;
+                const completed = stats.completed;
+                const percent = (total > 0) ? Math.round((completed / total) * 100) : 100;
+                percentCompleteString = `${percent}% (${completed} of ${total})`;
             }
 
             return {
                 uarId: r.UAR_ID,
                 uarPeriod: r.UAR_PERIOD,
-                divisionOwner: r.TB_M_DIVISION?.DIVISION_NAME ?? 'N/A', 
-                percentComplete: percentComplete,
+                divisionOwner: r.TB_M_DIVISION?.DIVISION_NAME ?? 'N/A',
+                percentComplete: percentCompleteString,
                 createdDate: wf?.CREATED_DT?.toISOString() ?? "",
                 completedDate: wf?.APPROVED_DT?.toISOString() ?? null,
                 status: mapStatus(wf?.IS_APPROVED, wf?.IS_REJECTED),

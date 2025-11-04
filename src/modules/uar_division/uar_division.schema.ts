@@ -7,7 +7,7 @@ const UarHeaderItemSchema = {
         uarId: { type: "string" },
         uarPeriod: { type: "string" },
         divisionOwner: { type: "string" },
-        percentComplete: { type: "number" },
+        percentComplete: { type: "string" },
         createdDate: { type: "string" },
         completedDate: { type: ["string", "null"] },
         status: { type: ["string", "null"], enum: ["1", "0", null] },
