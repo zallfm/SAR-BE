@@ -16,6 +16,8 @@ type JwtPayload = {
 // Profil yang diperkaya dari DB untuk guard permission
 type GuardedUser = {
   username: string;
+  divisionId: number;
+  noreg: string;
   features: string[];
   functions: string[];
   roles: string[];
@@ -108,6 +110,8 @@ export default fp<AuthOpts>(async function authorizePlugin(app: FastifyInstance,
       // Bentuk req.auth untuk permission guards
       req.auth = {
         username: profile?.user?.username ?? username,
+        divisionId: 2,
+        noreg: "100000",
         features: profile?.features ?? [],
         functions: profile?.functions ?? [],
         roles: profile?.roles ?? [],

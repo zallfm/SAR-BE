@@ -7,7 +7,6 @@ async function getDbNow(): Promise<Date> {
 }
 
 export const uarDivisionRepository = {
-
     async listUars(params: {
         page: number;
         limit: number;
@@ -17,11 +16,6 @@ export const uarDivisionRepository = {
     }) {
         const { page, limit, userDivisionId, period, uarId } = params;
 
-        const where: any = {
-            DIVISION_ID: userDivisionId,
-        };
-
-     
         const whereUar: any = {
             DIVISION_ID: userDivisionId,
         };
@@ -35,68 +29,66 @@ export const uarDivisionRepository = {
         const [dataRaw, totalGroups] = await Promise.all([
             prisma.tB_R_UAR_DIVISION_USER.findMany({
                 where: whereUar,
+                // MODIFIED: Select UAR_ID, UAR_PERIOD, and the related Division Name
                 select: {
                     UAR_ID: true,
                     UAR_PERIOD: true,
+                    TB_M_DIVISION: {
+                        select: {
+                            DIVISION_NAME: true,
+                        },
+                    },
                 },
                 distinct: ["UAR_ID", "UAR_PERIOD"],
-                orderBy: { UAR_ID: "desc" }, // Or CREATED_DT if it were here
+                orderBy: { UAR_ID: "desc" },
                 skip: (page - 1) * limit,
                 take: limit,
             }),
-            // Use groupBy to get the distinct count
             prisma.tB_R_UAR_DIVISION_USER.groupBy({
                 by: ["UAR_ID", "UAR_PERIOD"],
                 where: whereUar,
             }),
         ]);
-        // The total count is the length of the grouped results
         const totalRows = totalGroups.length;
 
-        // Now, for each UAR_ID, get its workflow status
         const uarIds = dataRaw.map((d) => d.UAR_ID);
         if (uarIds.length === 0) {
-            // No results, return empty
-            return { data: [], total: 0 };
+            return { data: [], total: 0, workflowStatus: [], completionStats: [] };
         }
 
-        const workflowStatus = await prisma.tB_R_WORKFLOW.findMany({
-            where: {
-                UAR_ID: { in: uarIds },
-                DIVISION_ID: userDivisionId,
-            },
-            // Get the latest status per UAR_ID, assuming multiple seq_no
-            distinct: ["UAR_ID"],
-            orderBy: {
-                UAR_ID: 'desc',
-                SEQ_NO: 'desc' // Or whatever logic determines the "main" workflow item
-            },
-            select: {
-                UAR_ID: true,
-                CREATED_DT: true,
-                APPROVED_DT: true,
-                IS_APPROVED: true,
-                IS_REJECTED: true,
-            },
-        });
+        const [workflowStatus, completionStats] = await Promise.all([
+            prisma.tB_R_WORKFLOW.findMany({
+                where: {
+                    UAR_ID: { in: uarIds },
+                    DIVISION_ID: userDivisionId,
+                },
+                distinct: ["UAR_ID"],
+                orderBy: [
+                    { UAR_ID: 'desc', },
+                    { SEQ_NO: 'desc' }
+                ],
+                select: {
+                    UAR_ID: true,
+                    CREATED_DT: true,
+                    APPROVED_DT: true,
+                    IS_APPROVED: true,
+                    IS_REJECTED: true,
+                },
+            }),
+            prisma.tB_R_UAR_DIVISION_USER.groupBy({
+                by: ['UAR_ID', 'DIV_APPROVAL_STATUS'],
+                where: {
+                    UAR_ID: { in: uarIds },
+                    DIVISION_ID: userDivisionId
+                },
+                _count: {
+                    _all: true
+                }
+            })
+        ]);
 
-        // Combine the data
-        const dataMap = new Map(workflowStatus.map((w) => [w.UAR_ID, w]));
-        const combinedData = dataRaw.map((r) => {
-            const wf = dataMap.get(r.UAR_ID);
-            return {
-                UAR_ID: r.UAR_ID,
-                UAR_PERIOD: r.UAR_PERIOD,
-                CREATED_DT: wf?.CREATED_DT,
-                APPROVED_DT: wf?.APPROVED_DT,
-                IS_APPROVED: wf?.IS_APPROVED,
-                IS_REJECTED: wf?.IS_REJECTED,
-            };
-        });
-
-        return { data: combinedData, total: totalRows };
+        return { data: dataRaw, total: totalRows, workflowStatus, completionStats };
     },
-
 
     async getUarDetails(uarId: string, userDivisionId: number) {
         return prisma.tB_R_UAR_DIVISION_USER.findMany({
@@ -105,7 +97,7 @@ export const uarDivisionRepository = {
                 DIVISION_ID: userDivisionId,
             },
             orderBy: {
-                NAME: "asc", // Order by user name
+                NAME: "asc",
             },
         });
     },
@@ -118,52 +110,76 @@ export const uarDivisionRepository = {
     ) {
         const { uarId, decision, items, comments } = dto;
         const now = await getDbNow();
+        const divApprovalStatus = decision === "Approve" ? "1" : "0";
 
-        const divApprovalStatus = decision === "Approve" ? "A" : "R";
-        const isApproved = decision === "Approve" ? "Y" : "N";
-        const isRejected = decision === "Approve" ? "N" : "Y";
-
-        // 1. Define the update for TB_R_UAR_DIVISION_USER
-        const updateDivisionUsers = prisma.tB_R_UAR_DIVISION_USER.updateMany({
-            where: {
-                UAR_ID: uarId,
-                DIVISION_ID: userDivisionId,
-                OR: items.map((item) => ({
-                    USERNAME: item.username,
-                    ROLE_ID: item.roleId,
-                })),
-            },
-            data: {
-                DIV_APPROVAL_STATUS: divApprovalStatus,
-                REVIEWED_BY: userNoreg, // The user performing the action
-                REVIEWED_DT: now,
-            },
-        });
-
-        // 2. Define the update for TB_R_WORKFLOW
-        const updateWorkflow = prisma.tB_R_WORKFLOW.updateMany({
-            where: {
-                UAR_ID: uarId,
-                DIVISION_ID: userDivisionId,
-                // You might want to target a specific SEQ_NO here
-            },
-            data: {
-                IS_APPROVED: isApproved,
-                IS_REJECTED: isRejected,
-                APPROVED_BY: userNoreg,
-                APPROVED_DT: now,
-                // TODO: Add a "REMARKS" or "COMMENTS" NVarChar(500) field to your
-                // TB_R_WORKFLOW table in schema.prisma to store comments.
-                // REMARKS: comments,
-            },
-        });
-
-        // 3. Execute both updates in a transaction
         try {
-            const [userUpdateResult, workflowUpdateResult] =
-                await prisma.$transaction([updateDivisionUsers, updateWorkflow]);
+            return await prisma.$transaction(async (tx) => {
+                const userUpdateResult = await tx.tB_R_UAR_DIVISION_USER.updateMany({
+                    where: {
+                        UAR_ID: uarId,
+                        DIVISION_ID: userDivisionId,
+                        OR: items.map((item) => ({
+                            USERNAME: item.username,
+                            ROLE_ID: item.roleId,
+                        })),
+                    },
+                    data: {
+                        DIV_APPROVAL_STATUS: divApprovalStatus,
+                        REVIEWED_BY: userNoreg,
+                        REVIEWED_DT: now,
+                    },
+                });
 
-            return { userUpdateResult, workflowUpdateResult };
+                const allItemsInUar = await tx.tB_R_UAR_DIVISION_USER.findMany({
+                    where: {
+                        UAR_ID: uarId,
+                        DIVISION_ID: userDivisionId,
+                    },
+                    select: {
+                        DIV_APPROVAL_STATUS: true,
+                    },
+                });
+
+                const totalItems = allItemsInUar.length;
+                let rejectedCount = 0;
+                let pendingCount = 0;
+
+                for (const item of allItemsInUar) {
+                    if (item.DIV_APPROVAL_STATUS === '0') {
+                        rejectedCount++;
+                    } else if (item.DIV_APPROVAL_STATUS === null) {
+                        pendingCount++;
+                    }
+                }
+
+                let isApproved: 'Y' | 'N' = 'N';
+                let isRejected: 'Y' | 'N' = 'N';
+                let approvedDt: Date | null = null;
+
+                if (rejectedCount > 0) {
+                    isRejected = 'Y';
+                    approvedDt = now;
+                } else if (pendingCount > 0) {
+                } else {
+                    isApproved = 'Y';
+                    approvedDt = now;
+                }
+
+                const workflowUpdateResult = await tx.tB_R_WORKFLOW.updateMany({
+                    where: {
+                        UAR_ID: uarId,
+                        DIVISION_ID: userDivisionId,
+                    },
+                    data: {
+                        IS_APPROVED: isApproved,
+                        IS_REJECTED: isRejected,
+                        APPROVED_BY: userNoreg,
+                        APPROVED_DT: approvedDt,
+                    },
+                });
+
+                return { userUpdateResult, workflowUpdateResult };
+            });
         } catch (error) {
             console.error("Batch update transaction failed:", error);
             throw new Error("Batch update failed.");
