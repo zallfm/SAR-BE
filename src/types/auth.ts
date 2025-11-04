@@ -2,6 +2,8 @@ export interface User {
   username: string;
   name: string;
   role: 'ADMINISTRATOR' | 'DPH' | 'SO';
+  divisionId: number;
+  noreg: string;
 }
 
 export interface TokenPayload {

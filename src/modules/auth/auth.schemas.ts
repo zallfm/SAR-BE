@@ -28,7 +28,9 @@ export const loginSchema = {
               properties: {
                 username: { type: 'string' },
                 name: { type: 'string' },
-                role: { type: 'string' }
+                role: { type: 'string' },
+                divisionId: { type: 'number' },
+                noreg: { type: 'string' }
               }
             }
           }
