@@ -262,10 +262,10 @@ const ApplicationPage: React.FC = () => {
         return;
       }
       // owner bermasalah (sudah dipakai/invalid/not found)
-      if (/owner/i.test(lower)) {
-        setModalErrors({ owner: message });
-        return;
-      }
+      // if (/owner/i.test(lower)) {
+      //   setModalErrors({ owner: message });
+      //   return;
+      // }
 
       // 3) terakhir: form-level
       setModalErrors({ form: message || "Failed to save application." });

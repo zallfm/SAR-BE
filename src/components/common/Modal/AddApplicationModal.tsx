@@ -31,6 +31,7 @@ const AutocompleteInput: React.FC<{
   suggestions: SystemUser[];
   onSelect: (user: SystemUser) => void;
   error?: string;
+  onFocusRequestData?: () => void;
 }> = ({
   label,
   placeholder,
@@ -39,6 +40,7 @@ const AutocompleteInput: React.FC<{
   suggestions,
   onSelect,
   error,
+  onFocusRequestData,
 }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -66,21 +68,29 @@ const AutocompleteInput: React.FC<{
           onQueryChange(e.target.value);
           setShowSuggestions(true);
         }}
-        onFocus={() => setShowSuggestions(true)}
+        onFocus={async () => {
+          setShowSuggestions(true);
+          // minta data default (q="") saat focus kalau disuplai dari parent
+          if (onFocusRequestData) await onFocusRequestData();
+        }}
         onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
       />
-      {showSuggestions && query && suggestions.length > 0 && (
+      {showSuggestions && (
         <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-40 overflow-y-auto">
-          {suggestions.map((user) => (
-            <li
-              key={user.NOREG}
-              onMouseDown={() => handleSelect(user)}
-              className="px-3 py-2 cursor-pointer hover:bg-blue-100"
-            >
-              {user.NOREG} - {user.PERSONAL_NAME}
-            </li>
-          ))}
+          {suggestions.length === 0 ? (
+            <li className="px-3 py-2 text-gray-500">No results</li>
+          ) : (
+            suggestions.map((user) => (
+              <li
+                key={user.NOREG}
+                onMouseDown={() => handleSelect(user)}
+                className="px-3 py-2 cursor-pointer hover:bg-blue-100"
+              >
+                {user.NOREG} - {user.PERSONAL_NAME}
+              </li>
+            ))
+          )}
         </ul>
       )}
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}{" "}
@@ -103,7 +113,7 @@ const UserDetailsDisplay: React.FC<{ user: SystemUser | null }> = ({
       <p className="truncate">
         Division :{" "}
         <span className="font-semibold text-gray-800">
-          {user?.DIVISION_NAME || "-"}
+          {user?.DIVISION_ID || "-"}
         </span>
       </p>
       <p className="truncate">
@@ -113,7 +123,7 @@ const UserDetailsDisplay: React.FC<{ user: SystemUser | null }> = ({
       <p className="truncate">
         Department :{" "}
         <span className="font-semibold text-gray-800">
-          {user?.DEPARTEMENT_NAME || "-"}
+          {user?.DEPARTMENT_ID || "-"}
         </span>
       </p>
     </div>
@@ -314,15 +324,49 @@ const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
   const debouncedCustQ = useDebouncedValue(custodianQuery, 300);
   const debouncedSecurityCenterQ = useDebouncedValue(securityCenterQuery, 300);
 
+  // OWNER
   useEffect(() => {
-    if (!debouncedOwnerQ) {
-      setOwnerSuggestions([]);
-      return;
-    }
-    getSystemUsersApi({ q: debouncedOwnerQ, limit: 100 })
+    // selalu fetch: kalau debounced empty => ambil default top list
+    const q = debouncedOwnerQ?.trim() ?? "";
+    getSystemUsersApi({ q, limit: 1000 })
       .then((res) => setOwnerSuggestions(res.data ?? []))
       .catch(() => setOwnerSuggestions([]));
   }, [debouncedOwnerQ]);
+
+  // CUSTODIAN
+  useEffect(() => {
+    const q = debouncedCustQ?.trim() ?? "";
+    getSystemUsersApi({ q, limit: 1000 })
+      .then((res) => setCustodianSuggestions(res.data ?? []))
+      .catch(() => setCustodianSuggestions([]));
+  }, [debouncedCustQ]);
+
+  // ===== di dalam AddApplicationModal component =====
+
+  // helper fetch user
+  const fetchUsers = async (q: string, limit = 100) => {
+    try {
+      const res = await getSystemUsersApi({ q, limit });
+      return res.data ?? [];
+    } catch {
+      return [];
+    }
+  };
+
+  // onFocus fetchers
+  const ensureOwnerOptions = async () => {
+    if (ownerSuggestions.length === 0 || ownerQuery.trim() === "") {
+      const data = await fetchUsers("");
+      setOwnerSuggestions(data);
+    }
+  };
+
+  const ensureCustodianOptions = async () => {
+    if (custodianSuggestions.length === 0 || custodianQuery.trim() === "") {
+      const data = await fetchUsers("");
+      setCustodianSuggestions(data);
+    }
+  };
 
   useEffect(() => {
     if (!debouncedCustQ) {
@@ -334,13 +378,23 @@ const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
       .catch(() => setCustodianSuggestions([]));
   }, [debouncedCustQ]);
 
+  // 1) helper optional biar rapi
+  async function fetchSecurityCenters(q: string) {
+    try {
+      const res = await getSecurityCentersApi({ q, limit: 100 });
+      setSecurityCenterOptions(res.data ?? []);
+    } catch {
+      setSecurityCenterOptions([]);
+    }
+  }
+
   // Ambil security centers sekali (atau saat input focus)
   useEffect(() => {
     // optional: kalau input kosong, kosongkan list (atau fetch top 10)
-    if (!debouncedSecurityCenterQ.trim()) {
-      setSecurityCenterOptions([]);
-      return;
-    }
+    // if (!debouncedSecurityCenterQ.trim()) {
+    //   setSecurityCenterOptions([]);
+    //   return;
+    // }
 
     getSecurityCentersApi({ q: debouncedSecurityCenterQ, limit: 100 })
       .then((res) => setSecurityCenterOptions(res.data ?? []))
@@ -509,6 +563,7 @@ const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
               setOwnerQuery(user.NOREG);
               clearError("owner");
             }}
+            onFocusRequestData={ensureOwnerOptions}
             // error={errors.owner}
           />
           <UserDetailsDisplay user={selectedOwner} />
@@ -528,6 +583,7 @@ const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
               setCustodianQuery(user.NOREG);
               clearError("custodian");
             }}
+            onFocusRequestData={ensureCustodianOptions}
             // error={errors.custodian}
           />
           <UserDetailsDisplay user={selectedCustodian} />
@@ -549,7 +605,12 @@ const AddApplicationModal: React.FC<AddApplicationModalProps> = ({
                 setSelectedSecurityCenter("");
                 setShowSecuritySuggestions(true);
               }}
-              onFocus={() => setShowSecuritySuggestions(true)}
+              onFocus={async () => {
+                setShowSecuritySuggestions(true);
+                if (securityCenterOptions.length === 0) {
+                  await fetchSecurityCenters("");
+                }
+              }}
               onBlur={() =>
                 setTimeout(() => setShowSecuritySuggestions(false), 200)
               }
