@@ -3,6 +3,13 @@ import { applicationService as svc } from "./application.service.js";
 import { ApplicationCreateDTO, ApplicationUpdateDTO } from "../../../types/application.js";
 
 export const applicationController = {
+  activeList: (_app: FastifyInstance) =>
+    async (req: FastifyRequest<{}>, reply: FastifyReply) => {
+      const result = await svc.activeList();
+      return reply.send({
+        data: result.data,
+      });
+    },
   list: (_app: FastifyInstance) =>
     async (req: FastifyRequest<{
       Querystring: {

@@ -3,7 +3,7 @@ import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import fastifyJWT from "@fastify/jwt";
 import rateLimit from "@fastify/rate-limit";
-
+import fastifyCookie from "@fastify/cookie";
 import { env } from "./config/env";
 import { securityPlugin } from "./plugins/securityHeaders";
 import { requestIdPlugin } from "./core/observability/requestId";
@@ -14,6 +14,7 @@ import prisma from "./plugins/prisma";
 import { indexRoutes } from "./api/index.routes";
 import { SECURITY_CONFIG } from "./config/security";
 import authorize from "./api/common/middleware/authorize";
+import requestContextPlugin from "./plugins/requestContext"
 
 export async function buildApp() {
   const app = Fastify({
@@ -24,7 +25,7 @@ export async function buildApp() {
       },
     },
   });
-
+  globalThis.app = app;
   // ==========================================
   // 🔒 1️⃣ Register Security & Utility Plugins
   // ==========================================
@@ -52,12 +53,21 @@ export async function buildApp() {
   // 🧠 Tambahkan Helmet setelah CORS
   await app.register(helmet, { contentSecurityPolicy: false });
 
+  await app.register(fastifyCookie);
+
   // JWT
-  await app.register(fastifyJWT, { secret: env.JWT_SECRET });
+  await app.register(fastifyJWT, {
+    secret: env.JWT_SECRET,
+    cookie: {
+      cookieName: "access",
+      signed: false,        // ← WAJIB ditambahkan
+    },
+  });
 
   // Plugin internal
   await app.register(requestIdPlugin);
   await app.register(securityPlugin);
+  await app.register(requestContextPlugin);
 
   // Custom Error Handler (optional)
   // app.setErrorHandler(errorHandler);

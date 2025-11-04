@@ -14,6 +14,10 @@ export async function applicationRoutes(app: FastifyInstance) {
     { schema: listApplicationSchema },
     applicationController.list(app)
   );
+  app.get(
+    "/masters/dropdown",
+    applicationController.activeList(app)
+  );
 
   // DETAIL: GET /application/:id
   app.get(

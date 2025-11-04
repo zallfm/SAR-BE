@@ -17,12 +17,19 @@ import {
 } from "../modules/batch/notif_history.service";
 
 type UarSystemOwner = TB_R_UAR_SYSTEM_OWNER;
-
 export async function runUarSOWorker(app: FastifyInstance) {
   app.log.info("Checking for UAR schedule jobs...");
   const now = new Date();
 
   try {
+    // *** ADDED: Check for the second database client ***
+    if (!app.prisma) {
+      app.log.error(
+        "Prisma client 'prisma' (for TB_H_EMPLOYEE) is not initialized."
+      );
+      return;
+    }
+
     const runningSchedules = await scheduleService.getRunningUarSchedules(app);
     let totalNewUarTasks = 0;
     console.log("runningSchedules", runningSchedules);
@@ -50,6 +57,7 @@ export async function runUarSOWorker(app: FastifyInstance) {
         ...new Set(accessMappings.map((m) => m.NOREG).filter(Boolean)),
       ] as string[];
 
+      // *** BUG FIX: Query prisma.TB_H_EMPLOYEE, not prisma.TB_M_EMPLOYEE ***
       const employeeData = await app.prisma.tB_M_EMPLOYEE.findMany({
         where: {
           NOREG: { in: noregs },
@@ -67,15 +75,15 @@ export async function runUarSOWorker(app: FastifyInstance) {
         }
       }
       app.log.info(
-        `Enriched ${employeeMap.size} employee records from prisma_sc.`
+        `Enriched ${employeeMap.size} employee records from prisma.`
       );
 
       const uarPeriod = `${now.getFullYear()}${(now.getMonth() + 1)
         .toString()
         .padStart(2, "0")}`;
-      const uarId = `UAR_${uarPeriod.substring(2)}_${
-        schedule.APPLICATION_ID
-      }`.substring(0, 20);
+      // *** BUG FIX: Shortened UAR_ID to fit NVarChar(20) ***
+      const uarId = `UAR_${uarPeriod.substring(2)}_${schedule.APPLICATION_ID
+        }`.substring(0, 20);
       const newUarTasks: Prisma.TB_R_UAR_SYSTEM_OWNERCreateManyInput[] =
         accessMappings.map((mapping) => {
           const employee = employeeMap.get(mapping.NOREG ?? "");
@@ -86,12 +94,10 @@ export async function runUarSOWorker(app: FastifyInstance) {
             USERNAME: mapping.USERNAME,
             NOREG: mapping.NOREG,
             NAME: `${mapping.FIRST_NAME} ${mapping.LAST_NAME}`,
-
             POSITION_NAME: employee?.POSITION_NAME ?? null,
             DIVISION_ID: employee?.DIVISION_ID ?? null,
             DEPARTMENT_ID: employee?.DEPARTMENT_ID ?? null,
             SECTION_ID: employee?.SECTION_ID ?? null,
-
             ORG_CHANGED_STATUS: null,
             COMPANY_CD: mapping.COMPANY_CD,
             APPLICATION_ID: mapping.APPLICATION_ID,
@@ -135,15 +141,18 @@ export async function runUarSOWorker(app: FastifyInstance) {
             CHANGED_DT: now,
           },
         });
-        app.log.info(`Updated source mappings for ${schedule.APPLICATION_ID}.`);
+        app.log.info(
+          `Updated source mappings for ${schedule.APPLICATION_ID}.`
+        );
       }
 
+      // This function now correctly groups tasks by approver
       await notificationService.triggerInitialNotifications(
         app,
         newUarTasks.map((task) => ({
           ...task,
           NOREG: task.NOREG ?? null,
-        })) as unknown as any[]
+        })) as unknown as TB_R_UAR_SYSTEM_OWNER[]
       );
     }
 
@@ -183,7 +192,8 @@ export async function runUarDailyReminderWorker(app: FastifyInstance) {
             DATEDIFF(DAY, uar.CREATED_DT, GETDATE()) AS DAYS_PENDING,
             (
                 SELECT TOP 1 h.ITEM_CODE
-                FROM TB_R_NOTIFICATION_HISTORY h
+                -- *** BUG FIX: Use correct history table ***
+                FROM TB_H_NOTIFICATION h
                 WHERE h.REQUEST_ID = (uar.UAR_ID + uar.USERNAME + uar.ROLE_ID)
                 AND h.ITEM_CODE LIKE 'UAR_REMINDER_%'
                 ORDER BY h.SENT_DT DESC
@@ -193,7 +203,7 @@ export async function runUarDailyReminderWorker(app: FastifyInstance) {
         JOIN
             TB_M_APPLICATION app ON uar.APPLICATION_ID = app.APPLICATION_ID
         WHERE
-            uar.SO_APPROVAL_STATUS = '0' -- '0' = Pending
+            uar.SO_APPROVAL_STATUS = '0'
             AND DATEDIFF(DAY, uar.CREATED_DT, GETDATE()) BETWEEN 1 AND 7;
     `;
 
@@ -209,6 +219,7 @@ export async function runUarDailyReminderWorker(app: FastifyInstance) {
       );
 
       if (nextReminderCode) {
+        // *** NOTE: Using notificationService as requested ***
         await notificationService.queueNotification(app, {
           REQUEST_ID: `${task.UAR_ID}${task.USERNAME}${task.ROLE_ID}`,
           ITEM_CODE: nextReminderCode,
@@ -290,33 +301,28 @@ export async function runPaPusherWorker(app: FastifyInstance) {
       },
     });
 
-    // --- 4. Process Each Job ---
     for (const job of candidates) {
       let finalPayload: Record<string, any> = {};
 
       try {
-        // --- 5. Enrich: Get Recipient Email/Teams ID (INLINE) ---
         let recipientEmail: string | null = null;
-        let recipientTeamsId: string | null = null; // Assuming Teams ID is email
+        let recipientTeamsId: string | null = null;
 
         if (job.ITEM_CODE.startsWith("PIC_")) {
-          // Logic 1: Get PIC UAR Email
           const pic = await app.prisma.tB_M_UAR_PIC.findFirst({
             where: {
-              DIVISION_ID: parseInt(job.APPROVER_ID), // APPROVER_ID is Division ID
+              DIVISION_ID: parseInt(job.APPROVER_ID),
             },
           });
           recipientEmail = pic?.MAIL ?? null;
           recipientTeamsId = pic?.MAIL ?? null;
         } else {
-          // Logic 2: Get Employee (System Owner/Div User) Email
           if (!app.prisma) {
-            throw new Error("Prisma client 'prisma_sc' is not available.");
+            throw new Error("Prisma client 'prisma' is not available.");
           }
           const employee = await app.prisma.tB_M_EMPLOYEE.findFirst({
             where: {
-              NOREG: job.APPROVER_ID, // APPROVER_ID is NOREG
-              VALID_TO: { gte: new Date() },
+              NOREG: job.APPROVER_ID,
             },
             orderBy: {
               VALID_TO: "desc",
@@ -332,7 +338,6 @@ export async function runPaPusherWorker(app: FastifyInstance) {
           );
         }
 
-        // --- 6. Enrich: Get Templates from TB_M_TEMPLATE (INLINE) ---
         const allTemplates = await app.prisma.tB_M_TEMPLATE.findMany({
           where: {
             ITEM_CODE: job.ITEM_CODE,
@@ -350,7 +355,13 @@ export async function runPaPusherWorker(app: FastifyInstance) {
           );
         }
 
-        // --- 7. Build Final Payload for Power Automate ---
+        // --- *** START OF EDITED LINES *** ---
+
+        // 7. Build Final Payload for Power Automate
+        // The 'LINK_DETAIL' field now contains the task count (e.g., "20")
+        // for grouped notifications. Default to 1 for reminders.
+        const taskCount = parseInt(job.LINK_DETAIL ?? "1", 10) || 1;
+
         finalPayload = {
           recipientEmail: recipientEmail,
           recipientTeamsId: recipientTeamsId,
@@ -362,7 +373,9 @@ export async function runPaPusherWorker(app: FastifyInstance) {
           itemCode: job.ITEM_CODE,
           requestId: job.REQUEST_ID,
           dueDate: job.DUE_DATE ?? "null",
+          taskCount: taskCount, // <-- THIS IS THE NEWLY ADDED LINE
         };
+        // --- *** END OF EDITED LINES *** ---
 
         console.log("notifResponse", finalPayload);
 
@@ -384,7 +397,7 @@ export async function runPaPusherWorker(app: FastifyInstance) {
             ID: job.ID,
             REQUEST_ID: job.REQUEST_ID,
             ITEM_CODE: job.ITEM_CODE,
-            CHANNEL: "EMAIL_TEAMS_PA", // Log the new combined channel
+            CHANNEL: "EMAIL_TEAMS_PA",
             SYSTEM: "SAR_DB_WORKER",
             RECIPIENT: job.APPROVER_ID,
             STATUS: "SENT_TO_PA",
@@ -394,14 +407,12 @@ export async function runPaPusherWorker(app: FastifyInstance) {
           },
         });
 
-        // --- 10. Mark candidate as SENT ---
         await app.prisma.tB_T_CANDIDATE_NOTIFICATION.update({
           where: { ID: job.ID },
           data: { STATUS: "SENT" },
         });
         app.log.info(`Successfully processed and pushed job ID: ${job.ID}`);
       } catch (jobError: any) {
-        // --- 11. Handle Job Failure ---
         app.log.error(jobError, `Failed to process job ID: ${job.ID}`);
         await app.prisma.tB_T_CANDIDATE_NOTIFICATION.update({
           where: { ID: job.ID },
@@ -426,17 +437,27 @@ export async function triggerCompletionNotification(
   );
 
   try {
-    if (!completedTask.NOREG) {
-      app.log.warn("Cannot send completion notification: NOREG is missing.");
+    // *** BUG FIX: Send to System Owner, not the end user ***
+    // 1. Find the application for this task
+    const appInfo = await app.prisma.tB_M_APPLICATION.findUnique({
+      where: { APPLICATION_ID: completedTask.APPLICATION_ID! },
+      select: { NOREG_SYSTEM_OWNER: true },
+    });
+
+    const recipientNoreg = appInfo?.NOREG_SYSTEM_OWNER;
+
+    if (!recipientNoreg) {
+      app.log.warn(`Cannot find NOREG_SYSTEM_OWNER for APP ID: ${completedTask.APPLICATION_ID}. Skipping completion notification.`);
       return;
     }
 
+    // 2. Queue the notification for the System Owner
     await notificationService.queueNotification(
       app,
       {
         REQUEST_ID: `${completedTask.UAR_ID}${completedTask.USERNAME}${completedTask.ROLE_ID}`,
         ITEM_CODE: "UAR_COMPLETED",
-        APPROVER_ID: completedTask.NOREG,
+        APPROVER_ID: recipientNoreg, // The System Owner's NOREG
         DUE_DATE: null,
       },
       false
@@ -475,15 +496,13 @@ export async function runUarSOSyncWorker(app: FastifyInstance) {
       results.forEach((result, index) => {
         if (result.status === "fulfilled") {
           app.log.info(
-            `Successfully fetched ${result.value.length} records from DB${
-              index + 1
+            `Successfully fetched ${result.value.length} records from DB${index + 1
             }`
           );
           allSourceData = allSourceData.concat(result.value);
         } else {
           app.log.error(
-            `Failed to fetch from DB ${index + 1}: ${
-              result.reason?.message || result.reason
+            `Failed to fetch from DB ${index + 1}: ${result.reason?.message || result.reason
             }`
           );
         }
@@ -497,11 +516,11 @@ export async function runUarSOSyncWorker(app: FastifyInstance) {
       await new Promise((resolve) => setTimeout(resolve, 300));
     }
     app.log.info(
-      `Processed ${
-        pendingSchedules.length
+      `Processed ${pendingSchedules.length
       } UAR SO Sync schedules at ${now.toISOString()}`
     );
   } catch (error) {
     app.log.error(error, "A fatal error occurred during the run.");
   }
 }
+

@@ -23,6 +23,8 @@ export type ListLogsQuery = {
   order?: any;
 };
 export interface LogDetail {
+  MESSAGE_ID: any;
+  MESSAGE_TYPE: any;
   ID: number;
   PROCESS_ID: string;
   MESSAGE_DATE_TIME: string;

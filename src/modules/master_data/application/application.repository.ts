@@ -47,6 +47,20 @@ async function getDbNow(): Promise<Date> {
 }
 
 export const applicationRepository = {
+  async activeList() {
+    const [dataRaw] = await Promise.all([
+      prisma.tB_M_APPLICATION.findMany({
+        where: {
+          APPLICATION_STATUS: "0"
+        },
+
+      }),
+    ]);
+    const data = dataRaw.map(mapRowDbToDto);
+    return { data };
+  },
+
+
   // List aplikasi dengan pencarian, sorting, dan pagination
   async list(params: {
     page: number;
@@ -91,6 +105,47 @@ export const applicationRepository = {
     return row ? mapRowDbToDto(row) : null;
   },
 
+  async existsByOwnerNoreg(ownerNoreg: string) {
+    const noreg = String(ownerNoreg).trim().toUpperCase();
+    const count = await prisma.tB_M_APPLICATION.count({
+      where: { NOREG_SYSTEM_OWNER: noreg },
+    });
+    return count > 0;
+  },
+
+  async existsByOwnerNoregExceptApp(appId: string, ownerNoreg: string) {
+    const noreg = String(ownerNoreg).trim().toUpperCase();
+    const id = String(appId).trim().toUpperCase();
+    const count = await prisma.tB_M_APPLICATION.count({
+      where: {
+        APPLICATION_ID: { not: id },
+        NOREG_SYSTEM_OWNER: noreg,
+      },
+    });
+    return count > 0;
+  },
+  async existsByName(name: string) {
+    const appName = String(name).trim().toUpperCase();
+    const count = await prisma.tB_M_APPLICATION.count({
+      where: {
+        APPLICATION_NAME: appName,
+      },
+    });
+    return count > 0;
+  },
+
+  async existsByNameExceptApp(appId: string, name: string) {
+    const appName = String(name).trim().toUpperCase();
+    const appIdNorm = String(appId).trim().toUpperCase();
+    const count = await prisma.tB_M_APPLICATION.count({
+      where: {
+        APPLICATION_ID: { not: appIdNorm },
+        APPLICATION_NAME: appName,
+      },
+    });
+    return count > 0;
+  },
+
   // Alias pencarian code (identik dengan findById di model ini)
   async findByCode(code: string) {
     const row = await prisma.tB_M_APPLICATION.findUnique({
@@ -105,6 +160,7 @@ export const applicationRepository = {
   // - CREATED_DT/CHANGED_DT bertipe Date pada SQL Server; Prisma akan memetakannya
   async create(payload: Omit<ApplicationRow, "CREATED_BY" | "CREATED_DT" | "CHANGED_BY" | "CHANGED_DT">, auditUser: string) {
     const now = await getDbNow();
+    console.log("payloadss", payload)
     const created = await prisma.tB_M_APPLICATION.create({
       data: {
         APPLICATION_ID: payload.APPLICATION_ID,
@@ -121,6 +177,7 @@ export const applicationRepository = {
         CHANGED_DT: now as unknown as any,
       },
     });
+    console.log("createds", created)
     return mapRowDbToDto(created);
   },
 
@@ -159,6 +216,7 @@ export const applicationRepository = {
       orderBy: { VALID_TO: "desc" },
       select: {
         NOREG: true,
+        DIVISION_ID: true,
         PERSONNEL_NAME: true,
         DIVISION_NAME: true,
         MAIL: true,
@@ -168,6 +226,7 @@ export const applicationRepository = {
     if (!row) return null;
     return {
       NOREG: row.NOREG,
+      DIVISION_ID: row.DIVISION_ID ?? undefined,
       PERSONAL_NAME: row.PERSONNEL_NAME ?? "",
       DIVISION_NAME: row.DIVISION_NAME ?? "",
       MAIL: row.MAIL ?? "",
@@ -185,11 +244,11 @@ export const applicationRepository = {
 
     const where = q
       ? {
-          OR: [
-            { NOREG: { contains: q } },
-            { PERSONNEL_NAME: { contains: q } },
-          ],
-        }
+        OR: [
+          { NOREG: { contains: q } },
+          { PERSONNEL_NAME: { contains: q } },
+        ],
+      }
       : undefined;
 
     const [rows, total] = await Promise.all([
@@ -200,11 +259,17 @@ export const applicationRepository = {
         skip: offset,
         take: limit,
         select: {
+          DIVISION_ID: true,
           NOREG: true,
           PERSONNEL_NAME: true,
           DIVISION_NAME: true,
           MAIL: true,
           DEPARTMENT_NAME: true,
+          TB_M_DIVISION: {
+            select: {
+              DIVISION_NAME: true,
+            },
+          },
         },
       }),
       prisma.tB_M_EMPLOYEE.count({ where }),
@@ -212,14 +277,15 @@ export const applicationRepository = {
 
     const items: SystemUser[] = rows.map((r) => ({
       NOREG: r.NOREG,
+      DIVISION_ID: r.DIVISION_ID,
       PERSONAL_NAME: r.PERSONNEL_NAME ?? "",
-      DIVISION_NAME: r.DIVISION_NAME ?? "",
+      DIVISION_NAME: r.TB_M_DIVISION?.DIVISION_NAME ?? "",
       MAIL: r.MAIL ?? "",
       DEPARTEMENT_NAME: r.DEPARTMENT_NAME ?? "",
       canBeOwner: true,
       canBeCustodian: true,
     }));
-
+    // console.log("items", items)
     return { items, total };
   },
   // Validasi Security Center: minimal sudah pernah digunakan oleh satu aplikasi

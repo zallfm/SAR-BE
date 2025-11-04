@@ -4,6 +4,8 @@ import { ApplicationError } from "../../../core/errors/applicationError";
 import { ERROR_CODES } from "../../../core/errors/errorCodes";
 import { ERROR_MESSAGES } from "../../../core/errors/errorMessages";
 import { MasterSystem } from "../../../types/master_config";
+import { publishMonitoringLog } from "../../log_monitoring/log_publisher";
+import { currentRequestId, currentUserId } from "../../../core/requestContext";
 
 type SystemWhereInput = Prisma.TB_M_SYSTEMWhereInput;
 
@@ -26,7 +28,7 @@ export const systemService = {
       systemType,
       systemCode,
       sortBy = "CREATED_DT",
-      order = "asc",
+      order = "desc",
     } = query;
 
     const pageNum = Number(page) || 1;
@@ -50,7 +52,7 @@ export const systemService = {
     const orderBy: Prisma.TB_M_SYSTEMOrderByWithRelationInput = {
       [sortBy]: order,
     };
-
+    console.log("orderbay", orderBy)
     try {
       const [rawData, total] = await app.prisma.$transaction([
         app.prisma.tB_M_SYSTEM.findMany({
@@ -73,7 +75,7 @@ export const systemService = {
       const totalPages = Math.max(1, Math.ceil(total / limitNum));
 
       return {
-        data, 
+        data,
         meta: {
           page: pageNum,
           limit: limitNum,
@@ -101,12 +103,21 @@ export const systemService = {
       const newData = await app.prisma.tB_M_SYSTEM.create({
         data: {
           ...dataForDb,
-          CREATED_BY: "Hesti",
           CREATED_DT: new Date(),
         },
       });
 
       const { VALUE_TIME, ...rest } = newData;
+      const userId = currentUserId();
+      const reqId = currentRequestId()
+      publishMonitoringLog(globalThis.app as any, {
+        userId,
+        module: "SO",
+        action: "SYSTEM_MASTER_CREATE",
+        status: "Success",
+        description: `Create system master ${newData.SYSTEM_TYPE}`,
+        location: "/applications"
+      }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
       return {
         ...rest,
         VALUE_TIME: VALUE_TIME ? convertTimeToString(VALUE_TIME) : null,
@@ -136,7 +147,6 @@ export const systemService = {
 
     const dataForUpdate: any = {
       ...otherData,
-      CHANGED_BY: "Hesti",
       CHANGED_DT: new Date(),
     };
 
@@ -163,6 +173,16 @@ export const systemService = {
       });
 
       const { VALUE_TIME, ...rest } = updatedSystem;
+      const userId = currentUserId();
+      const reqId = currentRequestId()
+      publishMonitoringLog(globalThis.app as any, {
+        userId,
+        module: "SO",
+        action: "SYSTEM_MASTER_UPDATE",
+        status: "Success",
+        description: `Update system master ${updatedSystem.SYSTEM_TYPE}`,
+        location: "/applications"
+      }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
       return {
         ...rest,
         VALUE_TIME: VALUE_TIME ? convertTimeToString(VALUE_TIME) : null,
@@ -211,6 +231,16 @@ export const systemService = {
       });
 
       const { VALUE_TIME, ...rest } = deletedSystem;
+      const userId = currentUserId();
+      const reqId = currentRequestId()
+      publishMonitoringLog(globalThis.app as any, {
+        userId,
+        module: "SO",
+        action: "SYSTEM_MASTER_DELETE",
+        status: "Success",
+        description: `Delete system master ${deletedSystem.SYSTEM_TYPE}`,
+        location: "/applications"
+      }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
       return {
         ...rest,
         VALUE_TIME: VALUE_TIME ? convertTimeToString(VALUE_TIME) : null,

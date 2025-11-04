@@ -18,23 +18,23 @@ function eligibleAsCustodian(user: SystemUser) {
 
 // dipanggil saat CREATE dan UPDATE
 export function validateOwnerAndCustodian(noregOwner: string, noregCust: string) {
-  if (noregOwner === noregCust) {
-    throw appError("VAL-ERR-302", "Owner and Custodian must be different users");
-  }
+  // if (noregOwner === noregCust) {
+  //   throw appError("VAL-ERR-302", "Owner and Custodian must be different users");
+  // }
 
-  const owner = findUser(noregOwner);
-  const cust  = findUser(noregCust);
+  // const owner = findUser(noregOwner);
+  // const cust  = findUser(noregCust);
 
-  if (!owner) throw appError("APP-ERR-101", "Owner user not found");
-  if (!cust)  throw appError("APP-ERR-101", "Custodian user not found");
+  // if (!owner) throw appError("APP-ERR-101", "Owner user not found");
+  // if (!cust)  throw appError("APP-ERR-101", "Custodian user not found");
 
-  if (!eligibleAsOwner(owner)) {
-    throw appError("VAL-ERR-302", "Selected Owner is not eligible as Owner");
-  }
+  // if (!eligibleAsOwner(owner)) {
+  //   throw appError("VAL-ERR-302", "Selected Owner is not eligible as Owner");
+  // }
 
-  if (!eligibleAsCustodian(cust)) {
-    throw appError("VAL-ERR-302", "Selected Custodian is not eligible as Custodian");
-  }
+  // if (!eligibleAsCustodian(cust)) {
+  //   throw appError("VAL-ERR-302", "Selected Custodian is not eligible as Custodian");
+  // }
 }
 
 function appError(code: string, message: string) {

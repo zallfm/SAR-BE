@@ -1,5 +1,7 @@
 import { ApplicationError } from "../../../core/errors/applicationError.js";
 import { ERROR_CODES } from "../../../core/errors/errorCodes.js";
+import { currentRequestId, currentUserId } from "../../../core/requestContext.js";
+import { publishMonitoringLog } from "../../log_monitoring/log_publisher.js";
 import { applicationRepository as repo } from "./application.repository.js";
 import { validateOwnerAndCustodian } from "./application.validator.js";
 
@@ -16,6 +18,10 @@ export const applicationService = {
     if (s === "active" || s === "aktif" || s === "a" || s === "0") return "Active";
     if (s === "inactive" || s === "inaktif" || s === "i" || s === "1") return "Inactive";
     return undefined;
+  },
+
+  async activeList() {
+    return repo.activeList()
   },
   async list(params: {
     page: number;
@@ -57,13 +63,15 @@ export const applicationService = {
       throw new ApplicationError(
         ERROR_CODES.VAL_DUPLICATE_ENTRY,
         "APPLICATION_ID already exists",
-        { APPLICATION_ID: input.APPLICATION_ID },
+        { errors: { APPLICATION_ID: { code: "ALREADY_EXISTS", message: "APPLICATION_ID already exists", value: input.APPLICATION_ID } } },
+        // { APPLICATION_ID: input.APPLICATION_ID },
         undefined,
         400
       )
     }
 
     // 2) Validate owner/custodian existence + eligibility
+    // console.log("inputss", input)
     validateOwnerAndCustodian(input.NOREG_SYSTEM_OWNER, input.NOREG_SYSTEM_CUST);
     const owner = await repo.getUserByNoreg(input.NOREG_SYSTEM_OWNER);
     if (!owner) {
@@ -73,26 +81,44 @@ export const applicationService = {
     if (!cust) {
       throw new ApplicationError(ERROR_CODES.APP_INVALID_DATA, "System Custodian NOREG not found");
     }
-
-    if (!owner.canBeOwner) {
-      throw new ApplicationError(ERROR_CODES.VAL_INVALID_FORMAT, "Selected Owner is not eligible as Owner");
+    const nameUsed = await repo.existsByName(input.APPLICATION_NAME);
+    if (nameUsed) {
+      throw new ApplicationError(
+        ERROR_CODES.VAL_DUPLICATE_ENTRY,
+        "APPLICATION_NAME already exists",
+        { errors: { APPLICATION_NAME: { code: "APPLICATION_NAME already existst", value: input.APPLICATION_NAME } } },
+        // { APPLICATION_NAME: input.APPLICATION_NAME },
+        undefined,
+        400
+      );
     }
-    if (!cust.canBeCustodian) {
-      throw new ApplicationError(ERROR_CODES.VAL_INVALID_FORMAT, "Selected Custodian is not eligible as Custodian");
-    }
-
-    // Optional: prevent same person for both roles
-    // console.log("owner.NOREG", owner.NOREG)
-    // console.log("cust.NOREG", cust.NOREG)
-    if (owner.NOREG === cust.NOREG) {
-      // console.log("masuk nih")
-      throw new ApplicationError(ERROR_CODES.VAL_INVALID_FORMAT, "Owner and Custodian must be different users");
-    }
+    // const ownerReg = String(owner.NOREG).trim().toUpperCase();
+    // const alreadyUsed = await repo.existsByOwnerNoreg(ownerReg);
+    // if (alreadyUsed) {
+    //   throw new ApplicationError(
+    //     ERROR_CODES.VAL_DUPLICATE_ENTRY,
+    //     "This System Owner is already assigned to another applicationtoh",
+    //     { errors: { NOREG_SYSTEM_OWNER: { code: "This System Owner is already assigned to another applicationtoh", value: ownerReg } } },
+    //     // { NOREG_SYSTEM_OWNER: ownerReg },
+    //     undefined,
+    //     400
+    //   );
+    // }
 
     // 3) Security center validity
     if (!(await repo.isValidSecurityCenter(input.SECURITY_CENTER))) {
       throw new ApplicationError(ERROR_CODES.APP_INVALID_DATA, "Invalid Security Center");
     }
+    const userId = currentUserId();
+    const reqId = currentRequestId()
+    publishMonitoringLog(globalThis.app as any, {
+      userId,
+      module: "APPLI",
+      action: "APPLICATION_CREATE",
+      status: "Success",
+      description: `Create application ${input.APPLICATION_NAME}`,
+      location: "/applications"
+    }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
 
     // Koersi status jika FE kirim varian lain
     const norm = this.normalizeStatus(input);
@@ -128,12 +154,34 @@ export const applicationService = {
       if (!owner) {
         throw new ApplicationError(ERROR_CODES.APP_INVALID_DATA, "System Owner NOREG not found");
       }
-      if (!owner.canBeOwner) {
-        throw new ApplicationError(ERROR_CODES.VAL_INVALID_FORMAT, "Selected Owner is not eligible as Owner");
+      // if (!owner.canBeOwner) {
+      //   throw new ApplicationError(ERROR_CODES.VAL_INVALID_FORMAT, "Selected Owner is not eligible as Owner");
+      // }
+      if (updates.APPLICATION_NAME) {
+        const nameUsed = await repo.existsByNameExceptApp(id, updates.APPLICATION_NAME);
+        if (nameUsed) {
+          throw new ApplicationError(
+            ERROR_CODES.VAL_DUPLICATE_ENTRY,
+            "APPLICATION_NAME already exists",
+            { errors: { APPLICATION_NAME: { code: "APPLICATION_NAME already existst", value: updates.APPLICATION_NAME } } },
+            // { APPLICATION_NAME: input.APPLICATION_NAME },
+            undefined,
+            400
+          );
+        }
       }
-      if (updates.NOREG_SYSTEM_CUST && updates.NOREG_SYSTEM_CUST === updates.NOREG_SYSTEM_OWNER) {
-        throw new ApplicationError(ERROR_CODES.VAL_INVALID_FORMAT, "Owner and Custodian must be different users");
-      }
+      // const ownerReg = String(owner.NOREG).trim().toUpperCase();
+      // const usedByOther = await repo.existsByOwnerNoregExceptApp(id, ownerReg);
+      // if (usedByOther) {
+      //   throw new ApplicationError(
+      //     ERROR_CODES.VAL_DUPLICATE_ENTRY,
+      //     "This System Owner is already assigned to another applicationtoh",
+      //     { errors: { NOREG_SYSTEM_OWNER: { code: "This System Owner is already assigned to another applicationtoh", value: ownerReg } } },
+      //     // { NOREG_SYSTEM_OWNER: ownerReg },
+      //     undefined,
+      //     400
+      //   );
+      // }
     }
 
     if (updates.NOREG_SYSTEM_CUST) {
@@ -141,9 +189,9 @@ export const applicationService = {
       if (!cust) {
         throw new ApplicationError(ERROR_CODES.APP_INVALID_DATA, "System Custodian NOREG not found");
       }
-      if (!cust.canBeCustodian) {
-        throw new ApplicationError(ERROR_CODES.VAL_INVALID_FORMAT, "Selected Custodian is not eligible as Custodian");
-      }
+      // if (!cust.canBeCustodian) {
+      //   throw new ApplicationError(ERROR_CODES.VAL_INVALID_FORMAT, "Selected Custodian is not eligible as Custodian");
+      // }
     }
 
     if (updates.SECURITY_CENTER) {
@@ -160,6 +208,16 @@ export const applicationService = {
     if (!updated) {
       throw new ApplicationError(ERROR_CODES.APP_UPDATE_FAILED, "Failed to update application");
     }
+    const userId = currentUserId();
+    const reqId = currentRequestId()
+    publishMonitoringLog(globalThis.app as any, {
+      userId,
+      module: "APPLI",
+      action: "APPLICATION_UPDATE",
+      status: "Success",
+      description: `Update application ${id}`,
+      location: "/applications"
+    }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
     return updated;
   },
 

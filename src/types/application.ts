@@ -5,6 +5,7 @@
 // --- SystemUser: pemilik & custodian sistem
 export interface SystemUser {
   NOREG: string;              // Noreg unik
+  DIVISION_ID:any
   PERSONAL_NAME: string;
   DIVISION_NAME: string;
   MAIL: string;

@@ -1,5 +1,6 @@
 import { LogDetail, LogEntry } from "../../types/log_monitoring";
 import { prisma } from "../../db/prisma";
+import { Prisma } from "../../generated/prisma";
 
 type Order = "asc" | "desc";
 type SortBy = "NO" | "START_DATE" | "END_DATE";
@@ -16,6 +17,55 @@ export interface ListLogsQuery {
   sortBy?: SortBy;
   order?: Order;
 }
+
+// STATUS → MESSAGE_TYPE di master
+const statusToMsgType: Record<LogEntry["STATUS"], string> = {
+  Success: "SUC",
+  Error: "ERR",
+  Warning: "WRN",
+  InProgress: "INF",
+};
+function dayPrefix(d = new Date()) {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}${mm}${dd}`;
+}
+
+// Ambil satu baris message default untuk status tertentu
+async function resolveMessageForStatus(status: LogEntry["STATUS"]) {
+  const wantedType = statusToMsgType[status] ?? "INF";
+  const msg = await prisma.tB_M_MESSAGE.findFirst({
+    where: { MESSAGE_TYPE: wantedType },
+    orderBy: { MESSAGE_ID: "asc" }, // ambil yg pertama; bebas atur
+  });
+  if (!msg) throw new Error(`TB_M_MESSAGE not found for MESSAGE_TYPE=${wantedType}`);
+  return msg; // { MESSAGE_ID: 'MSG004', MESSAGE_TYPE: 'SUC', ... }
+}
+async function allocateProcessId(tx: Prisma.TransactionClient, baseDate: Date) {
+  const prefix = dayPrefix(baseDate);
+  const resource = `LOG_SEQ_${prefix}`;
+
+  // 1) ambil lock eksklusif (lock milik transaksi ini)
+  await tx.$executeRawUnsafe(
+    `EXEC sp_getapplock @Resource = @p1, @LockMode = 'Exclusive', @LockOwner='Transaction', @LockTimeout = 5000;`,
+    resource
+  );
+
+  // 2) baca MAX(PROCESS_ID) hari ini (pakai HOLDLOCK untuk jaga konsistensi)
+  const [row] = await tx.$queryRaw<{ last?: string }[]>`
+    SELECT MAX([PROCESS_ID]) AS [last]
+    FROM [dbo].[TB_R_LOG_H] WITH (HOLDLOCK)
+    WHERE [PROCESS_ID] LIKE ${prefix + '%'}
+  `;
+
+  const last = row?.last ?? `${prefix}00000`;
+  const nextSeq = String(Number(last.slice(-5)) + 1).padStart(5, "0");
+  const candidate = `${prefix}${nextSeq}`;
+
+  return candidate; // contoh: 2025103000005
+}
+
 
 const parseDate = (s: string): Date => {
   if (!s) return new Date();
@@ -99,11 +149,20 @@ export const logRepository = {
       ];
     }
 
+    // log_monitoring.repository.ts
     const orderBy: any = (() => {
-      if (sortBy === "NO") return { PROCESS_ID: order };
-      if (sortBy === "END_DATE") return { END_DT: order };
-      return { START_DT: order };
+      if (sortBy === "NO") {
+        // biasanya tidak dipakai untuk “terbaru”, tapi tetap konsisten
+        return [{ PROCESS_ID: order }];
+      }
+      if (sortBy === "END_DATE") {
+        // terbaru di atas + tiebreaker
+        return [{ END_DT: order }, { START_DT: order }, { PROCESS_ID: "desc" }];
+      }
+      // DEFAULT = START_DATE (terbaru di atas) + tiebreaker
+      return [{ START_DT: order }, { END_DT: order }, { PROCESS_ID: "desc" }];
     })();
+
 
     const [total, rows] = await Promise.all([
       prisma.tB_R_LOG_H.count({ where }),
@@ -161,6 +220,8 @@ export const logRepository = {
         MESSAGE_DATE_TIME: toGB(d.CREATED_DT),
         LOCATION: d.LOCATION,
         MESSAGE_DETAIL: d.MESSAGE_CONTENT,
+        MESSAGE_ID: d.MESSAGE_ID,
+        MESSAGE_TYPE: d.MESSAGE_TYPE
       }));
 
     const result: LogEntry = {
@@ -184,14 +245,13 @@ export const logRepository = {
       Warning: "W",
       InProgress: "P",
     };
+    // console.log("newLog", newLog)
 
-    // Resolve MODULE_ID and FUNCTION_ID from names if possible
+    // cari modul by ID/NAMA (tahan banting)
     const moduleRow = await prisma.tB_M_MODULE.findFirst({
-      where: { MODULE_NAME: newLog.MODULE },
+      where: { OR: [{ MODULE_ID: newLog.MODULE }, { MODULE_NAME: newLog.MODULE }] },
     });
-    if (!moduleRow) {
-      throw new Error(`MODULE_NAME not found: ${newLog.MODULE}`);
-    }
+    if (!moduleRow) throw new Error(`MODULE not found: ${newLog.MODULE}`);
 
     const functionRow = await prisma.tB_M_FUNCTION.findFirst({
       where: { MODULE_ID: moduleRow.MODULE_ID, FUNCTION_NAME: newLog.FUNCTION_NAME },
@@ -200,43 +260,53 @@ export const logRepository = {
       throw new Error(`FUNCTION_NAME not found for module ${moduleRow.MODULE_ID}: ${newLog.FUNCTION_NAME}`);
     }
 
+    // ✅ tentukan message default dari STATUS
+    const defaultMsg = await resolveMessageForStatus(newLog.STATUS);
+
     const startDt = parseDate(newLog.START_DATE);
     const endDt = newLog.END_DATE ? parseDate(newLog.END_DATE) : null;
 
-    await prisma.$transaction(async (tx) => {
-      // Header
-      await tx.tB_R_LOG_H.create({
-        data: {
-          PROCESS_ID: newLog.PROCESS_ID,
-          MODULE_ID: moduleRow.MODULE_ID,
-          FUNCTION_ID: functionRow.FUNCTION_ID,
-          START_DT: startDt,
-          END_DT: endDt,
-          PROCESS_STATUS: statusToDb[newLog.STATUS],
-          CREATED_BY: newLog.USER_ID,
-          CREATED_DT: new Date(),
-        },
-      });
+    console.log("newLog", newLog)
 
-      // Details
-      if (newLog.DETAILS?.length) {
-        await tx.tB_R_LOG_D.createMany({
-          data: newLog.DETAILS.map((d) => ({
-            PROCESS_ID: newLog.PROCESS_ID,
-            SEQ_NO: d.ID,
-            MESSAGE_ID: "", // optional/not provided by API
-            MESSAGE_TYPE: "", // optional/not provided by API
-            MESSAGE_CONTENT: d.MESSAGE_DETAIL,
-            LOCATION: d.LOCATION,
-            CREATED_BY: newLog.USER_ID,
-            CREATED_DT: parseDate(d.MESSAGE_DATE_TIME),
+    try {
+      await prisma.$transaction(async (tx) => {
+        let processId = await allocateProcessId(tx, startDt);
+        // console.log("processId", processId)
+        await tx.tB_R_LOG_H.create({
+          data: {
+            PROCESS_ID: processId,
             MODULE_ID: moduleRow.MODULE_ID,
             FUNCTION_ID: functionRow.FUNCTION_ID,
-          })),
-          skipDuplicates: true,
+            START_DT: startDt,
+            END_DT: endDt,
+            PROCESS_STATUS: statusToDb[newLog.STATUS],
+            CREATED_BY: newLog.USER_ID,
+            CREATED_DT: new Date(),
+          },
         });
-      }
-    });
+
+        if (newLog.DETAILS?.length) {
+          await tx.tB_R_LOG_D.createMany({
+            data: newLog.DETAILS.map((d) => ({
+              PROCESS_ID: processId,
+              SEQ_NO: d.ID,
+              // ⬇️ default dari master, boleh override kalau d.MESSAGE_ID ada
+              MESSAGE_ID: d.MESSAGE_ID ?? defaultMsg.MESSAGE_ID,
+              MESSAGE_TYPE: d.MESSAGE_TYPE ?? defaultMsg.MESSAGE_TYPE,
+              MESSAGE_CONTENT: d.MESSAGE_DETAIL,
+              LOCATION: d.LOCATION,
+              CREATED_BY: newLog.USER_ID,
+              CREATED_DT: parseDate(d.MESSAGE_DATE_TIME),
+              MODULE_ID: moduleRow.MODULE_ID,
+              FUNCTION_ID: functionRow.FUNCTION_ID,
+            })),
+          });
+        }
+      });
+    } catch (e) {
+      console.error("[insertLog] TRANSACTION FAILED:", (e as any)?.message, e);
+      throw e;
+    }
 
     return newLog;
   },
@@ -259,6 +329,8 @@ export const logRepository = {
       MESSAGE_DATE_TIME: toGB(d.CREATED_DT),
       LOCATION: d.LOCATION,
       MESSAGE_DETAIL: d.MESSAGE_CONTENT,
+      MESSAGE_ID: d.MESSAGE_ID,
+      MESSAGE_TYPE: d.MESSAGE_TYPE
     }));
 
     return {
