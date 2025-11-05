@@ -3,13 +3,6 @@ import { ERROR_CODES } from "../../core/errors/errorCodes.js";
 import { uarDivisionRepository as repo } from "./uar_division.repository";
 import { currentRequestId, currentUserId, } from "../../core/requestContext";
 import { publishMonitoringLog } from "../log_monitoring/log_publisher";
-function mapStatus(isApproved, isRejected) {
-    if (isApproved === "Y")
-        return "1";
-    if (isRejected === "Y")
-        return "0";
-    return null;
-}
 export const uarDivisionService = {
     async list(params, userDivisionId) {
         const { data, total, workflowStatus, completionStats } = await repo.listUars({
@@ -27,19 +20,27 @@ export const uarDivisionService = {
             }
             const current = percentMap.get(uarId);
             current.total += count;
-            if (status === '1' || status === '0') {
+            if (status === '1' || status === '2') {
                 current.completed += count;
             }
         }
         const headers = data.map((r) => {
             const wf = wfStatusMap.get(r.UAR_ID);
             const stats = percentMap.get(r.UAR_ID);
-            let percentCompleteString = "100% (0 of 0)"; // Default if no items
+            let percentCompleteString = "100% (0 of 0)";
+            let newStatus = "1";
             if (stats) {
                 const total = stats.total;
                 const completed = stats.completed;
-                const percent = (total > 0) ? Math.round((completed / total) * 100) : 100;
-                percentCompleteString = `${percent}% (${completed} of ${total})`;
+                if (total > 0) {
+                    const percentNumber = Math.round((completed / total) * 100);
+                    percentCompleteString = `${percentNumber}% (${completed} of ${total})`;
+                    newStatus = (percentNumber === 100) ? "1" : "0";
+                }
+                else {
+                    percentCompleteString = "100% (0 of 0)";
+                    newStatus = "1";
+                }
             }
             return {
                 uarId: r.UAR_ID,
@@ -48,9 +49,10 @@ export const uarDivisionService = {
                 percentComplete: percentCompleteString,
                 createdDate: wf?.CREATED_DT?.toISOString() ?? "",
                 completedDate: wf?.APPROVED_DT?.toISOString() ?? null,
-                status: mapStatus(wf?.IS_APPROVED, wf?.IS_REJECTED),
+                status: newStatus
             };
         });
+        // console.log("headers", headers)
         return { data: headers, total };
     },
     async getDetails(uarId, userDivisionId) {
@@ -58,6 +60,12 @@ export const uarDivisionService = {
         if (!rows || rows.length === 0) {
             throw new ApplicationError(ERROR_CODES.APP_NOT_FOUND, "No UAR data found for this ID and your division.", { uarId, userDivisionId }, undefined, 404);
         }
+        // console.log("rowss", rows)
+        return rows;
+    },
+    async getUar(uarId, userDivisionId) {
+        const rows = await repo.getUar(uarId, userDivisionId);
+        console.log("rowss", rows);
         return rows;
     },
     async batchUpdate(dto, userNoreg, userDivisionId) {

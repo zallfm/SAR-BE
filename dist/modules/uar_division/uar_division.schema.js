@@ -52,6 +52,37 @@ export const getUarDetailsSchema = {
         },
     },
 };
+export const getUarSchema = {
+    params: {
+        type: "object",
+        properties: {
+            id: { type: "string", description: "UAR_ID" },
+        },
+        required: ["id"],
+        additionalProperties: false,
+    },
+    response: {
+        200: {
+            type: "object",
+            properties: {
+                data: {
+                    type: "object",
+                    properties: {
+                        header: { type: ["object", "null"], additionalProperties: true },
+                        details: {
+                            type: "array",
+                            items: { type: "object", additionalProperties: true },
+                        },
+                    },
+                    required: ["header", "details"],
+                    additionalProperties: false,
+                },
+            },
+            required: ["data"],
+            additionalProperties: false,
+        },
+    },
+};
 export const batchUpdateSchema = {
     body: {
         type: "object",
@@ -82,5 +113,20 @@ export const batchUpdateSchema = {
                 data: { type: "object", additionalProperties: true },
             },
         },
+    },
+};
+export const exportUarExcelSchema = {
+    description: "Export template UAR Division (cek tampilan)",
+    tags: ["UAR Division"],
+    querystring: {
+        type: "object",
+        properties: {
+            uar_id: { type: "string", description: "ID UAR" },
+        },
+        required: ["uar_id"],
+        additionalProperties: false,
+    },
+    response: {
+        200: { type: "string", format: "binary" },
     },
 };

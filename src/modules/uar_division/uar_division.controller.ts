@@ -2,7 +2,11 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { uarDivisionService as svc } from "./uar_division.service";
 import type { UarDivisionBatchUpdateDTO } from "../../types/uar_division";
+import { buildUarExcelTemplate } from "./uar.excel";
 
+type ExportQuery = {
+    uar_id: string;
+};
 
 function getAuthInfo(req: FastifyRequest) {
     const auth = req.auth as { divisionId: number; noreg: string };
@@ -63,6 +67,17 @@ export const uarDivisionController = {
             return reply.send({ data });
         },
 
+    getUar: (_app: FastifyInstance) =>
+        async (
+            req: FastifyRequest<{ Params: { id: string } }>,
+            reply: FastifyReply
+        ) => {
+            const { divisionId } = getAuthInfo(req);
+            const uarId = req.params.id;
+            const data = await svc.getUar(uarId, Number(divisionId));
+            return reply.send({ data });
+        },
+
 
     batchUpdate: (_app: FastifyInstance) =>
         async (
@@ -79,5 +94,25 @@ export const uarDivisionController = {
                 message: `Batch ${req.body.decision} successful.`,
                 data: result,
             });
+        },
+
+    exportExcel: (_app: FastifyInstance) =>
+        async (req: FastifyRequest<{ Querystring: ExportQuery }>, reply: FastifyReply) => {
+            const { divisionId } = getAuthInfo(req); // belum dipakai, tapi biarkan untuk konsistensi auth
+            const { uar_id } = req.query;
+
+            // ⛳ DUMMY PARAM (hardcoded) — cukup untuk test tampilan Excel
+            const { buffer, filename } = await buildUarExcelTemplate({
+                systemName: "IPPCS",
+                divisionName: "ISTD",
+                departmentName: "CIO",
+                monthLabel: "August 2025",
+                roleColumns: ["[ROLE 1]", "[ROLE 2]", "[ROLE 3]"],
+            });
+
+            reply
+                .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                .header("Content-Disposition", `attachment; filename="UAR_${uar_id}_${filename}"`)
+                .send(buffer);
         },
 };

@@ -2,6 +2,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { readFile, stat } from 'fs/promises';
 import { existsSync } from 'fs';
+import { getFunctionEvidence, getModuleEvidence, getAllEvidence, exportEvidenceToExcel } from './tdd-evidence.controller.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 export async function tddRoutes(app) {
@@ -32,6 +33,60 @@ export async function tddRoutes(app) {
         }
         catch (error) {
             return reply.status(404).send({ error: `Module ${moduleName} not found` });
+        }
+    });
+    // Evidence API endpoints
+    app.get('/tdd/api/evidence/:module/:function', async (request, reply) => {
+        const { module, function: functionName } = request.params;
+        try {
+            const evidence = await getFunctionEvidence(module, functionName);
+            if (!evidence) {
+                return reply.status(404).send({ error: `Evidence not found for ${module}/${functionName}` });
+            }
+            return reply.send(evidence);
+        }
+        catch (error) {
+            return reply.status(500).send({ error: 'Failed to get evidence' });
+        }
+    });
+    app.get('/tdd/api/evidence/:module', async (request, reply) => {
+        const { module } = request.params;
+        try {
+            const evidence = await getModuleEvidence(module);
+            if (!evidence) {
+                return reply.status(404).send({ error: `Evidence not found for module ${module}` });
+            }
+            return reply.send(evidence);
+        }
+        catch (error) {
+            return reply.status(500).send({ error: 'Failed to get evidence' });
+        }
+    });
+    app.get('/tdd/api/evidence', async (request, reply) => {
+        try {
+            const allEvidence = await getAllEvidence();
+            return reply.send({ evidence: allEvidence });
+        }
+        catch (error) {
+            return reply.status(500).send({ error: 'Failed to get evidence' });
+        }
+    });
+    app.get('/tdd/api/evidence/export', async (request, reply) => {
+        const { module } = request.query;
+        try {
+            const buffer = await exportEvidenceToExcel(module);
+            const dateStamp = new Date().toISOString().split('T')[0];
+            const filename = module
+                ? `TDD_Evidence_${module}_${dateStamp}.xlsx`
+                : `TDD_Evidence_All_${dateStamp}.xlsx`;
+            return reply
+                .type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                .header('Content-Disposition', `attachment; filename="${filename}"`)
+                .send(buffer);
+        }
+        catch (error) {
+            console.error('Error exporting evidence:', error);
+            return reply.status(500).send({ error: 'Failed to export evidence' });
         }
     });
     // Root route untuk /tdd

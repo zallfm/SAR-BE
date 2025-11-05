@@ -79,6 +79,7 @@ export const uarDivisionService = {
                 status: newStatus
             };
         });
+        // console.log("headers", headers)
 
         return { data: headers, total };
     },
@@ -95,6 +96,13 @@ export const uarDivisionService = {
                 404
             );
         }
+        // console.log("rowss", rows)
+        return rows;
+    },
+
+    async getUar(uarId: string, userDivisionId: number) {
+        const rows = await repo.getUar(uarId, userDivisionId);
+        console.log("rowss", rows)
         return rows;
     },
 

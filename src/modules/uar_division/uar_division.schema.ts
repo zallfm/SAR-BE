@@ -57,6 +57,37 @@ export const getUarDetailsSchema: FastifySchema = {
         },
     },
 };
+export const getUarSchema: FastifySchema = {
+  params: {
+    type: "object",
+    properties: {
+      id: { type: "string", description: "UAR_ID" },
+    },
+    required: ["id"],
+    additionalProperties: false,
+  },
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        data: {
+          type: "object",
+          properties: {
+            header: { type: ["object", "null"], additionalProperties: true },
+            details: {
+              type: "array",
+              items: { type: "object", additionalProperties: true },
+            },
+          },
+          required: ["header", "details"],
+          additionalProperties: false,
+        },
+      },
+      required: ["data"],
+      additionalProperties: false,
+    },
+  },
+};
 
 export const batchUpdateSchema: FastifySchema = {
     body: {
@@ -90,3 +121,20 @@ export const batchUpdateSchema: FastifySchema = {
         },
     },
 };
+
+export const exportUarExcelSchema = {
+  description: "Export template UAR Division (cek tampilan)",
+  tags: ["UAR Division"],
+  querystring: {
+    type: "object",
+    properties: {
+      uar_id: { type: "string", description: "ID UAR" },
+    },
+    required: ["uar_id"],
+    additionalProperties: false,
+  },
+  response: {
+    200: { type: "string", format: "binary" },
+  },
+} as const;
+

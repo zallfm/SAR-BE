@@ -4,6 +4,11 @@ import { prisma } from "../../db/prisma";
  * - Sumber: TB_M_AUTH_MAPPING (NOREG valid)
  * - Step: INSERT/UPSERT ke TB_R_WORKFLOW (SEQ_NO = 1) -> MERGE ke TB_R_UAR_DIVISION_USER
  */
+/**
+ * DIVISION USER:
+ * - Sumber: TB_M_AUTH_MAPPING (NOREG valid)
+ * - Step: INSERT/UPSERT ke TB_R_WORKFLOW (SEQ_NO = 1) -> MERGE ke TB_R_UAR_DIVISION_USER
+ */
 async function mergeDivisionUserTx(tx, p) {
     const rows = await tx.$queryRaw `
 SET XACT_ABORT ON;
