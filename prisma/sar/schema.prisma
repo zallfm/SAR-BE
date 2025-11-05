@@ -556,7 +556,7 @@ model TB_M_SYSTEM {
   CREATED_BY    String    @db.NVarChar(20)
   CREATED_DT    DateTime  @db.DateTime
   CHANGED_BY    String?   @db.NVarChar(20)
-  CHANGED_DT    DateTime? @db.Date
+  CHANGED_DT    DateTime? @db.DateTime
 
   @@id([SYSTEM_TYPE, SYSTEM_CD, VALID_FROM_DT], map: "PK_TB_M_SYSTEM")
 }

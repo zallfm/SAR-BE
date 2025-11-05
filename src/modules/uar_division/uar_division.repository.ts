@@ -29,7 +29,6 @@ export const uarDivisionRepository = {
         const [dataRaw, totalGroups] = await Promise.all([
             prisma.tB_R_UAR_DIVISION_USER.findMany({
                 where: whereUar,
-                // MODIFIED: Select UAR_ID, UAR_PERIOD, and the related Division Name
                 select: {
                     UAR_ID: true,
                     UAR_PERIOD: true,
