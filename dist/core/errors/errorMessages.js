@@ -1,0 +1,21 @@
+import { ERROR_CODES } from "./errorCodes.js";
+export const ERROR_MESSAGES = {
+    [ERROR_CODES.AUTH_INVALID_CREDENTIALS]: "Invalid username or password. Please try again.",
+    [ERROR_CODES.AUTH_SESSION_EXPIRED]: "Your session has expired. Please login again.",
+    [ERROR_CODES.AUTH_INSUFFICIENT_PERMISSIONS]: "You do not have permission to access this resource.",
+    [ERROR_CODES.AUTH_ACCOUNT_LOCKED]: "Your account is locked. Try again next day.",
+    [ERROR_CODES.AUTH_TOKEN_INVALID]: "Invalid or malformed token.",
+    [ERROR_CODES.VAL_REQUIRED_FIELD]: "Required field is missing.",
+    [ERROR_CODES.VAL_INVALID_FORMAT]: "Invalid format of provided data.",
+    [ERROR_CODES.API_NETWORK_ERROR]: "Network error occurred.",
+    [ERROR_CODES.API_TIMEOUT]: "Request timed out.",
+    [ERROR_CODES.API_SERVER_ERROR]: "Server error occurred.",
+    [ERROR_CODES.API_RATE_LIMIT]: "Too many requests. Please slow down.",
+    [ERROR_CODES.API_UNAUTHORIZED]: "Unauthorized.",
+    [ERROR_CODES.SYS_UNKNOWN_ERROR]: "An unknown error occurred.",
+    [ERROR_CODES.SYS_CONFIG_ERROR]: "Configuration error.",
+    [ERROR_CODES.SYS_DATABASE_ERROR]: "Database error.",
+    [ERROR_CODES.SYS_PERMISSION_DENIED]: "Operation not permitted.",
+    [ERROR_CODES.APP_NOT_FOUND]: "The specified data was not found.",
+    [ERROR_CODES.APP_ALREADY_EXISTS]: "The specified data already exists.",
+};

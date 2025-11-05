@@ -266,6 +266,11 @@ export const applicationRepository = {
           DIVISION_NAME: true,
           MAIL: true,
           DEPARTMENT_NAME: true,
+          TB_M_DIVISION: {
+            select: {
+              DIVISION_NAME: true,
+            },
+          },
         },
       }),
       prisma.tB_M_EMPLOYEE.count({ where }),
@@ -276,7 +281,7 @@ export const applicationRepository = {
       DIVISION_ID: r.DIVISION_ID,
       DEPARTMENT_ID: r.DEPARTMENT_ID,
       PERSONAL_NAME: r.PERSONNEL_NAME ?? "",
-      DIVISION_NAME: r.DIVISION_NAME ?? "",
+      DIVISION_NAME: r.TB_M_DIVISION?.DIVISION_NAME ?? "",
       MAIL: r.MAIL ?? "",
       DEPARTEMENT_NAME: r.DEPARTMENT_NAME ?? "",
       canBeOwner: true,

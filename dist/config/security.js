@@ -1,0 +1,11 @@
+export const SECURITY_CONFIG = {
+    SESSION_TIMEOUT_MS: 30 * 60 * 1000,
+    SESSION_WARNING_MS: 5 * 60 * 1000,
+    TOKEN_REFRESH_THRESHOLD_MS: 5 * 60 * 1000,
+    MAX_SESSION_DURATION_MS: 8 * 60 * 60 * 1000,
+    // total maximal login
+    MAX_LOGIN_ATTEMPTS: 5,
+    // total duration locked
+    LOCKOUT_DURATION_MS: 0.2 * 60 * 1000,
+    MAX_API_CALLS_PER_MINUTE: 60
+};

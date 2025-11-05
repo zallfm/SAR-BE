@@ -22,7 +22,30 @@ const config: Config = {
     '^(\\.{1,2}/.*)\\.js$': '$1'
   },
 
-  verbose: true
+  verbose: true,
+
+  // Test coverage configuration untuk TDD
+  collectCoverage: false, // Default false, aktifkan dengan --coverage flag
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
+  collectCoverageFrom: [
+    'src/**/*.{ts,js}',
+    '!src/**/*.d.ts',
+    '!src/**/*.spec.ts',
+    '!src/**/*.test.ts',
+    '!src/tests/**',
+    '!src/generated/**',
+    '!src/server.ts',
+    '!src/app.ts'
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70
+    }
+  }
 };
 
 export default config;

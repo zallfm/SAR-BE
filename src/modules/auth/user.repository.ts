@@ -93,6 +93,8 @@ export const userRepository = {
       username: dbUser.USERNAME,
       password: dbUser.PASSWORD,
       name: dbUser.USERNAME,
+      divisionId: 2,
+      noreg: "100000",
       role: dynamicRole as User['role'], // contoh: "DPH", "SO", "ADMINISTRATOR"
     };
   },

@@ -136,6 +136,7 @@ model TB_M_DIVISION {
   CHANGED_BY                String?                     @db.NVarChar(20)
   CHANGED_DT                DateTime?                   @db.Date
   TB_M_APPLICATION          TB_M_APPLICATION[]
+  TB_M_EMPLOYEE             TB_M_EMPLOYEE[]
   TB_M_EMPLOYEE_TERMINATION TB_M_EMPLOYEE_TERMINATION[]
   TB_M_UAR_PIC              TB_M_UAR_PIC[]
   TB_R_UAR_DIVISION_USER    TB_R_UAR_DIVISION_USER[]
@@ -178,6 +179,7 @@ model TB_M_EMPLOYEE {
   CHANGED_DT                                                          DateTime?          @db.Date
   TB_M_APPLICATION_TB_M_APPLICATION_NOREG_SYSTEM_OWNERToTB_M_EMPLOYEE TB_M_APPLICATION[] @relation("TB_M_APPLICATION_NOREG_SYSTEM_OWNERToTB_M_EMPLOYEE")
   TB_M_APPLICATION_TB_M_APPLICATION_NOREG_SYSTEM_CUSTToTB_M_EMPLOYEE  TB_M_APPLICATION[] @relation("TB_M_APPLICATION_NOREG_SYSTEM_CUSTToTB_M_EMPLOYEE")
+  TB_M_DIVISION                                                       TB_M_DIVISION?     @relation(fields: [DIVISION_ID], references: [DIVISION_ID], onDelete: NoAction, onUpdate: NoAction, map: "TB_M_EMPLOYEE_TB_M_DIVISION_FK")
 
   @@id([NOREG, POSITION_CODE, JOB_CODE, VALID_FROM, VALID_TO, ORG_ID], map: "PK_TB_M_EMPLOYEE")
 }
@@ -554,7 +556,7 @@ model TB_M_SYSTEM {
   CREATED_BY    String    @db.NVarChar(20)
   CREATED_DT    DateTime  @db.DateTime
   CHANGED_BY    String?   @db.NVarChar(20)
-  CHANGED_DT    DateTime? @db.Date
+  CHANGED_DT    DateTime? @db.DateTime
 
   @@id([SYSTEM_TYPE, SYSTEM_CD, VALID_FROM_DT], map: "PK_TB_M_SYSTEM")
 }
