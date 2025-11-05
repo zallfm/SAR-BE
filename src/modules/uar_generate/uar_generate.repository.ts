@@ -10,14 +10,24 @@ type GenParams = { period: string; application_id: string; createdBy: string };
  * - Sumber: TB_M_AUTH_MAPPING (NOREG valid)
  * - Step: INSERT/UPSERT ke TB_R_WORKFLOW (SEQ_NO = 1) -> MERGE ke TB_R_UAR_DIVISION_USER
  */
+
+/**
+ * DIVISION USER:
+ * - Sumber: TB_M_AUTH_MAPPING (NOREG valid)
+ * - Step: INSERT/UPSERT ke TB_R_WORKFLOW (SEQ_NO = 1) -> MERGE ke TB_R_UAR_DIVISION_USER
+ */
 async function mergeDivisionUserTx(tx: TxLike, p: GenParams): Promise<MergeCount> {
   const rows = await tx.$queryRaw<{ inserted: number; updated: number }[]>`
 SET XACT_ABORT ON;
 
 DECLARE @PERIOD_RAW NVARCHAR(30) = ${p.period};
 DECLARE @APP_ID     NVARCHAR(50) = ${p.application_id};
+DECLARE @APP_ID     NVARCHAR(50) = ${p.application_id};
 DECLARE @CREATED_BY VARCHAR(50)  = ${p.createdBy};
 
+-- =========================
+-- Normalisasi periode UAR => YYYYMM
+-- =========================
 -- =========================
 -- Normalisasi periode UAR => YYYYMM
 -- =========================
@@ -45,6 +55,7 @@ SELECT
   e.NOREG,
   e.PERSONNEL_NAME,
   e.POSITION_NAME,
+  e.SECTION_ID,
   e.POSITION_TITLE,
   e.JOB_CODE,
   e.JOB_TITLE,
@@ -118,9 +129,32 @@ WHERE h.HEAD_NOREG IS NULL;  -- exclude head
     h.HEAD_NOREG   AS APPROVER_NOREG,
     h.HEAD_NAME    AS APPROVER_NAME
   FROM #pick_head h
+),
+head_with_plan AS (
+  SELECT
+    x.*,
+    cfg.VALUE_NUM AS OFFSET_DAYS,
+    DATEADD(DAY, ISNULL(cfg.VALUE_NUM,0), CAST(SYSDATETIME() AS DATE)) AS PLAN_APPROVED_DT
+  FROM head_src x
+  OUTER APPLY (
+    SELECT TOP 1 s.VALUE_NUM
+    FROM TB_M_SYSTEM s
+    WHERE s.SYSTEM_TYPE = 'UAR_PLAN'
+      AND SYSDATETIME() BETWEEN s.VALID_FROM_DT AND ISNULL(s.VALID_TO_DT, '9999-12-31')
+      AND (
+           s.SYSTEM_CD = 'DH' OR
+           s.SYSTEM_CD = 'DEFAULT'
+      )
+    ORDER BY
+      CASE
+        WHEN s.SYSTEM_CD = 'DH'                      THEN 1
+        WHEN s.SYSTEM_CD = 'DEFAULT'                 THEN 2
+        ELSE 99
+      END
+  ) cfg
 )
 MERGE TB_R_WORKFLOW WITH (HOLDLOCK) AS wf
-USING head_src AS x
+USING head_with_plan AS x
   ON ( wf.UAR_ID = x.UAR_ID
        AND wf.SEQ_NO = x.SEQ_NO
        AND wf.DIVISION_ID = x.DIVISION_ID
@@ -129,15 +163,18 @@ WHEN NOT MATCHED THEN
   INSERT (UAR_ID, SEQ_NO, DIVISION_ID, DEPARTMENT_ID,
           APPROVAL_CD, APPROVAL_DESC,
           APPROVER_NOREG, APPROVER_NAME,
+          PLAN_APPROVED_DT,
           CREATED_BY, CREATED_DT)
   VALUES (x.UAR_ID, x.SEQ_NO, x.DIVISION_ID, x.DEPARTMENT_ID,
           1, 'Division Approval',
           x.APPROVER_NOREG, x.APPROVER_NAME,
+          x.PLAN_APPROVED_DT,
           ${p.createdBy}, SYSDATETIME())
 WHEN MATCHED THEN
   UPDATE SET
     wf.APPROVER_NOREG = x.APPROVER_NOREG,
     wf.APPROVER_NAME  = x.APPROVER_NAME,
+    wf.PLAN_APPROVED_DT = x.PLAN_APPROVED_DT,
     wf.CHANGED_BY     = ${p.createdBy},
     wf.CHANGED_DT     = SYSDATETIME();
 
@@ -160,6 +197,7 @@ DECLARE @chg TABLE (action NVARCHAR(10));
     s.NOREG,
     s.PERSONNEL_NAME AS NAME,
     s.POSITION_NAME,
+    s.SECTION_ID,
     s.POSITION_TITLE,
     s.JOB_CODE,
     s.JOB_TITLE,
@@ -189,7 +227,7 @@ WHEN NOT MATCHED THEN
   )
   VALUES (
     src.UAR_PERIOD, src.UAR_ID, src.USERNAME, src.ROLE_ID, src.APPLICATION_ID,
-    src.DIVISION_ID, src.DEPARTMENT_ID, src.NOREG, src.NAME, src.POSITION_NAME, NULL,
+    src.DIVISION_ID, src.DEPARTMENT_ID, src.NOREG, src.NAME, src.POSITION_NAME, src.SECTION_ID,
     src.REVIEWER_NOREG, src.REVIEWER_NAME,
     ${p.createdBy}, SYSDATETIME()
   )
@@ -200,6 +238,7 @@ WHEN MATCHED THEN
     tgt.NOREG           = src.NOREG,
     tgt.NAME            = src.NAME,
     tgt.POSITION_NAME   = src.POSITION_NAME,
+    tgt.SECTION_ID      = src.SECTION_ID,
     tgt.REVIEWER_NOREG  = COALESCE(src.REVIEWER_NOREG, tgt.REVIEWER_NOREG),
     tgt.REVIEWER_NAME   = COALESCE(src.REVIEWER_NAME , tgt.REVIEWER_NAME ),
     tgt.CHANGED_BY      = ${p.createdBy},
@@ -265,8 +304,8 @@ SELECT
   am.USERNAME,
   am.ROLE_ID,
   am.APPLICATION_ID,
-  app.DIVISION_ID_OWNER AS DIVISION_ID,
-  app.DIVISION_ID_OWNER AS DEPARTMENT_ID, -- jika punya kolom dept owner ganti ke sana
+  COALESCE(app.DIVISION_ID_OWNER, emp.DIVISION_ID) AS DIVISION_ID,
+  emp.DEPARTMENT_ID AS DEPARTMENT_ID, 
   emp.NOREG,
   emp.PERSONNEL_NAME AS NAME,
   emp.POSITION_NAME,
@@ -299,25 +338,36 @@ SELECT
   e.NOREG,
   e.PERSONNEL_NAME,
   e.POSITION_NAME,
+  e.SECTION_ID,
   e.POSITION_LEVEL,
   CASE WHEN CHARINDEX('so head', LOWER(LTRIM(RTRIM(e.POSITION_NAME)))) > 0 THEN 0 ELSE 1 END AS is_head_first
 INTO #so_head_candidates
 FROM TB_M_EMPLOYEE e
 JOIN #owner_groups g
   ON g.DIVISION_ID = e.DIVISION_ID
+  AND ISNULL(g.DEPARTMENT_ID,'') = ISNULL(e.DEPARTMENT_ID,'')
 WHERE e.NOREG LIKE 'EMP%';
 
 IF OBJECT_ID('tempdb..#pick_so_head') IS NOT NULL DROP TABLE #pick_so_head;
-SELECT TOP (1)
+;WITH ranked AS (
+  SELECT
+    c.*,
+    ROW_NUMBER() OVER (
+      PARTITION BY c.DIVISION_ID, c.DEPARTMENT_ID
+      ORDER BY c.is_head_first, ISNULL(c.POSITION_LEVEL,0) DESC, c.NOREG
+    ) AS rn
+  FROM #so_head_candidates c
+)
+SELECT
   @UAR_ID AS UAR_ID,
-  2       AS SEQ_NO,
-  c.DIVISION_ID,
-  c.DEPARTMENT_ID,
-  c.NOREG          AS APPROVER_NOREG,
-  c.PERSONNEL_NAME AS APPROVER_NAME
+  2 AS SEQ_NO,
+  DIVISION_ID,
+  DEPARTMENT_ID,
+  NOREG          AS APPROVER_NOREG,
+  PERSONNEL_NAME AS APPROVER_NAME
 INTO #pick_so_head
-FROM #so_head_candidates c
-ORDER BY c.is_head_first, ISNULL(c.POSITION_LEVEL,0) DESC, c.NOREG;
+FROM ranked
+WHERE rn = 1;
 
 -- Safety fallback: kalau candidate kosong (mustahil bila #so_users ada, tapi tetap jaga-jaga)
 IF NOT EXISTS (SELECT 1 FROM #pick_so_head)
@@ -333,17 +383,43 @@ END;
 -- 3) MERGE Header WF SEQ=2 (System Owner)
 --    ON hanya UAR_ID + SEQ_NO agar tidak terganjal DEPT_ID
 -- ==========================================================
+WITH so_head_with_plan AS (
+  SELECT
+    x.UAR_ID, x.SEQ_NO, x.DIVISION_ID, x.DEPARTMENT_ID,
+    x.APPROVER_NOREG, x.APPROVER_NAME,
+    cfg.VALUE_NUM AS OFFSET_DAYS,
+    DATEADD(DAY, ISNULL(cfg.VALUE_NUM,0), CAST(SYSDATETIME() AS DATE)) AS PLAN_APPROVED_DT
+  FROM (SELECT * FROM #pick_so_head) x
+  OUTER APPLY (
+    SELECT TOP 1 s.VALUE_NUM
+    FROM TB_M_SYSTEM s
+    WHERE s.SYSTEM_TYPE = 'UAR_PLAN'
+      AND SYSDATETIME() BETWEEN s.VALID_FROM_DT AND ISNULL(s.VALID_TO_DT,'9999-12-31')
+      AND (
+           s.SYSTEM_CD = 'SO' OR
+           s.SYSTEM_CD = 'DEFAULT'
+      )
+    ORDER BY
+      CASE
+        WHEN s.SYSTEM_CD = 'SO'                      THEN 1
+        WHEN s.SYSTEM_CD = 'DEFAULT'                 THEN 2
+        ELSE 99
+      END
+  ) cfg
+)
 MERGE TB_R_WORKFLOW WITH (HOLDLOCK) AS wf
-USING (SELECT * FROM #pick_so_head) x
-  ON (wf.UAR_ID = x.UAR_ID AND wf.SEQ_NO = x.SEQ_NO)
+USING so_head_with_plan x
+  ON (wf.UAR_ID = x.UAR_ID AND wf.SEQ_NO = x.SEQ_NO AND ISNULL(wf.DIVISION_ID,'')   = ISNULL(x.DIVISION_ID,'') AND ISNULL(wf.DEPARTMENT_ID,'') = ISNULL(x.DEPARTMENT_ID,''))
 WHEN NOT MATCHED THEN
   INSERT (UAR_ID, SEQ_NO, DIVISION_ID, DEPARTMENT_ID,
           APPROVAL_CD, APPROVAL_DESC,
           APPROVER_NOREG, APPROVER_NAME,
+          PLAN_APPROVED_DT,
           CREATED_BY, CREATED_DT)
   VALUES (x.UAR_ID, x.SEQ_NO, x.DIVISION_ID, x.DEPARTMENT_ID,
           2, 'System Owner Approval',
           x.APPROVER_NOREG, x.APPROVER_NAME,
+          x.PLAN_APPROVED_DT,
           ${p.createdBy}, SYSDATETIME())
 WHEN MATCHED THEN
   UPDATE SET
@@ -351,6 +427,7 @@ WHEN MATCHED THEN
     wf.DEPARTMENT_ID  = x.DEPARTMENT_ID,
     wf.APPROVER_NOREG = x.APPROVER_NOREG,
     wf.APPROVER_NAME  = x.APPROVER_NAME,
+    wf.PLAN_APPROVED_DT  = x.PLAN_APPROVED_DT,
     wf.CHANGED_BY     = ${p.createdBy},
     wf.CHANGED_DT     = SYSDATETIME();
 
@@ -376,8 +453,10 @@ DECLARE @chg TABLE (action NVARCHAR(10));
     h.APPROVER_NOREG AS REVIEWER_NOREG,
     h.APPROVER_NAME  AS REVIEWER_NAME
   FROM #so_users u
-  CROSS APPLY (SELECT TOP 1 * FROM #pick_so_head) h
-  WHERE ISNULL(u.NOREG,'') <> ISNULL(h.APPROVER_NOREG,'') -- head TIDAK ikut detail
+  JOIN #pick_so_head h
+    ON  h.DIVISION_ID              = u.DIVISION_ID
+    AND ISNULL(h.DEPARTMENT_ID,'') = ISNULL(u.DEPARTMENT_ID,'')   -- [CHANGED]
+  WHERE ISNULL(u.NOREG,'') <> ISNULL(h.APPROVER_NOREG,'')         -- exclude head dari detail
 )
 MERGE TB_R_UAR_SYSTEM_OWNER AS tgt
 USING so_enriched AS src

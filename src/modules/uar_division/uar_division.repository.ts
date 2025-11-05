@@ -110,7 +110,7 @@ export const uarDivisionRepository = {
     ) {
         const { uarId, decision, items, comments } = dto;
         const now = await getDbNow();
-        const divApprovalStatus = decision === "Approve" ? "1" : "0";
+        const divApprovalStatus = decision === "Approve" ? "1" : "2";
 
         try {
             return await prisma.$transaction(async (tx) => {

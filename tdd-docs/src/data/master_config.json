@@ -1,0 +1,469 @@
+{
+  "name": "master_config",
+  "displayName": "Master Config",
+  "description": "System configuration management",
+  "functions": [
+    {
+      "name": "getSystem",
+      "signature": "async getSystem(app: FastifyInstance, query: any): Promise<PaginatedResponse<SystemConfig>>",
+      "description": "Get paginated list of system configurations",
+      "category": "service",
+      "testScenarios": [
+        {
+          "id": "config-get-001",
+          "name": "Happy Path - Get Systems",
+          "phase": "RED",
+          "description": "Should return paginated system configurations",
+          "testCode": "it('should return paginated systems', async () => {\n  const query = { page: 1, limit: 10 };\n  jest.spyOn(app.prisma.tB_M_SYSTEM, 'findMany').mockResolvedValue([]);\n  const result = await systemService.getSystem(app, query);\n  expect(result.data).toBeDefined();\n});"
+        }
+      ],
+      "todos": [
+        {
+          "id": "todo-getSystem-001",
+          "task": "Setup test file: src/tests/unit/masterConfig.service.spec.ts",
+          "status": "pending",
+          "priority": "high",
+          "description": "Create test file with describe block"
+        },
+        {
+          "id": "todo-getSystem-002",
+          "task": "Write test: Happy Path - Get Systems",
+          "status": "pending",
+          "priority": "high",
+          "description": "Write test for paginated system config list"
+        },
+        {
+          "id": "todo-getSystem-003",
+          "task": "Mock app.prisma.tB_M_SYSTEM.findMany",
+          "status": "pending",
+          "priority": "high",
+          "description": "Mock Prisma findMany for systems"
+        },
+        {
+          "id": "todo-getSystem-004",
+          "task": "Implement getSystem function",
+          "status": "pending",
+          "priority": "high",
+          "description": "Query Prisma with pagination and return result"
+        }
+      ],
+      "bddScenarios": [
+        {
+          "id": "bdd-getSystem-001",
+          "name": "Feature: Get System Configurations",
+          "description": "As a user, I want to retrieve system configurations so that I can view system settings",
+          "scenarios": [
+            {
+              "id": "bdd-getSystem-001-001",
+              "name": "Scenario: List System Configurations",
+              "given": [
+                "System configurations exist in database"
+              ],
+              "when": [
+                "User calls getSystem with query parameters",
+                "System queries Prisma"
+              ],
+              "then": [
+                "System returns paginated response",
+                "System includes configuration data"
+              ],
+              "testCode": "it('should return paginated systems', async () => {\n  const query = { page: 1, limit: 10 };\n  jest.spyOn(app.prisma.tB_M_SYSTEM, 'findMany').mockResolvedValue([]);\n  const result = await systemService.getSystem(app, query);\n  expect(result.data).toBeDefined();\n});"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "createSystem",
+      "signature": "async createSystem(app: FastifyInstance, data: CreateSystemDTO): Promise<SystemConfig>",
+      "description": "Create new system configuration",
+      "category": "service",
+      "testScenarios": [
+        {
+          "id": "config-create-001",
+          "name": "Happy Path - Create System",
+          "phase": "RED",
+          "description": "Should create system configuration",
+          "testCode": "it('should create system', async () => {\n  const data = { SYSTEM_CD: 'SYS001', SYSTEM_TYPE: 'TYPE1', ... };\n  jest.spyOn(app.prisma.tB_M_SYSTEM, 'create').mockResolvedValue({ ... });\n  const result = await systemService.createSystem(app, data);\n  expect(result).toBeDefined();\n});"
+        }
+      ],
+      "todos": [
+        {
+          "id": "todo-createSystem-001",
+          "task": "Setup test file: src/tests/unit/masterConfig.service.spec.ts (createSystem section)",
+          "status": "pending",
+          "priority": "high",
+          "description": "Add describe block for createSystem tests"
+        },
+        {
+          "id": "todo-createSystem-002",
+          "task": "Write test: Happy Path - Create System",
+          "status": "pending",
+          "priority": "high",
+          "description": "Write test for successful system creation"
+        },
+        {
+          "id": "todo-createSystem-003",
+          "task": "Mock app.prisma.tB_M_SYSTEM.create",
+          "status": "pending",
+          "priority": "high",
+          "description": "Mock Prisma create for system"
+        },
+        {
+          "id": "todo-createSystem-004",
+          "task": "Implement createSystem function",
+          "status": "pending",
+          "priority": "high",
+          "description": "Validate input and create system via Prisma"
+        },
+        {
+          "id": "todo-createSystem-005",
+          "task": "Add validation for required fields",
+          "status": "pending",
+          "priority": "medium",
+          "description": "Validate SYSTEM_CD, SYSTEM_TYPE are provided"
+        }
+      ],
+      "bddScenarios": [
+        {
+          "id": "bdd-createSystem-001",
+          "name": "Feature: Create System Configuration",
+          "description": "As a system administrator, I want to create a new system configuration so that system settings can be managed",
+          "scenarios": [
+            {
+              "id": "bdd-createSystem-001-001",
+              "name": "Scenario: Create System Successfully",
+              "given": [
+                "Valid system configuration data provided"
+              ],
+              "when": [
+                "Administrator calls createSystem with valid data",
+                "System validates input"
+              ],
+              "then": [
+                "System creates configuration in database",
+                "System returns created configuration object"
+              ],
+              "testCode": "it('should create system', async () => {\n  const data = { SYSTEM_CD: 'SYS001', SYSTEM_TYPE: 'TYPE1' };\n  jest.spyOn(app.prisma.tB_M_SYSTEM, 'create').mockResolvedValue({ ID: 1, ...data });\n  const result = await systemService.createSystem(app, data);\n  expect(result).toBeDefined();\n});"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "unknown",
+      "description": "Handles POST request to /",
+      "signature": "GET /",
+      "method": "GET",
+      "endpoint": "/",
+      "testScenarios": [
+        {
+          "phase": "RED",
+          "description": "Test unknown should fail initially",
+          "testCode": "it('should unknown', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should fail"
+        },
+        {
+          "phase": "GREEN",
+          "description": "Test unknown should pass after implementation",
+          "testCode": "it('should unknown', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should pass"
+        },
+        {
+          "phase": "REFACTOR",
+          "description": "Refactor unknown implementation",
+          "testCode": "// TODO: Refactor code\n// All tests should still pass",
+          "expectedResult": "Code refactored, tests still pass"
+        }
+      ],
+      "todos": [
+        {
+          "id": "1",
+          "task": "Implement unknown function",
+          "status": "pending",
+          "priority": "high",
+          "description": "Create implementation for unknown"
+        }
+      ],
+      "bddScenarios": [
+        {
+          "feature": "unknown Feature",
+          "description": "As a developer, I want to unknown so that I can handle the request",
+          "scenarios": [
+            {
+              "name": "unknown Success Scenario",
+              "given": "Given I have valid request",
+              "when": "When I call unknown",
+              "then": "Then I should receive successful response",
+              "testCode": "// TODO: Implement BDD test"
+            }
+          ]
+        }
+      ],
+      "dod": {
+        "criteria": [
+          {
+            "id": "dod-1",
+            "description": "All test scenarios implemented and passing",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-2",
+            "description": "Code coverage meets minimum threshold (70%)",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-3",
+            "description": "Error handling implemented for all error cases",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-4",
+            "description": "Code reviewed and approved",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-5",
+            "description": "Documentation updated",
+            "status": "PENDING",
+            "evidence": ""
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac-1",
+            "description": "Test unknown should fail initially",
+            "testScenarioId": "unknown-scenario-1",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-2",
+            "description": "Test unknown should pass after implementation",
+            "testScenarioId": "unknown-scenario-2",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-3",
+            "description": "Refactor unknown implementation",
+            "testScenarioId": "unknown-scenario-3",
+            "status": "PENDING"
+          }
+        ]
+      }
+    },
+    {
+      "name": "id",
+      "description": "Handles PUT request to /:id",
+      "signature": "PUT /:id",
+      "method": "PUT",
+      "endpoint": "/:id",
+      "testScenarios": [
+        {
+          "phase": "RED",
+          "description": "Test id should fail initially",
+          "testCode": "it('should id', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should fail"
+        },
+        {
+          "phase": "GREEN",
+          "description": "Test id should pass after implementation",
+          "testCode": "it('should id', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should pass"
+        },
+        {
+          "phase": "REFACTOR",
+          "description": "Refactor id implementation",
+          "testCode": "// TODO: Refactor code\n// All tests should still pass",
+          "expectedResult": "Code refactored, tests still pass"
+        }
+      ],
+      "todos": [
+        {
+          "id": "1",
+          "task": "Implement id function",
+          "status": "pending",
+          "priority": "high",
+          "description": "Create implementation for id"
+        }
+      ],
+      "bddScenarios": [
+        {
+          "feature": "id Feature",
+          "description": "As a developer, I want to id so that I can handle the request",
+          "scenarios": [
+            {
+              "name": "id Success Scenario",
+              "given": "Given I have valid request",
+              "when": "When I call id",
+              "then": "Then I should receive successful response",
+              "testCode": "// TODO: Implement BDD test"
+            }
+          ]
+        }
+      ],
+      "dod": {
+        "criteria": [
+          {
+            "id": "dod-1",
+            "description": "All test scenarios implemented and passing",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-2",
+            "description": "Code coverage meets minimum threshold (70%)",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-3",
+            "description": "Error handling implemented for all error cases",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-4",
+            "description": "Code reviewed and approved",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-5",
+            "description": "Documentation updated",
+            "status": "PENDING",
+            "evidence": ""
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac-1",
+            "description": "Test id should fail initially",
+            "testScenarioId": "id-scenario-1",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-2",
+            "description": "Test id should pass after implementation",
+            "testScenarioId": "id-scenario-2",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-3",
+            "description": "Refactor id implementation",
+            "testScenarioId": "id-scenario-3",
+            "status": "PENDING"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SYSTEMTYPESYSTEMCDVALIDFROMDT",
+      "description": "Handles DELETE request to /:SYSTEM_TYPE/:SYSTEM_CD/:VALID_FROM_DT",
+      "signature": "DELETE /:SYSTEM_TYPE/:SYSTEM_CD/:VALID_FROM_DT",
+      "method": "DELETE",
+      "endpoint": "/:SYSTEM_TYPE/:SYSTEM_CD/:VALID_FROM_DT",
+      "testScenarios": [
+        {
+          "phase": "RED",
+          "description": "Test SYSTEMTYPESYSTEMCDVALIDFROMDT should fail initially",
+          "testCode": "it('should SYSTEMTYPESYSTEMCDVALIDFROMDT', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should fail"
+        },
+        {
+          "phase": "GREEN",
+          "description": "Test SYSTEMTYPESYSTEMCDVALIDFROMDT should pass after implementation",
+          "testCode": "it('should SYSTEMTYPESYSTEMCDVALIDFROMDT', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should pass"
+        },
+        {
+          "phase": "REFACTOR",
+          "description": "Refactor SYSTEMTYPESYSTEMCDVALIDFROMDT implementation",
+          "testCode": "// TODO: Refactor code\n// All tests should still pass",
+          "expectedResult": "Code refactored, tests still pass"
+        }
+      ],
+      "todos": [
+        {
+          "id": "1",
+          "task": "Implement SYSTEMTYPESYSTEMCDVALIDFROMDT function",
+          "status": "pending",
+          "priority": "high",
+          "description": "Create implementation for SYSTEMTYPESYSTEMCDVALIDFROMDT"
+        }
+      ],
+      "bddScenarios": [
+        {
+          "feature": "SYSTEMTYPESYSTEMCDVALIDFROMDT Feature",
+          "description": "As a developer, I want to SYSTEMTYPESYSTEMCDVALIDFROMDT so that I can handle the request",
+          "scenarios": [
+            {
+              "name": "SYSTEMTYPESYSTEMCDVALIDFROMDT Success Scenario",
+              "given": "Given I have valid request",
+              "when": "When I call SYSTEMTYPESYSTEMCDVALIDFROMDT",
+              "then": "Then I should receive successful response",
+              "testCode": "// TODO: Implement BDD test"
+            }
+          ]
+        }
+      ],
+      "dod": {
+        "criteria": [
+          {
+            "id": "dod-1",
+            "description": "All test scenarios implemented and passing",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-2",
+            "description": "Code coverage meets minimum threshold (70%)",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-3",
+            "description": "Error handling implemented for all error cases",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-4",
+            "description": "Code reviewed and approved",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-5",
+            "description": "Documentation updated",
+            "status": "PENDING",
+            "evidence": ""
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac-1",
+            "description": "Test SYSTEMTYPESYSTEMCDVALIDFROMDT should fail initially",
+            "testScenarioId": "SYSTEMTYPESYSTEMCDVALIDFROMDT-scenario-1",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-2",
+            "description": "Test SYSTEMTYPESYSTEMCDVALIDFROMDT should pass after implementation",
+            "testScenarioId": "SYSTEMTYPESYSTEMCDVALIDFROMDT-scenario-2",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-3",
+            "description": "Refactor SYSTEMTYPESYSTEMCDVALIDFROMDT implementation",
+            "testScenarioId": "SYSTEMTYPESYSTEMCDVALIDFROMDT-scenario-3",
+            "status": "PENDING"
+          }
+        ]
+      }
+    }
+  ]
+}

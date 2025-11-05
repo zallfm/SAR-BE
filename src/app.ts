@@ -92,6 +92,8 @@ export async function buildApp() {
       "/health",
       "/api/auth/login",
       "/api/auth/refresh-token",
+      "/tdd", // TDD documentation is public
+      "/tdd/*", // All TDD routes are public
     ],
     prefixBase: "", // optional
   });
@@ -99,6 +101,10 @@ export async function buildApp() {
 
   await app.register(authRoutes, { prefix: "/api/auth" });
   await app.register(indexRoutes, { prefix: "/api/sar" });
+  
+  // TDD Documentation routes
+  const { tddRoutes } = await import("./api/tdd/tdd.routes");
+  await app.register(tddRoutes);
 
   // ==========================================
   // ❤️ 4️⃣ Health Check

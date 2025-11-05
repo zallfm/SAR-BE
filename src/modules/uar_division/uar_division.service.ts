@@ -12,14 +12,6 @@ import {
 } from "../../core/requestContext";
 import { publishMonitoringLog } from "../log_monitoring/log_publisher";
 
-function mapStatus(
-    isApproved: string | null | undefined,
-    isRejected: string | null | undefined
-): null | "1" | "0" {
-    if (isApproved === "Y") return "1";
-    if (isRejected === "Y") return "0";
-    return null;
-}
 
 export const uarDivisionService = {
 
@@ -51,7 +43,7 @@ export const uarDivisionService = {
 
             const current = percentMap.get(uarId)!;
             current.total += count;
-            if (status === '1' || status === '0') {
+            if (status === '1' || status === '2') {
                 current.completed += count;
             }
         }
@@ -60,12 +52,21 @@ export const uarDivisionService = {
             const wf = wfStatusMap.get(r.UAR_ID);
             const stats = percentMap.get(r.UAR_ID);
 
-            let percentCompleteString = "100% (0 of 0)"; // Default if no items
+            let percentCompleteString = "100% (0 of 0)";
+            let newStatus: "1" | "0" = "1";
             if (stats) {
                 const total = stats.total;
                 const completed = stats.completed;
-                const percent = (total > 0) ? Math.round((completed / total) * 100) : 100;
-                percentCompleteString = `${percent}% (${completed} of ${total})`;
+
+                if (total > 0) {
+                    const percentNumber = Math.round((completed / total) * 100);
+                    percentCompleteString = `${percentNumber}% (${completed} of ${total})`;
+
+                    newStatus = (percentNumber === 100) ? "1" : "0";
+                } else {
+                    percentCompleteString = "100% (0 of 0)";
+                    newStatus = "1";
+                }
             }
 
             return {
@@ -75,7 +76,7 @@ export const uarDivisionService = {
                 percentComplete: percentCompleteString,
                 createdDate: wf?.CREATED_DT?.toISOString() ?? "",
                 completedDate: wf?.APPROVED_DT?.toISOString() ?? null,
-                status: mapStatus(wf?.IS_APPROVED, wf?.IS_REJECTED),
+                status: newStatus
             };
         });
 

@@ -1,0 +1,64 @@
+{
+  "name": "uar_generate",
+  "displayName": "UAR Generate",
+  "description": "UAR generation process",
+  "functions": [
+    {
+      "name": "generate",
+      "signature": "async generate(input: GenerateUARInput): Promise<GenerateUARResult>",
+      "description": "Generate UAR for application and period",
+      "category": "service",
+      "testScenarios": [
+        {
+          "id": "uar-gen-001",
+          "name": "Happy Path - Generate UAR",
+          "phase": "RED",
+          "description": "Should generate UAR successfully",
+          "testCode": "it('should generate UAR', async () => {\n  const input = { period: '2024-Q1', application_id: 'APP001', createdBy: 'admin' };\n  jest.spyOn(uarGenerateRepository, 'generateAll').mockResolvedValue({ divisionUser: { inserted: 10 }, systemOwner: { inserted: 5 } });\n  const result = await uarGenerateService.generate(input);\n  expect(result.success).toBe(true);\n});"
+        },
+        {
+          "id": "uar-gen-002",
+          "name": "Error - Missing Required Fields",
+          "phase": "RED",
+          "description": "Should throw error when period or application_id is missing",
+          "testCode": "it('should throw error for missing fields', async () => {\n  await expect(uarGenerateService.generate({ period: '', application_id: 'APP001', createdBy: 'admin' })).rejects.toThrow();\n});"
+        }
+      ],
+      "todos": [
+        {"id": "todo-generate-001", "task": "Setup test file: src/tests/unit/uarGenerate.service.spec.ts", "status": "pending", "priority": "high", "description": "Create test file with describe block"},
+        {"id": "todo-generate-002", "task": "Write test: Happy Path - Generate UAR", "status": "pending", "priority": "high", "description": "Write test for successful UAR generation"},
+        {"id": "todo-generate-003", "task": "Mock uarGenerateRepository.generateAll", "status": "pending", "priority": "high", "description": "Mock repository to return generation results"},
+        {"id": "todo-generate-004", "task": "Implement generate function", "status": "pending", "priority": "high", "description": "Validate input, call repository.generateAll, return result"},
+        {"id": "todo-generate-005", "task": "Write test: Missing Required Fields Error", "status": "pending", "priority": "high", "description": "Write test for missing period or application_id"},
+        {"id": "todo-generate-006", "task": "Add validation for required fields", "status": "pending", "priority": "high", "description": "Validate period and application_id are provided"},
+        {"id": "todo-generate-007", "task": "Write test: Invalid Period Format", "status": "pending", "priority": "medium", "description": "Test validation for period format (e.g., YYYY-Q1)"},
+        {"id": "todo-generate-008", "task": "Add period format validation", "status": "pending", "priority": "medium", "description": "Validate period matches expected format"}
+      ],
+      "bddScenarios": [
+        {
+          "id": "bdd-generate-001",
+          "name": "Feature: Generate UAR",
+          "description": "As a system administrator, I want to generate UAR for an application and period so that UAR processes can be initialized",
+          "scenarios": [
+            {
+              "id": "bdd-generate-001-001",
+              "name": "Scenario: Generate UAR Successfully",
+              "given": ["Valid period and application_id provided", "Application exists", "Period format is valid"],
+              "when": ["Administrator calls generate with valid input", "System validates input", "System calls repository.generateAll"],
+              "then": ["System generates UAR records", "System returns generation result with counts", "System includes divisionUser and systemOwner insertion counts"],
+              "testCode": "it('should generate UAR', async () => {\n  const input = { period: '2024-Q1', application_id: 'APP001', createdBy: 'admin' };\n  jest.spyOn(uarGenerateRepository, 'generateAll').mockResolvedValue({ divisionUser: { inserted: 10 }, systemOwner: { inserted: 5 } });\n  const result = await uarGenerateService.generate(input);\n  expect(result.success).toBe(true);\n  expect(result.divisionUser).toBeDefined();\n  expect(result.systemOwner).toBeDefined();\n});"
+            },
+            {
+              "id": "bdd-generate-001-002",
+              "name": "Scenario: Generate UAR Fails Due to Missing Fields",
+              "given": ["Period or application_id is missing", "Administrator attempts to generate"],
+              "when": ["Administrator calls generate with missing fields", "System validates input"],
+              "then": ["System throws ApplicationError", "Error indicates missing required fields", "UAR generation does not proceed"],
+              "testCode": "it('should throw error for missing fields', async () => {\n  await expect(uarGenerateService.generate({ period: '', application_id: 'APP001', createdBy: 'admin' })).rejects.toThrow();\n});"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

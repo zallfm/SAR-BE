@@ -1,0 +1,289 @@
+import { prismaSC } from '../../db/prisma';
+import { hrPortalClient } from './hrPortal';
+function buildMenuTree(rows) {
+    const byId = new Map();
+    const roots = [];
+    for (const r of rows)
+        byId.set(r.MENU_ID, { ...r, children: [] });
+    for (const r of rows) {
+        const node = byId.get(r.MENU_ID);
+        const parent = r.MENU_PARENT ?? '';
+        if (parent && byId.has(parent)) {
+            byId.get(parent).children.push(node);
+        }
+        else {
+            roots.push(node);
+        }
+    }
+    return roots;
+}
+export const userRepository = {
+    async login(username, password) {
+        const dbUser = await prismaSC.tB_M_USER.findFirst({
+            where: {
+                USERNAME: username,
+                TB_M_USER_APPLICATION: {
+                    some: {
+                        APPLICATION: 'SARSYS'
+                    }
+                }
+            },
+            // select: { ID: true, USERNAME: true, PASSWORD: true },
+        });
+        if (!dbUser) {
+            throw new Error("Username or password incorrect");
+        }
+        if (dbUser.IN_ACTIVE_DIRECTORY) {
+            console.log(`User ${username} has IN_ACTIVE_DIRECTORY=1, authenticating via HR Portal`);
+            const hrPortalAuth = await hrPortalClient.checkSCMobile(username, password);
+            if (!hrPortalAuth.success) {
+                throw new Error('Username or password incorrect');
+            }
+        }
+        else {
+            console.log(`User ${username} has IN_ACTIVE_DIRECTORY=0, using local password verification`);
+            if (dbUser.PASSWORD !== password) {
+                throw new Error('Username or password incorrect');
+            }
+        }
+        // Ambil semua role user dari TB_M_AUTHORIZATION + TB_M_ROLE (aplikasi SARSYS)
+        const roles = await prismaSC.$queryRaw `
+      SELECT DISTINCT r.ID, r.NAME
+      FROM TB_M_ROLE r
+      INNER JOIN TB_M_AUTHORIZATION a ON r.ID = a.ROLE
+      WHERE r.APPLICATION = 'SARSYS'
+        AND a.APPLICATION = 'SARSYS'
+        AND a.USERNAME = ${username}
+      ORDER BY r.ID
+    `;
+        // console.log("roles", roles)
+        // Tentukan role utama (kalau punya lebih dari satu role)
+        const primary = roles?.[0];
+        const dynamicRole = (primary?.NAME ?? 'Administrator').toUpperCase();
+        // Return hasil dinamis
+        return {
+            id: dbUser.ID,
+            username: dbUser.USERNAME,
+            password: dbUser.PASSWORD,
+            name: dbUser.USERNAME,
+            divisionId: 2,
+            noreg: "100000",
+            role: dynamicRole, // contoh: "DPH", "SO", "ADMINISTRATOR"
+        };
+    },
+    async getMenu(username) {
+        const startTime = Date.now();
+        try {
+            const menusQuery = await prismaSC.$queryRaw `
+      WITH auth AS (
+        SELECT [ROLE], [FUNCTION], [FEATURE]
+        FROM dbo.TB_M_AUTHORIZATION
+        WHERE [USERNAME] = ${username} AND [APPLICATION] = 'SARSYS'
+      ),
+      base AS (
+        SELECT m.*
+        FROM dbo.TB_M_MENU m
+        JOIN dbo.TB_M_MENU_AUTHORIZATION ma ON m.MENU_ID = ma.MENU_ID
+        JOIN auth a ON
+             (ma.ROLE_ID     IS NOT NULL AND ma.ROLE_ID     = a.[ROLE])
+          OR (ma.FUNCTION_ID IS NOT NULL AND ma.FUNCTION_ID = a.[FUNCTION])
+          OR (ma.FEATURE_ID  IS NOT NULL AND ma.FEATURE_ID  = a.[FEATURE])
+        WHERE m.APP_ID = 'SARSYS' AND ma.APP_ID = 'SARSYS'
+      ),
+      q AS (
+        SELECT DISTINCT
+          m.MENU_ID,
+          m.MENU_PARENT,
+          m.MENU_TEXT,
+          m.MENU_TIPS,
+          m.IS_ACTIVE,
+          m.VISIBILITY,
+          m.URL,
+          m.GLYPH,
+          m.SEPARATOR,
+          m.TARGET,
+
+          -- nomor urut dari prefix angka (default 9999 jika tak ada angka)
+          TRY_CONVERT(int, NULLIF(SUBSTRING(m.MENU_ID, 1,
+              PATINDEX('%[^0-9]%', m.MENU_ID + 'X') - 1), ''))        AS ORDER_NO,
+
+          -- nomor urut parent dari prefix angka
+          TRY_CONVERT(int, NULLIF(SUBSTRING(m.MENU_PARENT, 1,
+              PATINDEX('%[^0-9]%', m.MENU_PARENT + 'X') - 1), ''))    AS PARENT_ORDER,
+
+          -- ID bersih (tanpa angka)
+          SUBSTRING(m.MENU_ID,
+              PATINDEX('%[^0-9]%', m.MENU_ID + 'X'),
+              LEN(m.MENU_ID))                                         AS MENU_ID_CLEAN,
+
+          -- Parent bersih (biarkan null/'menu' apa adanya)
+          CASE
+            WHEN m.MENU_PARENT IS NULL OR m.MENU_PARENT = 'menu' THEN m.MENU_PARENT
+            ELSE SUBSTRING(m.MENU_PARENT,
+                   PATINDEX('%[^0-9]%', m.MENU_PARENT + 'X'),
+                   LEN(m.MENU_PARENT))
+          END                                                         AS MENU_PARENT_CLEAN
+        FROM base m
+      )
+      SELECT *
+      FROM q
+      ORDER BY
+        ISNULL(PARENT_ORDER, 9999),
+        ISNULL(ORDER_NO, 9999),
+        MENU_ID_CLEAN;
+    `;
+            const groupedMenus = this.groupMenusByParent(menusQuery);
+            const executionTime = Date.now() - startTime;
+            try {
+                await prismaSC.tB_R_AUDIT_TRAIL.create({
+                    data: {
+                        ACTION_TYPE: 'R',
+                        TABLE_NAME: 'TB_M_MENU',
+                        TABLE_ITEM: 'getMenu',
+                        VALUE_BEFORE: null,
+                        VALUE_AFTER: `Query executed in ${executionTime}ms for user ${username}`,
+                        MODIFIED_BY: username,
+                        MODIFIED_DATE: new Date(),
+                    },
+                });
+            }
+            catch { }
+            return groupedMenus;
+        }
+        catch (err) {
+            // Saat dev, bagusnya log detail error
+            console.error('getMenu error:', err);
+            throw new Error('Internal Server Error');
+        }
+    },
+    async getProfile(username) {
+        try {
+            // 1) Ambil user basic info (SC)
+            const userRows = await prismaSC.$queryRaw `
+      SELECT
+        u.USERNAME,
+        u.FIRST_NAME,
+        u.LAST_NAME,
+        u.ID,
+        u.REG_NO,
+        u.COMPANY,
+        u.BIRTH_DATE,
+        u.ADDRESS
+      FROM TB_M_USER u
+      WHERE u.USERNAME = ${username}
+    `;
+            const user = userRows[0];
+            if (!user) {
+                throw new Error('User not found in SC database');
+            }
+            // 2) Ambil detail company (jika ada)
+            const company = user.COMPANY
+                ? await prismaSC.tB_M_COMPANY.findFirst({
+                    where: { ID: user.COMPANY },
+                    select: {
+                        ID: true,
+                        NAME: true,
+                        DESCRIPTION: true
+                    },
+                })
+                : null;
+            // 3) Ambil roles, features, functions (paralel)
+            const [roles, features, functions] = await Promise.all([
+                prismaSC.$queryRaw `
+        SELECT DISTINCT r.ID, r.NAME, r.DESCRIPTION
+        FROM TB_M_ROLE r
+        INNER JOIN TB_M_AUTHORIZATION a ON r.ID = a.ROLE
+        WHERE r.APPLICATION = 'SARSYS'
+          AND a.USERNAME    = ${username}
+          AND a.APPLICATION = 'SARSYS'
+      `,
+                prismaSC.$queryRaw `
+        SELECT DISTINCT f.ID
+        FROM TB_M_FEATURE f
+        INNER JOIN TB_M_AUTHORIZATION a ON f.ID = a.FEATURE
+        WHERE f.APPLICATION = 'SARSYS'
+          AND a.USERNAME    = ${username}
+          AND a.APPLICATION = 'SARSYS'
+      `,
+                prismaSC.$queryRaw `
+        SELECT DISTINCT f.ID
+        FROM TB_M_FUNCTION f
+        INNER JOIN TB_M_AUTHORIZATION a ON f.ID = a.[FUNCTION]
+        WHERE f.APPLICATION = 'SARSYS'
+          AND a.USERNAME    = ${username}
+          AND a.APPLICATION = 'SARSYS'
+      `,
+            ]);
+            return {
+                user: {
+                    username: user.USERNAME,
+                    name: `${user.FIRST_NAME ?? ''} ${user.LAST_NAME ?? ''}`.trim(),
+                    id: user.ID,
+                    regNo: user.REG_NO,
+                    company: user.COMPANY,
+                    firstName: user.FIRST_NAME,
+                    lastName: user.LAST_NAME,
+                    birthDate: user.BIRTH_DATE,
+                    address: user.ADDRESS,
+                    companyInfo: company
+                        ? {
+                            id: company.ID,
+                            name: company.NAME,
+                            description: company.DESCRIPTION ?? null
+                        }
+                        : null,
+                    // area/division dihilangkan karena sumbernya tidak tersedia di prisma utama
+                },
+                features: features.map(f => f.ID),
+                functions: functions.map(fn => fn.ID),
+                roles: roles.map(r => r.ID),
+            };
+        }
+        catch {
+            throw new Error('Internal Server Error');
+        }
+    },
+    groupMenusByParent(menus) {
+        const strip = (s) => s ? s.replace(/^\d+/, '') : s ?? null;
+        const rows = menus.map((m) => {
+            const rawId = m.MENU_ID ?? '';
+            const rawParent = m.MENU_PARENT ?? '';
+            const idClean = strip(rawId) ?? '';
+            const parentClean = rawParent === 'menu' || !rawParent ? 'menu' : strip(rawParent) ?? 'menu';
+            const orderNo = parseInt((rawId.match(/^\d+/)?.[0] ?? '9999'), 20);
+            return {
+                menuId: idClean,
+                menuText: m.MENU_TEXT ?? '',
+                menuTips: m.MENU_TIPS ?? '',
+                isActive: m.IS_ACTIVE ?? false,
+                visibility: m.VISIBILITY ?? false,
+                url: m.URL ?? '',
+                glyph: m.GLYPH ?? '',
+                separator: m.SEPARATOR ?? '',
+                target: m.TARGET ?? '',
+                parent: parentClean,
+                orderNo,
+            };
+        });
+        const byId = new Map();
+        for (const r of rows)
+            byId.set(r.menuId, { ...r, submenu: [] });
+        const roots = [];
+        for (const r of rows) {
+            const node = byId.get(r.menuId);
+            if (r.parent && r.parent !== 'menu' && byId.has(r.parent)) {
+                byId.get(r.parent).submenu.push(node);
+            }
+            else {
+                roots.push(node);
+            }
+        }
+        const sortByOrder = (a, b) => (a.orderNo ?? 9999) - (b.orderNo ?? 9999);
+        const sortTree = (nodes) => {
+            nodes.sort(sortByOrder);
+            nodes.forEach(n => n.submenu && n.submenu.length && sortTree(n.submenu));
+        };
+        sortTree(roots);
+        return roots;
+    }
+};
