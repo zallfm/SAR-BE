@@ -3,7 +3,7 @@ import { ChevronDownIcon } from '../../icons/ChevronDownIcon';
 
 interface SearchableDropdownProps {
     label: string;
-    value: string;
+    value: string | undefined;
     onChange: (value: string) => void;
     options: string[];
     searchable?: boolean; // If false, acts like a regular dropdown

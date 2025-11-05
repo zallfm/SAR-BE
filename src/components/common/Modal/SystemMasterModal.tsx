@@ -134,7 +134,7 @@ const SystemMasterModal: React.FC<SystemMasterModalProps> = ({
       }
 
       await onSave(finalRecord);
-      onClose();
+      onClose();r
     } catch (error) {
       console.error("Failed to save record:", error);
     } finally {

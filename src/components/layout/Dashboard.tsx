@@ -16,6 +16,7 @@ import { useLogout, useMenu } from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { postLogMonitoringApi } from "@/src/api/log_monitoring";
 import { AuditAction } from "@/src/constants/auditActions";
+import { UarHeader } from "@/src/types/uarDivision";
 
 const DashboardContent = lazy(
   () => import("../features/DashboardContent/DashboardContent")
@@ -90,7 +91,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
       //   location: "Dashboard.handleLogout",
       //   timestamp: new Date().toISOString(),
       // });
-      
+
 
       await doLogout();
       const { token, currentUser, tokenExpiryMs } = useAuthStore.getState();
@@ -148,7 +149,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
     setActiveView("uar_system_owner");
   };
 
-  const handleReviewUarDivisionRecord = (record: UarDivisionUserRecord) => {
+  const handleReviewUarDivisionRecord = (record: UarHeader) => {
     selectDivisionUser(record);
     setActiveView("uar_division_user_detail");
   };
@@ -202,7 +203,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
       case "uar_division_user_detail":
         return selectedDivisionUser ? (
           <UarDivisionUserDetailPage
-            record={selectedDivisionUser}
+            uarHeader={selectedDivisionUser}
             onBack={handleBackToUarDivisionUser}
             user={user}
           />

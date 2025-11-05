@@ -1,14 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  initialUarDivisionUserData,
-  initialUarDivisionUserReviewData,
-} from "../../../../data";
-import type { UarDivisionUserRecord } from "../../../../data";
 import { ChevronDownIcon } from "../../icons/ChevronDownIcon";
-import { SearchIcon } from "../../icons/SearchIcon";
 import { ProgressCheckIcon } from "../../icons/ProgressCheckIcon";
-import { SendIcon } from "../../icons/SendIcon";
-import { DownloadActionIcon } from "../../icons/DownloadActionIcon";
 import StatusPill from "../StatusPill/StatusPill";
 import { ActionReview } from "../../common/Button/ActionReview";
 import { ActionDownload } from "../../common/Button/ActionDownload";
@@ -16,195 +8,75 @@ import SearchableDropdown from "../../common/SearchableDropdown";
 import { useAuthStore } from "@/src/store/authStore";
 import { postLogMonitoringApi } from "@/src/api/log_monitoring";
 import { AuditAction } from "@/src/constants/auditActions";
+import { useUarStore } from "@/src/store/uarStore";
+import type { UarHeader } from "@/src/types/uarDivision";
+import { formatDateTime } from "@/utils/dateFormatter";
 
 interface UarDivisionUserPageProps {
-  onReview: (record: UarDivisionUserRecord) => void;
+  onReview: (record: UarHeader) => void; // <-- Use UarHeader type
 }
 
 const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
   onReview,
 }) => {
-  const [records] = useState<UarDivisionUserRecord[]>(
-    initialUarDivisionUserData
-  );
+  const {
+    divisionUserHeaders,
+    divisionUserMeta,
+    divisionUserFilters,
+    divisionUserCurrentPage,
+    divisionUserItemsPerPage,
+    isLoading,
+    error,
+    getUarList,
+    setDivisionUserFilters,
+    setDivisionUserCurrentPage,
+    setDivisionUserItemsPerPage,
+  } = useUarStore();
 
-  // Filters
-  const [periodFilter, setPeriodFilter] = useState("");
-  const [uarFilter, setUarFilter] = useState("");
+  const { currentUser } = useAuthStore();
+
   const [ownerFilter, setOwnerFilter] = useState("");
   const [createDateFilter, setCreateDateFilter] = useState("");
   const [completedDateFilter, setCompletedDateFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  useEffect(() => {
+    const abortController = new AbortController();
 
-  const { currentUser } = useAuthStore();
+    const extraFilters = {
+      owner: ownerFilter || undefined,
+      createdDate: createDateFilter || undefined,
+      completedDate: completedDateFilter || undefined,
+      status: statusFilter || undefined,
+    };
 
-  const progressData = useMemo(() => {
-    const progressMap = new Map<string, { reviewed: number; total: number }>();
-    initialUarDivisionUserReviewData.forEach((detail) => {
-      const progress = progressMap.get(detail.uarId) || {
-        reviewed: 0,
-        total: 0,
-      };
-      progress.total += 1;
-      if (detail.reviewed) {
-        progress.reviewed += 1;
-      }
-      progressMap.set(detail.uarId, progress);
-    });
-    return progressMap;
-  }, []);
+    getUarList({ ...extraFilters, signal: abortController.signal });
 
-  const handleReviewClick = async (record: UarDivisionUserRecord) => {
+    return () => {
+      abortController.abort();
+    };
+  }, [
+    getUarList,
+    divisionUserFilters,
+    ownerFilter,
+    createDateFilter,
+    completedDateFilter,
+    statusFilter,
+    divisionUserCurrentPage,
+    divisionUserItemsPerPage,
+  ]);
+
+  // --- Event Handlers ---
+  const handleReviewClick = async (record: UarHeader) => {
     // 1️⃣ Jalankan fungsi review yang dikirim dari parent
     onReview(record);
 
-    // 2️⃣ Kirim log monitoring
-    try {
-      await postLogMonitoringApi({
-        userId: currentUser?.username ?? "anonymous",
-        module: "UAR Division User",
-        action: AuditAction.DATA_REVIEW,
-        status: "Success",
-        description: `User ${currentUser?.username ?? "unknown"} reviewed UAR ${
-          record.uarId
-        }`,
-        location: "UarDivisionUserPage.handleReviewClick",
-        timestamp: new Date().toISOString(),
-      });
-    } catch (err) {
-      console.warn("Gagal mencatat log review:", err);
-    }
+
   };
 
-  const handleDownloadClick = async (record: UarDivisionUserRecord) => {
-    try {
-      await postLogMonitoringApi({
-        userId: currentUser?.username ?? "anonymous",
-        module: "UAR Division User",
-        action: AuditAction.DATA_DOWNLOAD,
-        status: "Success",
-        description: `User ${
-          currentUser?.username ?? "unknown"
-        } downloaded UAR ${record.uarId}`,
-        location: "UarDivisionUserPage.handleDownloadClick",
-        timestamp: new Date().toISOString(),
-      });
-    } catch (err) {
-      console.warn("Gagal mencatat log download:", err);
-    }
+  const handleDownloadClick = async (record: UarHeader) => {
+
   };
-
-  const enhancedRecords = useMemo(() => {
-    const computePeriod = (uarId: string) => {
-      const parts = uarId.split("_");
-      if (parts.length > 1 && parts[1].length === 6 && /^\d+$/.test(parts[1])) {
-        const month = parts[1].substring(0, 2);
-        const year = `20${parts[1].substring(2)}`;
-        return `${year}-${month}`;
-      }
-      return null;
-    };
-
-    return records.map((record) => {
-      const progress = progressData.get(record.uarId);
-      const reviewed = progress?.reviewed ?? 0;
-      const total = progress?.total ?? 0;
-      const isFinished = total > 0 && reviewed === total;
-      const percentComplete =
-        total > 0
-          ? `${Math.round((reviewed / total) * 100)}% (${reviewed} of ${total})`
-          : "0% (0 of 0)";
-
-      return {
-        ...record,
-        percentComplete,
-        status: isFinished ? ("Finished" as const) : ("InProgress" as const),
-        periodKey: computePeriod(record.uarId),
-        searchableUarId: record.uarId.toLowerCase(),
-        searchableOwner: record.divisionOwner.toLowerCase(),
-      };
-    });
-  }, [records, progressData]);
-
-  const overallProgress = useMemo(() => {
-    const totalCount = enhancedRecords.length;
-    const finishedCount = enhancedRecords.filter(
-      (record) => record.status === "Finished"
-    ).length;
-
-    return { finishedCount, totalCount };
-  }, [enhancedRecords]);
-
-  const filteredRecords = useMemo(() => {
-    const normalizedUarFilter = uarFilter.trim().toLowerCase();
-    const normalizedOwnerFilter = ownerFilter.trim().toLowerCase();
-
-    return enhancedRecords.filter((record) => {
-      if (
-        normalizedUarFilter &&
-        !record.searchableUarId.includes(normalizedUarFilter)
-      ) {
-        return false;
-      }
-
-      if (
-        normalizedOwnerFilter &&
-        !record.searchableOwner.includes(normalizedOwnerFilter)
-      ) {
-        return false;
-      }
-
-      if (statusFilter && record.status !== statusFilter) {
-        return false;
-      }
-
-      if (periodFilter && record.periodKey !== periodFilter) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [enhancedRecords, periodFilter, statusFilter, uarFilter, ownerFilter]);
-
-  const totalItems = filteredRecords.length;
-  const totalPages =
-    totalItems === 0 ? 1 : Math.ceil(totalItems / itemsPerPage);
-
-  useEffect(() => {
-    if (totalItems === 0) {
-      if (currentPage !== 1) {
-        setCurrentPage(1);
-      }
-      return;
-    }
-
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalItems, totalPages]);
-
-  const { paginatedRecords, startItem, endItem } = useMemo(() => {
-    if (totalItems === 0) {
-      return {
-        paginatedRecords: [] as typeof enhancedRecords,
-        startItem: 0,
-        endItem: 0,
-      };
-    }
-
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-
-    return {
-      paginatedRecords: filteredRecords.slice(startIndex, endIndex),
-      startItem: startIndex + 1,
-      endItem: endIndex,
-    };
-  }, [filteredRecords, totalItems, currentPage, itemsPerPage, enhancedRecords]);
 
   const logFilterChange = async (key: string, value: string) => {
     try {
@@ -213,9 +85,8 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
         module: "UAR Division User",
         action: AuditAction.DATA_FILTER,
         status: "Success",
-        description: `User ${
-          currentUser?.username ?? "unknown"
-        } filtered by ${key}: ${value}`,
+        description: `User ${currentUser?.username ?? "unknown"
+          } filtered by ${key}: ${value}`,
         location: "UarDivisionUserPage.filter",
         timestamp: new Date().toISOString(),
       });
@@ -224,22 +95,34 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
     }
   };
 
-  // 🔧 helper: normalisasi tanggal ke YYYY-MM-DD (support 'dd-mm-yyyy' & 'yyyy-mm-dd')
-  const normalizeToYMD = (s: string): string | null => {
-    if (!s) return null;
+  const overallProgress = useMemo(() => {
+    const finishedCount = divisionUserHeaders.filter((head) => head.status === "1").length;
 
-    // already yyyy-mm-dd
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const totalCount = divisionUserMeta?.total ?? 0;
 
-    // dd-mm-yyyy -> yyyy-mm-dd
-    const m = s.match(/^(\d{2})-(\d{2})-(\d{4})$/);
-    if (m) {
-      const [_, dd, mm, yyyy] = m;
-      return `${yyyy}-${mm}-${dd}`;
-    }
+    return { finishedCount, totalCount };
+  }, [divisionUserMeta, divisionUserHeaders]);
 
-    return null;
-  };
+  // Pagination data is now sourced from the store and its metadata
+  const paginatedRecords = divisionUserHeaders;
+  const totalItems = divisionUserMeta?.total ?? 0;
+  const totalPages = divisionUserMeta?.totalPages ?? 1;
+
+  const startItem = useMemo(() => {
+    if (totalItems === 0 || !divisionUserMeta) return 0;
+    console.log("divuserData", divisionUserMeta)
+    return (divisionUserMeta.page - 1) * divisionUserMeta.limit + 1;
+  }, [divisionUserMeta, totalItems]);
+
+  const endItem = useMemo(() => {
+    if (totalItems === 0 || !divisionUserMeta) return 0;
+    return Math.min(divisionUserMeta.page * divisionUserMeta.limit, totalItems);
+  }, [divisionUserMeta, totalItems]);
+
+  // 🔧 helper: (This helper is no longer used by the component's filters,
+  // but might be used by other parts, so it's safe to keep.)
+
+
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
@@ -253,13 +136,13 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
             {/* Period Input */}
             <div className="relative w-full max-w-sm">
               <input
-                type={periodFilter ? "month" : "text"}
+                type={divisionUserFilters.period ? "month" : "text"}
                 placeholder="Period"
-                value={periodFilter}
+                value={divisionUserFilters.period} // <-- Use store value
                 onChange={async (e) => {
                   const v = e.target.value;
-                  setPeriodFilter(v);
-                  setCurrentPage(1);
+                  // Use store action; this also resets page to 1
+                  setDivisionUserFilters({ period: v });
                   if (v) await logFilterChange("period", v);
                 }}
                 onFocus={(e) => {
@@ -271,7 +154,8 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
                   }
                 }}
                 onBlur={(e) => {
-                  if (!e.target.value) e.target.type = "text";
+                  // <-- Use store value
+                  if (!divisionUserFilters.period) e.target.type = "text";
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />
@@ -296,35 +180,38 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
           <div className="flex items-center gap-4 flex-wrap">
             <SearchableDropdown
               label="UAR ID"
-              value={uarFilter}
+              value={divisionUserFilters.uarId} // <-- Use store value
+              options={[...new Set(divisionUserHeaders.map((uar) => uar.uarId))]}
               onChange={async (v) => {
-                setUarFilter(v);
-                setCurrentPage(1);
+                // Use store action; this also resets page to 1
+                setDivisionUserFilters({ uarId: v });
                 if (v) await logFilterChange("uarId", v);
               }}
-              options={[...new Set(records.map((r) => r.uarId))]}
+              // options removed - data is no longer local
               placeholder="UAR ID"
             />
             <SearchableDropdown
               label="Division Owner"
-              value={ownerFilter}
+              value={ownerFilter} // <-- Use local value
+              options={[...new Set(divisionUserHeaders.map((uar) => uar.divisionOwner))]}
+
               onChange={async (v) => {
                 setOwnerFilter(v);
-                setCurrentPage(1);
+                setDivisionUserCurrentPage(1); // <-- Manually reset page
                 if (v) await logFilterChange("divisionOwner", v);
               }}
-              options={[...new Set(records.map((r) => r.divisionOwner))]}
+              // options removed - data is no longer local
               placeholder="Division Owner"
             />
             <div className="relative">
               <input
                 type={createDateFilter ? "date" : "text"}
                 placeholder="Create Date"
-                value={createDateFilter}
+                value={createDateFilter} // <-- Use local value
                 onChange={async (e) => {
                   const v = e.target.value;
                   setCreateDateFilter(v);
-                  setCurrentPage(1);
+                  setDivisionUserCurrentPage(1); // <-- Manually reset page
                   if (v) await logFilterChange("createdDate", v);
                 }}
                 onFocus={(e) => {
@@ -340,12 +227,12 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
               <input
                 type={completedDateFilter ? "date" : "text"}
                 placeholder="Completed Date"
-                value={completedDateFilter}
+                value={completedDateFilter} // <-- Use local value
                 onChange={async (e) => {
-                    const v = e.target.value;
-                    setCompletedDateFilter(v)
-                    setCurrentPage(1)
-                    if(v) await logFilterChange("completedDate", v)
+                  const v = e.target.value;
+                  setCompletedDateFilter(v);
+                  setDivisionUserCurrentPage(1); // <-- Manually reset page
+                  if (v) await logFilterChange("completedDate", v);
                 }}
                 onFocus={(e) => {
                   e.target.type = "date";
@@ -358,10 +245,10 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
             </div>
             <SearchableDropdown
               label="Status"
-              value={statusFilter}
+              value={statusFilter} // <-- Use local value
               onChange={async (v) => {
                 setStatusFilter(v);
-                setCurrentPage(1);
+                setDivisionUserCurrentPage(1); // <-- Manually reset page
                 if (v) await logFilterChange("status", v);
               }}
               options={["Finished", "InProgress"]}
@@ -392,47 +279,61 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
               </tr>
             </thead>
             <tbody>
-              {paginatedRecords.map((record) => (
-                <tr
-                  key={record.ID}
-                  className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50"
-                >
-                  <td className="px-4 py-4 whitespace-nowrap text-gray-900 text-sm">
-                    {record.uarId}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm">
-                    {record.divisionOwner}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm">
-                    {record.percentComplete}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm">
-                    {record.createDate}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm">
-                    {record.completedDate}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm">
-                    <StatusPill status={record.status} />
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="group relative">
-                        {/* Button Review */}
-                        <ActionReview
-                          onClick={() => handleReviewClick(record)}
-                        />
-                      </div>
-                      <div className="group relative">
-                        {/* Button download */}
-                        <ActionDownload
-                          onClick={() => handleDownloadClick(record)}
-                        />
-                      </div>
-                    </div>
+              {error ? (
+                <tr>
+                  <td colSpan={7} className="text-center p-6 text-red-600">
+                    Error: {error}
                   </td>
                 </tr>
-              ))}
+              ) : paginatedRecords.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center p-6 text-gray-500">
+                    No records found.
+                  </td>
+                </tr>
+              ) : (
+                paginatedRecords.map((record) => (
+                  <tr
+                    key={record.uarId} // Assuming UarHeader has an 'ID' property
+                    className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50"
+                  >
+                    <td className="px-4 py-4 whitespace-nowrap text-gray-900 text-sm">
+                      {record.uarId}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm">
+                      {record.divisionOwner}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm">
+                      {record.percentComplete}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm">
+                      {formatDateTime(record.createdDate)}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm">
+                      {formatDateTime(record.completedDate)}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm">
+                      <StatusPill status={record.status === "1" ? "Finished" : "InProgress"} />
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="group relative">
+                          {/* Button Review */}
+                          <ActionReview
+                            onClick={() => handleReviewClick(record)}
+                          />
+                        </div>
+                        <div className="group relative">
+                          {/* Button download */}
+                          <ActionDownload
+                            onClick={() => handleDownloadClick(record)}
+                          />
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -442,12 +343,11 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
           <div className="flex items-center gap-2">
             <div className="relative">
               <select
-                value={itemsPerPage}
+                value={divisionUserItemsPerPage}
                 onChange={(e) => {
                   const value = Number(e.target.value);
                   if (!Number.isNaN(value) && value > 0) {
-                    setItemsPerPage(value);
-                    setCurrentPage(1);
+                    setDivisionUserItemsPerPage(value);
                   }
                 }}
                 className="pl-3 pr-8 py-1.5 border border-gray-300 rounded-md hover:bg-gray-100 appearance-none bg-white"
@@ -464,13 +364,18 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
           </div>
           <div className="flex items-center gap-4">
             <span>
+              {/* Use derived pagination values */}
               Showing {totalItems === 0 ? 0 : `${startItem}-${endItem}`} of{" "}
               {totalItems}
             </span>
             <div className="flex gap-2">
               <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage <= 1}
+                onClick={() =>
+                  setDivisionUserCurrentPage(
+                    Math.max(1, divisionUserCurrentPage - 1)
+                  )
+                }
+                disabled={divisionUserCurrentPage <= 1}
                 className="px-2 py-1 border bg-white border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
                 aria-label="Previous Page"
               >
@@ -478,9 +383,12 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
               </button>
               <button
                 onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  // Use store action and value
+                  setDivisionUserCurrentPage(
+                    Math.min(totalPages, divisionUserCurrentPage + 1)
+                  )
                 }
-                disabled={currentPage >= totalPages}
+                disabled={divisionUserCurrentPage >= totalPages}
                 className="px-2 py-1 border bg-white border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
                 aria-label="Next Page"
               >
