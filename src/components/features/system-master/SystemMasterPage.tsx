@@ -22,7 +22,7 @@ import { useAuthStore } from "@/src/store/authStore";
 import { AuditAction } from "@/src/constants/auditActions";
 import { SystemMaster } from "@/src/types/systemMaster";
 import { useSystemMasterStore } from "@/src/store/systemMasterStore";
-import { formatDate } from "@/utils/dateFormatter";
+import { formatDate, formatDateTime } from "@/utils/dateFormatter";
 
 interface SystemMasterPageProps {
   user: User;
@@ -325,13 +325,13 @@ const SystemMasterPage: React.FC<SystemMasterPageProps> = ({ user }) => {
                     {record.CREATED_BY}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    {formatDate(record.CREATED_DT)}
+                    {formatDateTime(record.CREATED_DT)}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
                     {record.CHANGED_BY ? record.CHANGED_BY : "-"}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    {formatDate(record.CHANGED_DT ?? "")}
+                    {formatDateTime(record.CHANGED_DT ?? "")}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
                     <div className="flex items-center gap-4">

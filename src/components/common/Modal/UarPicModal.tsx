@@ -72,11 +72,13 @@ const UarPicModal: React.FC<UarPicModalProps> = ({
           return "You must input email name @toyota.co.id";
         }
       } else {
-        // No domain provided, check if username part is valid
         if (!/^[^\s@]+$/.test(email)) {
           return "Invalid email format.";
         }
       }
+    }
+    if (email.length > 30) {
+      return "Email can only contains 30 characters"
     }
     return null;
   }, [email]);
