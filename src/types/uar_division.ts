@@ -13,8 +13,9 @@ export interface UarDivisionBatchUpdateDTO {
 export interface UarHeader {
     uarId: string;
     uarPeriod: string;
+    divisionOwner: string;
+    percentComplete: string;
     createdDate: string;
     completedDate: string | null;
     status: null | "1" | "0";
 }
-

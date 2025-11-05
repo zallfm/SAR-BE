@@ -32,25 +32,57 @@ export const uarDivisionService = {
         },
         userDivisionId: number
     ) {
-        const { data, total } = await repo.listUars({
+        const { data, total, workflowStatus, completionStats } = await repo.listUars({
             ...params,
             userDivisionId,
         });
 
-        const headers: UarHeader[] = data.map((r) => ({
-            uarId: r.UAR_ID,
-            uarPeriod: r.UAR_PERIOD,
-            createdDate: r.CREATED_DT?.toISOString() ?? "",
-            completedDate: r.APPROVED_DT?.toISOString() ?? null,
-            status: mapStatus(r.IS_APPROVED, r.IS_REJECTED),
-        }));
+        const wfStatusMap = new Map(workflowStatus.map((w) => [w.UAR_ID, w]));
+
+        const percentMap = new Map<string, { completed: number; total: number }>();
+        for (const stat of completionStats) {
+            const uarId = stat.UAR_ID;
+            const count = stat._count._all;
+            const status = stat.DIV_APPROVAL_STATUS;
+
+            if (!percentMap.has(uarId)) {
+                percentMap.set(uarId, { completed: 0, total: 0 });
+            }
+
+            const current = percentMap.get(uarId)!;
+            current.total += count;
+            if (status === '1' || status === '0') {
+                current.completed += count;
+            }
+        }
+
+        const headers: UarHeader[] = data.map((r) => {
+            const wf = wfStatusMap.get(r.UAR_ID);
+            const stats = percentMap.get(r.UAR_ID);
+
+            let percentCompleteString = "100% (0 of 0)"; // Default if no items
+            if (stats) {
+                const total = stats.total;
+                const completed = stats.completed;
+                const percent = (total > 0) ? Math.round((completed / total) * 100) : 100;
+                percentCompleteString = `${percent}% (${completed} of ${total})`;
+            }
+
+            return {
+                uarId: r.UAR_ID,
+                uarPeriod: r.UAR_PERIOD,
+                divisionOwner: r.TB_M_DIVISION?.DIVISION_NAME ?? 'N/A',
+                percentComplete: percentCompleteString,
+                createdDate: wf?.CREATED_DT?.toISOString() ?? "",
+                completedDate: wf?.APPROVED_DT?.toISOString() ?? null,
+                status: mapStatus(wf?.IS_APPROVED, wf?.IS_REJECTED),
+            };
+        });
 
         return { data: headers, total };
     },
 
-    /**
-     * Get all items for a single UAR, filtered by the user's division.
-     */
+
     async getDetails(uarId: string, userDivisionId: number) {
         const rows = await repo.getUarDetails(uarId, userDivisionId);
         if (!rows || rows.length === 0) {
