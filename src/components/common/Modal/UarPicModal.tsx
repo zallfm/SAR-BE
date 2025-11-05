@@ -75,11 +75,15 @@ const UarPicModal: React.FC<UarPicModalProps> = ({
         if (!/^[^\s@]+$/.test(email)) {
           return "Invalid email format.";
         }
+        if (email.length > 30) {
+          return "Email can only contains 30 characters"
+        }
+      }
+      if (email.length > 20) {
+        return "Email can only contains 30 characters"
       }
     }
-    if (email.length > 30) {
-      return "Email can only contains 30 characters"
-    }
+
     return null;
   }, [email]);
 
