@@ -25,7 +25,7 @@ export const applicationController = {
         limit = 10,
         search,
         sortField = "CREATED_DT",
-        sortOrder = "desc",
+        sortOrder = "asc",
       } = req.query ?? {};
 
       const result = await svc.list({
