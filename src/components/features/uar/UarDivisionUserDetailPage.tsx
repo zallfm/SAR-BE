@@ -47,6 +47,7 @@ const UarDivisionUserDetailPage: React.FC<UarDivisionUserDetailPageProps> = ({
         divisionUserDetails, // This will be UarDetailItem[]
         isLoading: isStoreLoading,
         error: storeError,
+
         getUarDetails,
         clearUarDetails,
         batchUpdate,
@@ -102,53 +103,17 @@ const UarDivisionUserDetailPage: React.FC<UarDivisionUserDetailPageProps> = ({
     }, [divisionUserDetails]);
 
 
-    // --- Action Handlers ---
 
-    const handleRowApprovalChange = async (id: string, status: ApprovalStatus) => {
-        const originalStatus =
-            status === 'Approved' ? 'Revoked' : 'Approved';
-
-        // 1. Optimistic UI Update
+    const handleRowApprovalChange = (id: string, status: ApprovalStatus) => {
         setTableData((prev) =>
             prev.map((row) => (row.ID === id ? { ...row, approvalStatus: status } : row))
         );
-
-        // 2. Find row data for payload
-        const rowData = tableData.find((row) => row.ID === id);
-        if (!rowData) return;
-
-        // 3. Log
-        const action =
-            status === 'Approved' ? AuditAction.DATA_KEEP : AuditAction.DATA_REVOKE;
-
-        // 4. Prepare and send payload
-        const payload: BatchUpdatePayload = {
-            uarId: uarHeader.uarId,
-            decision: status === 'Approved' ? 'Approve' : 'Revoke',
-            comments: rowData.comments?.[rowData.comments.length - 1]?.text, // Send last comment
-            items: [{ username: rowData.username, roleId: rowData.roleId }],
-        };
-
-        // 5. Call store action
-        const { error } = await batchUpdate(payload);
-        if (error) {
-            // Revert UI on failure
-            console.error('Failed to update row:', error.message);
-            setTableData((prev) =>
-                prev.map((row) =>
-                    row.ID === id ? { ...row, approvalStatus: originalStatus } : row
-                )
-            );
-        }
-        // On success, store refetches and data is auto-updated
     };
 
-    const handleBulkAction = async (status: ApprovalStatus) => {
+    const handleBulkAction = (status: ApprovalStatus) => {
         if (selectedRows.length === 0) return;
-        const originalStatus =
-            status === 'Approved' ? 'Revoked' : 'Approved';
 
-        // 1. Optimistic UI Update
+        // 1. Just update local UI state
         setTableData((prev) =>
             prev.map((row) =>
                 selectedRows.includes(row.ID)
@@ -156,45 +121,8 @@ const UarDivisionUserDetailPage: React.FC<UarDivisionUserDetailPageProps> = ({
                     : row
             )
         );
-
-        // 2. Find row data for payload
-        const selectedRowData = tableData.filter((row) =>
-            selectedRows.includes(row.ID)
-        );
-
-        // 3. Log
-        const action =
-            status === 'Approved'
-                ? AuditAction.DATA_KEEP_ALL
-                : AuditAction.DATA_REVOKE_ALL;
-
-
-        // 4. Prepare and send payload
-        const payload: BatchUpdatePayload = {
-            uarId: uarHeader.uarId,
-            decision: status === 'Approved' ? 'Approve' : 'Revoke',
-            // No clear way to add a single comment for bulk action
-            items: selectedRowData.map((r) => ({
-                username: r.username,
-                roleId: r.roleId,
-            })),
-        };
-
-        // 5. Call store action
-        const { error } = await batchUpdate(payload);
-        if (error) {
-            // Revert UI on failure
-            console.error('Failed to bulk update:', error.message);
-            setTableData((prev) =>
-                prev.map((row) =>
-                    selectedRows.includes(row.ID)
-                        ? { ...row, approvalStatus: originalStatus }
-                        : row
-                )
-            );
-        }
-        // On success, store refetches.
         setSelectedRows([]); // Clear selection
+        // No API call here
     };
 
     const handleSubmitComment = async (newCommentText: string) => {
@@ -330,13 +258,31 @@ const UarDivisionUserDetailPage: React.FC<UarDivisionUserDetailPageProps> = ({
                     </div>
                     <button
                         onClick={async () => {
-                            // Reverted to original logic: just log
+                            const changedItems = tableData
+                                .filter(row => row.approvalStatus !== null)
+                                .map(row => ({
+                                    username: row.username,
+                                    roleId: row.roleId,
+                                    decision: row.approvalStatus!, // 'Approved' or 'Revoked'
+                                }));
+
+                            if (changedItems.length === 0) {
+                                alert("No changes to submit.");
+                                return;
+                            }
+
+                            const payload: BatchUpdatePayload = {
+                                uarId: uarHeader.uarId,
+                                items: changedItems,
+                            };
+
+                            await batchUpdate(payload);
 
                         }}
-                        disabled={isStoreLoading} // Disable if store is busy
+                        disabled={isStoreLoading} // Button is disabled while store is busy
                         className="px-8 py-2 text-sm font-semibold text-white bg-blue-400 rounded-lg hover:bg-blue-500 transition-colors disabled:bg-blue-200 disabled:cursor-not-allowed"
                     >
-                        {isStoreLoading ? 'Loading...' : 'Submit'}
+                        {isStoreLoading ? 'Submitting...' : 'Submit'}
                     </button>
                 </div>
 

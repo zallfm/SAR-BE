@@ -138,7 +138,6 @@ export const useUarStore = create<UarState>()(
           set({ isLoading: true });
           try {
             await batchUpdateApi(payload);
-            // Refetch details to show new statuses
             await get().getUarDetails(payload.uarId);
             return { error: undefined };
           } catch (error: any) {
