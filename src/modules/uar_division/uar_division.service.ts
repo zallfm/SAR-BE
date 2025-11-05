@@ -134,7 +134,7 @@ export const uarDivisionService = {
             module: "UAR_DIV",
             action: "BATCH_UPDATE",
             status: "Success",
-            description: `Batch ${dto.decision} for UAR ${dto.uarId} on ${dto.items.length} items.`,
+            description: `Batch update for UAR ${dto.uarId} on ${dto.items.length} items.`,
             location: "/uar-division/batch-update",
         }).catch((e) => console.warn({ e, reqId }, "monitoring log failed"));
 

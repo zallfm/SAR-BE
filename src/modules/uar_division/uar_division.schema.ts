@@ -63,7 +63,6 @@ export const batchUpdateSchema: FastifySchema = {
         type: "object",
         properties: {
             uarId: { type: "string" },
-            decision: { type: "string", enum: ["Approve", "Revoke"] },
             comments: { type: "string" },
             items: {
                 type: "array",
@@ -73,12 +72,13 @@ export const batchUpdateSchema: FastifySchema = {
                     properties: {
                         username: { type: "string" },
                         roleId: { type: "string" },
+                        decision: { type: "string", enum: ["Approved", "Revoked"] }
                     },
-                    required: ["username", "roleId"],
+                    required: ["username", "roleId", "decision"],
                 },
             },
         },
-        required: ["uarId", "decision", "items"],
+        required: ["uarId", "items"],
     },
     response: {
         200: {
