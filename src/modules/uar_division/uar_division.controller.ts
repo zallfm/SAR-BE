@@ -98,21 +98,14 @@ export const uarDivisionController = {
 
     exportExcel: (_app: FastifyInstance) =>
         async (req: FastifyRequest<{ Querystring: ExportQuery }>, reply: FastifyReply) => {
-            const { divisionId } = getAuthInfo(req); // belum dipakai, tapi biarkan untuk konsistensi auth
+            const { divisionId } = getAuthInfo(req);
             const { uar_id } = req.query;
 
-            // ⛳ DUMMY PARAM (hardcoded) — cukup untuk test tampilan Excel
-            const { buffer, filename } = await buildUarExcelTemplate({
-                systemName: "IPPCS",
-                divisionName: "ISTD",
-                departmentName: "CIO",
-                monthLabel: "August 2025",
-                roleColumns: ["[ROLE 1]", "[ROLE 2]", "[ROLE 3]"],
-            });
+            const { buffer, filename } = await buildUarExcelTemplate(uar_id, divisionId);
 
             reply
                 .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                .header("Content-Disposition", `attachment; filename="UAR_${uar_id}_${filename}"`)
+                .header("Content-Disposition", `attachment; filename="${filename}"`)
                 .send(buffer);
         },
 };

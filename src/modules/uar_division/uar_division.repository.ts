@@ -126,12 +126,10 @@ export const uarDivisionRepository = {
             );
         }
 
-        // Filter detail sesuai department pada header (jika header punya DEPARTMENT_ID)
         const filteredDetails = header?.DEPARTMENT_ID
             ? details.filter(d => d.DEPARTMENT_ID === header.DEPARTMENT_ID)
             : details;
 
-        // === Ambil Department Name untuk header ===
         const department = header?.DEPARTMENT_ID
             ? await prisma.tB_M_EMPLOYEE.findFirst({
                 where: { DEPARTMENT_ID: header.DEPARTMENT_ID },
@@ -144,22 +142,22 @@ export const uarDivisionRepository = {
             select: { DIVISION_NAME: true }
         }) : null
 
-        // === Ambil SECTION_NAME untuk SETIAP detail (batch, tanpa N+1) ===
-        // 1) kumpulkan SECTION_ID unik (buang null)
+        const employee = header?.APPROVER_NOREG ? await prisma.tB_M_EMPLOYEE.findFirst({
+            where: { NOREG: header.APPROVER_NOREG },
+            select: { PERSONNEL_NAME: true }
+        }) : null
+
         const sectionIds = Array.from(
             new Set(filteredDetails.map(d => d.SECTION_ID).filter((v): v is number => v != null))
         );
 
-        // 2) query nama section untuk semua id tsb
         const sectionRows = sectionIds.length
             ? await prisma.tB_M_EMPLOYEE.findMany({
                 where: { SECTION_ID: { in: sectionIds } },
-                // kalau ada konsep aktif, bisa tambahkan: VALID_TO: null
                 select: { SECTION_ID: true, SECTION_NAME: true },
             })
             : [];
 
-        // 3) buat map SECTION_ID -> SECTION_NAME (ambil yang pertama saja)
         const sectionMap = new Map<number, string | null>();
         for (const r of sectionRows) {
             if (r.SECTION_ID != null && !sectionMap.has(r.SECTION_ID)) {
@@ -167,10 +165,46 @@ export const uarDivisionRepository = {
             }
         }
 
-        // 4) merge SECTION_NAME ke setiap detail
+        const departmentIds = Array.from(
+            new Set(filteredDetails.map(d => d.DEPARTMENT_ID).filter((v): v is number => v != null))
+        );
+
+        const departmentRows = departmentIds.length
+            ? await prisma.tB_M_EMPLOYEE.findMany({
+                where: { DEPARTMENT_ID: { in: departmentIds } },
+                select: { DEPARTMENT_ID: true, DEPARTMENT_NAME: true },
+            })
+            : [];
+
+        const departmentMap = new Map<number, string | null>();
+        for (const r of departmentRows) {
+            if (r.DEPARTMENT_ID != null && !departmentMap.has(r.DEPARTMENT_ID)) {
+                departmentMap.set(r.DEPARTMENT_ID, (r as any).DEPARTMENT_NAME ?? null);
+            }
+        }
+
+        const employeeNameDetailIds = Array.from(
+            new Set(filteredDetails.map(d => d.NOREG).filter((v): v is string => v != null))
+        );
+
+        const employeeNameDetailRows = departmentIds.length
+            ? await prisma.tB_M_EMPLOYEE.findMany({
+                where: { NOREG: { in: employeeNameDetailIds } },
+                select: { NOREG: true, PERSONNEL_NAME: true },
+            })
+            : [];
+
+        const EmployeeNameMap = new Map<string, string | null>();
+        for (const r of employeeNameDetailRows) {
+            if (r.NOREG != null && !EmployeeNameMap.has(r.NOREG)) {
+                EmployeeNameMap.set(r.NOREG, (r as any).PERSONNEL_NAME ?? null);
+            }
+        }
         const detailsWithSectionName = filteredDetails.map(d => ({
             ...d,
             SECTION_NAME: d.SECTION_ID != null ? sectionMap.get(d.SECTION_ID) ?? null : null,
+            DEPARTMENT_NAME: d.DEPARTMENT_ID != null ? departmentMap.get(d.DEPARTMENT_ID) ?? null : null,
+            PERSONNEL_NAME: d.NOREG != null ? EmployeeNameMap.get(d.NOREG) ?? null : null,
         }));
 
         // (opsional) isi SECTION_NAME di header dari salah satu detail (kalau mau)
@@ -183,6 +217,7 @@ export const uarDivisionRepository = {
                 ...header,
                 DEPARTMENT_NAME: department?.DEPARTMENT_NAME ?? null,
                 DIVISION_NAME: division?.DIVISION_NAME ?? null,
+                PERONNEL_NAME: employee?.PERSONNEL_NAME ?? null,
             },
             details: detailsWithSectionName,
         };

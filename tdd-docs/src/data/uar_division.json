@@ -482,6 +482,111 @@
           }
         ]
       }
+    },
+    {
+      "name": "excelid",
+      "description": "Handles GET request to /excel/:id",
+      "signature": "GET /excel/:id",
+      "method": "GET",
+      "endpoint": "/excel/:id",
+      "testScenarios": [
+        {
+          "phase": "RED",
+          "description": "Test excelid should fail initially",
+          "testCode": "it('should excelid', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should fail"
+        },
+        {
+          "phase": "GREEN",
+          "description": "Test excelid should pass after implementation",
+          "testCode": "it('should excelid', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should pass"
+        },
+        {
+          "phase": "REFACTOR",
+          "description": "Refactor excelid implementation",
+          "testCode": "// TODO: Refactor code\n// All tests should still pass",
+          "expectedResult": "Code refactored, tests still pass"
+        }
+      ],
+      "todos": [
+        {
+          "id": "1",
+          "task": "Implement excelid function",
+          "status": "pending",
+          "priority": "high",
+          "description": "Create implementation for excelid"
+        }
+      ],
+      "bddScenarios": [
+        {
+          "feature": "excelid Feature",
+          "description": "As a developer, I want to excelid so that I can handle the request",
+          "scenarios": [
+            {
+              "name": "excelid Success Scenario",
+              "given": "Given I have valid request",
+              "when": "When I call excelid",
+              "then": "Then I should receive successful response",
+              "testCode": "// TODO: Implement BDD test"
+            }
+          ]
+        }
+      ],
+      "dod": {
+        "criteria": [
+          {
+            "id": "dod-1",
+            "description": "All test scenarios implemented and passing",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-2",
+            "description": "Code coverage meets minimum threshold (70%)",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-3",
+            "description": "Error handling implemented for all error cases",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-4",
+            "description": "Code reviewed and approved",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-5",
+            "description": "Documentation updated",
+            "status": "PENDING",
+            "evidence": ""
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac-1",
+            "description": "Test excelid should fail initially",
+            "testScenarioId": "excelid-scenario-1",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-2",
+            "description": "Test excelid should pass after implementation",
+            "testScenarioId": "excelid-scenario-2",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-3",
+            "description": "Refactor excelid implementation",
+            "testScenarioId": "excelid-scenario-3",
+            "status": "PENDING"
+          }
+        ]
+      }
     }
   ]
 }
