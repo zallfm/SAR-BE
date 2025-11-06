@@ -15,36 +15,33 @@ const emit = (name: 'http:unauthorized' | 'http:forbidden', detail?: any) => {
   try { window.dispatchEvent(new CustomEvent(name, { detail })); } catch { }
 };
 
-// ✅ tambahkan properti params di sini
 type HttpOptions = {
-  path: string; // contoh: '/auth/login'
+  path: string;
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   token?: string | null;
   body?: any;
-  params?: Record<string, any>; // <-- query string (baru)
+  params?: Record<string, any>;
   headers?: Record<string, string>;
-  signal?: AbortSignal
+  signal?: AbortSignal;
+  responseType?: 'json' | 'blob';
 };
 
-// helper untuk gabung base + path, tapi tetap hormati URL absolut
 function buildUrl(path: string) {
   try {
-    // kalau path sudah absolut (http:// atau https://), langsung return
     return new URL(path).toString();
   } catch {
-    const base = API_BASE.replace(/\/+$/, ''); // hapus slash akhir
+    const base = API_BASE.replace(/\/+$/, '');
     const p = path.startsWith('/') ? path : `/${path}`;
     return `${base}${p}`;
   }
 }
 
-// ✅ helper untuk serialize query params jadi ?key=value
 function buildQuery(params?: Record<string, any>): string {
   if (!params) return '';
   const query = new URLSearchParams();
 
   Object.entries(params).forEach(([key, value]) => {
-    if (value === undefined || value === null || value === '') return; // skip kosong
+    if (value === undefined || value === null || value === '') return;
     if (Array.isArray(value)) {
       value.forEach((v) => query.append(key, String(v)));
     } else if (value instanceof Date) {
@@ -71,36 +68,37 @@ function getTokenFallback(): string | null {
 
 
 export async function http<T>(opts: HttpOptions): Promise<T> {
-  // ✅ tambahkan dukungan untuk params/query
   const url = buildUrl(opts.path) + buildQuery(opts.params);
 
-  // buat headers dinamis
   const headers: Record<string, string> = {
     ...(opts.headers ?? {}),
     'x-request-id': genReqId(),
     ...(opts.token ? { Authorization: `Bearer ${opts.token}` } : {}),
   };
-  console.log("headers", headers)
 
-  // hanya tambahkan content-type kalau ada body
   if (opts.body) {
     headers['Content-Type'] = 'application/json';
+  }
+
+  if (opts.responseType === 'blob') {
+    headers['Accept'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
   }
 
   const res = await fetch(url, {
     method: opts.method ?? 'GET',
     headers,
     body: opts.body ? JSON.stringify(opts.body) : undefined,
-    signal: opts.signal
+    signal: opts.signal,
   });
 
-  const json = await res.json().catch(() => ({})); // fallback kalau bukan JSON
-
   if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    const json = (() => { try { return JSON.parse(text); } catch { return null; } })();
+
     const err: HttpError = {
       status: res.status,
       code: json?.code,
-      message: json?.message ?? 'Request failed',
+      message: json.message ? json.message : text || 'Request failed',
       requestId: json?.requestId,
       details: json?.details,
     };
@@ -109,5 +107,15 @@ export async function http<T>(opts: HttpOptions): Promise<T> {
     throw err;
   }
 
+  if (opts.responseType === 'blob') {
+    const blob = await res.blob();
+    const cd = res.headers.get('Content-Disposition') || '';
+    const m = /filename\*?=(?:UTF-8''|")?([^\";]+)/i.exec(cd);
+    const filename = m ? decodeURIComponent(m[1].replace(/"/g, '')) : undefined;
+
+    return { blob, filename } as T;
+  }
+
+  const json = await res.json().catch(() => ({}));
   return json as T;
 }

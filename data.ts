@@ -51,11 +51,11 @@ export const initialApplications: Application[] = [
 export interface SystemUser {
   NOREG: string;
   DIVISION_ID: number;
-  DEPARTMENT_ID: number;
-  PERSONAL_NAME: string;
   DIVISION_NAME: string;
-  MAIL: string;
+  DEPARTMENT_ID: number;
   DEPARTMENT_NAME: string;
+  PERSONAL_NAME: string;
+  MAIL: string;
   canBeOwner: boolean;      // eligible as System Owner
   canBeCustodian: boolean;
 }

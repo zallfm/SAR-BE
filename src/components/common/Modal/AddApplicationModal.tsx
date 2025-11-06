@@ -113,7 +113,7 @@ const UserDetailsDisplay: React.FC<{ user: SystemUser | null }> = ({
       <p className="truncate">
         Division :{" "}
         <span className="font-semibold text-gray-800">
-          {user?.DIVISION_ID || "-"}
+          {user?.DIVISION_NAME || "-"}
         </span>
       </p>
       <p className="truncate">
@@ -123,7 +123,7 @@ const UserDetailsDisplay: React.FC<{ user: SystemUser | null }> = ({
       <p className="truncate">
         Department :{" "}
         <span className="font-semibold text-gray-800">
-          {user?.DEPARTMENT_ID || "-"}
+          {user?.DEPARTMENT_NAME || "-"}
         </span>
       </p>
     </div>
