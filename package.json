@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsup && node scripts/fix-imports.js && node scripts/copy-prisma-generated.js",
+    "build:tsc": "tsc -p tsconfig.json && node scripts/fix-imports.js && node scripts/copy-prisma-generated.js",
     "start": "node dist/server.js",
     "test": "jest --passWithNoTests",
     "test:unit": "jest tests/unit --runInBand",
@@ -24,7 +25,8 @@
     "predev": "npm run tdd:generate",
     "tdd:generate-evidence": "tsx scripts/generate-test-evidence.ts",
     "tdd:watch-evidence": "tsx scripts/watch-test-results.ts",
-    "tdd:test": "npm run test:coverage && npm run tdd:generate-evidence"
+    "tdd:test": "npm run test:coverage && npm run tdd:generate-evidence",
+    "build:onprem": "rm -rf build && docker build --platform linux/amd64 --target export --output build -f Dockerfile.onprem ."
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
@@ -61,6 +63,7 @@
     "prisma": "^6.17.1",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
+    "tsup": "^8.5.0",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3"
   }
