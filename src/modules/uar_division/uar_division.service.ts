@@ -102,7 +102,7 @@ export const uarDivisionService = {
 
     async getUar(uarId: string, userDivisionId: number) {
         const rows = await repo.getUar(uarId, userDivisionId);
-        console.log("rowss", rows)
+        // console.log("rowss", rows)
         return rows;
     },
 
