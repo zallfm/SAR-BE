@@ -255,7 +255,7 @@ export async function buildUarExcelTemplate(uarId: string, userDivisionId: numbe
 
         row.getCell("SECTION").value = d.SECTION_NAME ?? "";
 
-        row.getCell("DEPARTMENT").value = d.DEPARTMENT_ID ?? "";
+        row.getCell("DEPARTMENT").value = d.DEPARTMENT_NAME ?? "";
 
         row.getCell("DIVISION").value = divisionName;
 

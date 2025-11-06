@@ -2,7 +2,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { uarDivisionService as svc } from "./uar_division.service";
 import type { UarDivisionBatchUpdateDTO } from "../../types/uar_division";
-import { buildUarExcelTemplate } from "./uar.excel";
+// import { buildUarExcelTemplate } from "./uar.excel";
 
 type ExportQuery = {
     uar_id: string;
