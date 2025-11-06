@@ -34,9 +34,9 @@ export async function uarDivisionRoutes(app: FastifyInstance) {
         uarDivisionController.batchUpdate(app)
     );
 
-    app.get(
-        "/export",
-        {schema: exportUarExcelSchema},
-        uarDivisionController.exportExcel(app)
-    )
+    // app.get(
+    //     "/export",
+    //     {schema: exportUarExcelSchema},
+    //     uarDivisionController.exportExcel(app)
+    // )
 }
