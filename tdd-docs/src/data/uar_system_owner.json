@@ -1,0 +1,217 @@
+{
+  "name": "uar_system_owner",
+  "displayName": "Uar_system_owner",
+  "description": "Module for uar_system_owner",
+  "functions": [
+    {
+      "name": "uarIdapplicationsapplicationId",
+      "description": "Handles GET request to /:uarId/applications/:applicationId",
+      "signature": "GET /:uarId/applications/:applicationId",
+      "method": "GET",
+      "endpoint": "/:uarId/applications/:applicationId",
+      "testScenarios": [
+        {
+          "phase": "RED",
+          "description": "Test uarIdapplicationsapplicationId should fail initially",
+          "testCode": "it('should uarIdapplicationsapplicationId', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should fail"
+        },
+        {
+          "phase": "GREEN",
+          "description": "Test uarIdapplicationsapplicationId should pass after implementation",
+          "testCode": "it('should uarIdapplicationsapplicationId', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should pass"
+        },
+        {
+          "phase": "REFACTOR",
+          "description": "Refactor uarIdapplicationsapplicationId implementation",
+          "testCode": "// TODO: Refactor code\n// All tests should still pass",
+          "expectedResult": "Code refactored, tests still pass"
+        }
+      ],
+      "todos": [
+        {
+          "id": "1",
+          "task": "Implement uarIdapplicationsapplicationId function",
+          "status": "pending",
+          "priority": "high",
+          "description": "Create implementation for uarIdapplicationsapplicationId"
+        }
+      ],
+      "bddScenarios": [
+        {
+          "feature": "uarIdapplicationsapplicationId Feature",
+          "description": "As a developer, I want to uarIdapplicationsapplicationId so that I can handle the request",
+          "scenarios": [
+            {
+              "name": "uarIdapplicationsapplicationId Success Scenario",
+              "given": "Given I have valid request",
+              "when": "When I call uarIdapplicationsapplicationId",
+              "then": "Then I should receive successful response",
+              "testCode": "// TODO: Implement BDD test"
+            }
+          ]
+        }
+      ],
+      "dod": {
+        "criteria": [
+          {
+            "id": "dod-1",
+            "description": "All test scenarios implemented and passing",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-2",
+            "description": "Code coverage meets minimum threshold (70%)",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-3",
+            "description": "Error handling implemented for all error cases",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-4",
+            "description": "Code reviewed and approved",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-5",
+            "description": "Documentation updated",
+            "status": "PENDING",
+            "evidence": ""
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac-1",
+            "description": "Test uarIdapplicationsapplicationId should fail initially",
+            "testScenarioId": "uarIdapplicationsapplicationId-scenario-1",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-2",
+            "description": "Test uarIdapplicationsapplicationId should pass after implementation",
+            "testScenarioId": "uarIdapplicationsapplicationId-scenario-2",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-3",
+            "description": "Refactor uarIdapplicationsapplicationId implementation",
+            "testScenarioId": "uarIdapplicationsapplicationId-scenario-3",
+            "status": "PENDING"
+          }
+        ]
+      }
+    },
+    {
+      "name": "batchupdate",
+      "description": "Handles POST request to /batch-update",
+      "signature": "POST /batch-update",
+      "method": "POST",
+      "endpoint": "/batch-update",
+      "testScenarios": [
+        {
+          "phase": "RED",
+          "description": "Test batchupdate should fail initially",
+          "testCode": "it('should batchupdate', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should fail"
+        },
+        {
+          "phase": "GREEN",
+          "description": "Test batchupdate should pass after implementation",
+          "testCode": "it('should batchupdate', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should pass"
+        },
+        {
+          "phase": "REFACTOR",
+          "description": "Refactor batchupdate implementation",
+          "testCode": "// TODO: Refactor code\n// All tests should still pass",
+          "expectedResult": "Code refactored, tests still pass"
+        }
+      ],
+      "todos": [
+        {
+          "id": "1",
+          "task": "Implement batchupdate function",
+          "status": "pending",
+          "priority": "high",
+          "description": "Create implementation for batchupdate"
+        }
+      ],
+      "bddScenarios": [
+        {
+          "feature": "batchupdate Feature",
+          "description": "As a developer, I want to batchupdate so that I can handle the request",
+          "scenarios": [
+            {
+              "name": "batchupdate Success Scenario",
+              "given": "Given I have valid request",
+              "when": "When I call batchupdate",
+              "then": "Then I should receive successful response",
+              "testCode": "// TODO: Implement BDD test"
+            }
+          ]
+        }
+      ],
+      "dod": {
+        "criteria": [
+          {
+            "id": "dod-1",
+            "description": "All test scenarios implemented and passing",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-2",
+            "description": "Code coverage meets minimum threshold (70%)",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-3",
+            "description": "Error handling implemented for all error cases",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-4",
+            "description": "Code reviewed and approved",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-5",
+            "description": "Documentation updated",
+            "status": "PENDING",
+            "evidence": ""
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac-1",
+            "description": "Test batchupdate should fail initially",
+            "testScenarioId": "batchupdate-scenario-1",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-2",
+            "description": "Test batchupdate should pass after implementation",
+            "testScenarioId": "batchupdate-scenario-2",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-3",
+            "description": "Refactor batchupdate implementation",
+            "testScenarioId": "batchupdate-scenario-3",
+            "status": "PENDING"
+          }
+        ]
+      }
+    }
+  ]
+}

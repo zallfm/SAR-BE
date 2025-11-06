@@ -1,0 +1,85 @@
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { uarSystemOwnerService as svc } from "./uar_system_owner.service";
+import type { UarSystemOwnerBatchUpdateDTO } from "../../types/uar_system_owner";
+/**
+ * Extracts authenticated user's noreg.
+ * Assumes the auth plugin attaches { noreg: string } to req.auth.
+ */
+function getAuthInfo(req: FastifyRequest) {
+    const auth = req.auth as { noreg: string };
+    if (!auth?.noreg) {
+        throw new Error(
+            "User authentication details (noreg) not found. Check auth plugin."
+        );
+    }
+    return auth;
+}
+
+export const uarSystemOwnerController = {
+
+    list: (_app: FastifyInstance) =>
+        async (
+            req: FastifyRequest<{
+                Querystring: {
+                    page?: number;
+                    limit?: number;
+                    period?: string;
+                    uarId?: string;
+                    applicationId?: string;
+                };
+            }>,
+            reply: FastifyReply
+        ) => {
+            const { noreg } = getAuthInfo(req);
+            const { page = 1, limit = 10, period, uarId, applicationId } = req.query ?? {};
+
+            const result = await svc.list(
+                {
+                    page: Number(page),
+                    limit: Number(limit),
+                    period,
+                    uarId,
+                    applicationId,
+                },
+                noreg
+            );
+
+            return reply.send({
+                data: result.data,
+                meta: {
+                    page: Number(page),
+                    limit: Number(limit),
+                    total: result.total,
+                }
+            });
+        },
+
+
+    getDetails: (_app: FastifyInstance) =>
+        async (
+            req: FastifyRequest<{ Params: { uarId: string, applicationId: string } }>,
+            reply: FastifyReply
+        ) => {
+            const { noreg } = getAuthInfo(req);
+            const { uarId, applicationId } = req.params;
+            const data = await svc.getDetails(uarId, applicationId, noreg);
+            return reply.send({ data });
+        },
+
+
+    batchUpdate: (_app: FastifyInstance) =>
+        async (
+            req: FastifyRequest<{ Body: UarSystemOwnerBatchUpdateDTO }>,
+            reply: FastifyReply
+        ) => {
+            const { noreg } = getAuthInfo(req);
+            const result = await svc.batchUpdate(
+                req.body,
+                noreg
+            );
+            return reply.send({
+                message: `Batch update successful.`,
+                data: result,
+            });
+        },
+};
