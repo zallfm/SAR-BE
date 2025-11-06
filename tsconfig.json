@@ -10,5 +10,10 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["src", "tests/**/*.ts"]
+  "include": ["src"],
+  "exclude": [
+    "src/tests/**/*",
+    "src/workers/schedule.worker.reference.ts",
+    "node_modules"
+  ]
 }

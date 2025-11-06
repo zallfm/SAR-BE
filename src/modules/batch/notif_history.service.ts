@@ -1,8 +1,8 @@
 import { FastifyInstance } from "fastify";
-import { Prisma } from "../../generated/prisma";
 import { ApplicationError } from "../../core/errors/applicationError";
 import { ERROR_CODES } from "../../core/errors/errorCodes";
 import { ERROR_MESSAGES } from "../../core/errors/errorMessages";
+import { Prisma } from "../../generated/prisma/index.js";
 
 type NotificationHistoryData = Prisma.TB_H_NOTIFICATIONUncheckedCreateInput;
 type NotificationHistoryWhereInput = Prisma.TB_H_NOTIFICATIONWhereInput;
@@ -256,7 +256,7 @@ export const notificationHistoryService = {
   },
 };
 
-import { TB_R_UAR_SYSTEM_OWNER } from "../../generated/prisma";
+import { TB_R_UAR_SYSTEM_OWNER } from "../../generated/prisma/index.js";
 
 type UarSystemOwner = TB_R_UAR_SYSTEM_OWNER;
 
