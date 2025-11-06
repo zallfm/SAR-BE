@@ -1,6 +1,6 @@
 import { LogDetail, LogEntry } from "../../types/log_monitoring";
 import { prisma } from "../../db/prisma";
-import { Prisma } from "../../generated/prisma";
+import { Prisma } from "../../generated/prisma/index.js";
 
 type Order = "asc" | "desc";
 type SortBy = "NO" | "START_DATE" | "END_DATE";

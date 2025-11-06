@@ -1,20 +1,20 @@
 import { FastifyInstance } from "fastify";
 import {
-  runCreateOnlySync,
-  scheduleService,
+  Prisma,
+  TB_M_EMPLOYEE,
+  TB_R_UAR_SYSTEM_OWNER,
+} from "../../generated/prisma/index.js"; // Assuming Prisma client is generated
+import { notificationService } from "../modules/batch/notif_history.service";
+import {
   fetchFromDB1,
   fetchFromDB2,
   fetchFromDB3,
   fetchFromDB4,
   fetchFromDB5,
+  runCreateOnlySync,
+  scheduleService,
 } from "../modules/master_data/schedule/schedule.service";
 import { UarPic } from "../types/uarPic";
-import { Prisma, TB_R_UAR_SYSTEM_OWNER } from "../../src/generated/prisma"; // Assuming Prisma client is generated
-import { TB_M_EMPLOYEE } from "../../src/generated/prisma";
-import {
-  notificationService,
-  REMINDER_CODES,
-} from "../modules/batch/notif_history.service";
 
 type UarSystemOwner = TB_R_UAR_SYSTEM_OWNER;
 export async function runUarSOWorker(app: FastifyInstance) {
@@ -82,8 +82,9 @@ export async function runUarSOWorker(app: FastifyInstance) {
         .toString()
         .padStart(2, "0")}`;
       // *** BUG FIX: Shortened UAR_ID to fit NVarChar(20) ***
-      const uarId = `UAR_${uarPeriod.substring(2)}_${schedule.APPLICATION_ID
-        }`.substring(0, 20);
+      const uarId = `UAR_${uarPeriod.substring(2)}_${
+        schedule.APPLICATION_ID
+      }`.substring(0, 20);
       const newUarTasks: Prisma.TB_R_UAR_SYSTEM_OWNERCreateManyInput[] =
         accessMappings.map((mapping) => {
           const employee = employeeMap.get(mapping.NOREG ?? "");
@@ -141,9 +142,7 @@ export async function runUarSOWorker(app: FastifyInstance) {
             CHANGED_DT: now,
           },
         });
-        app.log.info(
-          `Updated source mappings for ${schedule.APPLICATION_ID}.`
-        );
+        app.log.info(`Updated source mappings for ${schedule.APPLICATION_ID}.`);
       }
 
       // This function now correctly groups tasks by approver
@@ -447,7 +446,9 @@ export async function triggerCompletionNotification(
     const recipientNoreg = appInfo?.NOREG_SYSTEM_OWNER;
 
     if (!recipientNoreg) {
-      app.log.warn(`Cannot find NOREG_SYSTEM_OWNER for APP ID: ${completedTask.APPLICATION_ID}. Skipping completion notification.`);
+      app.log.warn(
+        `Cannot find NOREG_SYSTEM_OWNER for APP ID: ${completedTask.APPLICATION_ID}. Skipping completion notification.`
+      );
       return;
     }
 
@@ -496,13 +497,15 @@ export async function runUarSOSyncWorker(app: FastifyInstance) {
       results.forEach((result, index) => {
         if (result.status === "fulfilled") {
           app.log.info(
-            `Successfully fetched ${result.value.length} records from DB${index + 1
+            `Successfully fetched ${result.value.length} records from DB${
+              index + 1
             }`
           );
           allSourceData = allSourceData.concat(result.value);
         } else {
           app.log.error(
-            `Failed to fetch from DB ${index + 1}: ${result.reason?.message || result.reason
+            `Failed to fetch from DB ${index + 1}: ${
+              result.reason?.message || result.reason
             }`
           );
         }
@@ -516,11 +519,11 @@ export async function runUarSOSyncWorker(app: FastifyInstance) {
       await new Promise((resolve) => setTimeout(resolve, 300));
     }
     app.log.info(
-      `Processed ${pendingSchedules.length
+      `Processed ${
+        pendingSchedules.length
       } UAR SO Sync schedules at ${now.toISOString()}`
     );
   } catch (error) {
     app.log.error(error, "A fatal error occurred during the run.");
   }
 }
-

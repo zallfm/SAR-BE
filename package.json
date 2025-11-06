@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsup && node scripts/fix-imports.js && node scripts/copy-prisma-generated.js",
+    "build:tsc": "tsc -p tsconfig.json && node scripts/fix-imports.js && node scripts/copy-prisma-generated.js",
     "start": "node dist/server.js",
     "test": "jest --passWithNoTests",
     "test:unit": "jest tests/unit --runInBand",
@@ -17,7 +18,8 @@
     "test:tdd": "jest --watch --coverage",
     "prisma:gen:sar": "prisma generate --schema=prisma/sar/schema.prisma",
     "prisma:gen:sc": "prisma generate --schema=prisma/sc/schema_sc.prisma",
-    "prisma:gen:all": "pnpm run prisma:gen:sar && pnpm run prisma:gen:sc"
+    "prisma:gen:all": "npm run prisma:gen:sar && npm run prisma:gen:sc",
+    "build:onprem": "rm -rf build && docker build --platform linux/amd64 --target export --output build -f Dockerfile.onprem ."
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
@@ -48,10 +50,12 @@
     "@types/mssql": "^9.1.8",
     "@types/multer": "^2.0.0",
     "@types/node-schedule": "^2.1.8",
+    "glob": "^11.0.3",
     "jest": "^29.7.0",
     "prisma": "^6.17.1",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
+    "tsup": "^8.5.0",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3"
   }
