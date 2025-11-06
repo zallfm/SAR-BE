@@ -115,6 +115,7 @@ export const uarDivisionRepository = {
                 orderBy: { NAME: "asc" },
             }),
         ]);
+        // console.log("header", header)
 
         if (!header && (!details || details.length === 0)) {
             throw new ApplicationError(

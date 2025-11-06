@@ -189,13 +189,23 @@ export async function buildUarExcelTemplate(uarId: string, userDivisionId: numbe
     uniqueRoles.forEach((roleId, i) => {
         const col = firstRoleCol + i;
         const cell = ws.getCell(hdr2, col);
+
         cell.value = roleId || "ROLE";
         cell.alignment = {
-            vertical: "middle",
-            horizontal: "center",
-            textRotation: 255,
-            wrapText: true,
+            vertical: "bottom",     // mulai dari bawah
+            horizontal: "center",     // rata kiri
+            textRotation: 90,       // arah dari bawah ke atas
+            wrapText: false,
+            shrinkToFit: true,
         };
+        cell.font = { bold: true };
+    });
+
+    ws.getRow(hdr2).height = 100; // sesuaikan 90–120
+
+    // Lebar kolom ROLE (lebih sempit biasanya pas untuk vertikal)
+    roleCols.forEach((_, i) => {
+        ws.getColumn(baseCols.length + 1 + i).width = 7; // 7–9 oke
     });
 
 
@@ -207,17 +217,23 @@ export async function buildUarExcelTemplate(uarId: string, userDivisionId: numbe
     // Styling header
     for (let c = 1; c <= remarkIndex; c++) {
         const top = ws.getCell(hdr1, c);
-        top.alignment = center as Alignment;
+        top.alignment = { vertical: "middle", horizontal: "center" };
         top.font = { bold: true };
         top.border = borderThin;
         top.fill = ((c >= accessStart && c <= accessEnd) || c === remarkIndex) ? fillBlue : fillYellow;
 
         const sub = ws.getCell(hdr2, c);
-        sub.alignment = center as Alignment;
+        const prev = (sub.alignment ?? {}) as Alignment;
+        sub.alignment = {
+            ...prev,                    // ← pertahankan textRotation/-wrap/shrinkToFit
+            vertical: "middle",
+            horizontal: "center",
+        };
         sub.font = { bold: true };
         sub.border = borderThin;
         sub.fill = ((c >= accessStart && c <= accessEnd) || c === remarkIndex) ? fillBlue : fillYellow;
     }
+
 
     // ====== Data Rows (pivot per USERNAME, one-hot role) ======
     const dataStartRow = hdr2 + 1;
@@ -282,7 +298,7 @@ export async function buildUarExcelTemplate(uarId: string, userDivisionId: numbe
         });
 
         // Kosongkan kolom aksi/remark
-        row.getCell("KEEP").value = "";
+        row.getCell("KEEP").value = d.DIV_APPROVAL_STATUS === "1" ? "1" : undefined;
         row.getCell("ASSIGN_TO").value = "";
         row.getCell("DELETE").value = "";
         row.getCell("REMARK").value = "";
