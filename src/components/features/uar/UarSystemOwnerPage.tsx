@@ -5,7 +5,6 @@ import StatusPill from "../StatusPill/StatusPill";
 import { ActionReview } from "../../common/Button/ActionReview";
 import { ActionDownload } from "../../common/Button/ActionDownload";
 import SearchableDropdown from "../../common/SearchableDropdown";
-import { postLogMonitoringApi } from "@/src/api/log_monitoring";
 import { AuditAction } from "@/src/constants/auditActions";
 import { useAuthStore } from "@/src/store/authStore";
 import { useUarStore } from "@/src/store/uarStore";
@@ -79,34 +78,15 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
 
     // 3. Kirim log monitoring
     try {
-      await postLogMonitoringApi({
-        userId: currentUser?.username ?? "anonymous",
-        module: "UAR System Owner",
-        action: AuditAction.DATA_REVIEW,
-        status: "Success",
-        description: `User ${currentUser?.username ?? "unknown"} reviewed UAR ${record.uarId
-          }`,
-        location: "UarSystemOwnerPage.handleReviewClick",
-        timestamp: new Date().toISOString(),
-      });
+   
     } catch (err) {
       console.warn("Gagal mencatat log review:", err);
     }
   };
 
   const handleDownloadClick = async (record: SystemOwnerUarHeader) => {
-    // ... (logika download tetap sama)
     try {
-      await postLogMonitoringApi({
-        userId: currentUser?.username ?? "anonymous",
-        module: "UAR System Owner",
-        action: AuditAction.DATA_DOWNLOAD,
-        status: "Success",
-        description: `User ${currentUser?.username ?? "unknown"
-          } downloaded UAR ${record.uarId}`,
-        location: "UarSystemOwnerPage.handleDownloadClick",
-        timestamp: new Date().toISOString(),
-      });
+    
     } catch (err) {
       console.warn("Gagal mencatat log download:", err);
     }
@@ -115,16 +95,7 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
   const logFilterChange = async (key: string, value: string) => {
     // ... (logika log filter tetap sama)
     try {
-      await postLogMonitoringApi({
-        userId: currentUser?.username ?? "anonymous",
-        module: "UAR System Owner",
-        action: AuditAction.DATA_FILTER,
-        status: "Success",
-        description: `User ${currentUser?.username ?? "unknown"
-          } filtered by ${key}: ${value}`,
-        location: "UarSystemOwnerPage.filter",
-        timestamp: new Date().toISOString(),
-      });
+   
     } catch (err) {
       console.warn("Failed to log filter:", err);
     }
