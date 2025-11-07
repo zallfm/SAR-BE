@@ -41,6 +41,7 @@ export const userRepository = {
     username: string,
     password: string
   ): Promise<InternalUser | null> {
+    // Optimize: select only needed fields to reduce data transfer
     const dbUser = await prismaSC.tB_M_USER.findFirst({
       where: {
         USERNAME: username,
@@ -50,7 +51,12 @@ export const userRepository = {
           },
         },
       },
-      // select: { ID: true, USERNAME: true, PASSWORD: true },
+      select: { 
+        ID: true, 
+        USERNAME: true, 
+        PASSWORD: true,
+        IN_ACTIVE_DIRECTORY: true
+      },
     });
 
     if (!dbUser) {
