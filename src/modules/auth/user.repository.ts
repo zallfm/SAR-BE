@@ -41,16 +41,22 @@ export const userRepository = {
     username: string,
     password: string
   ): Promise<InternalUser | null> {
+    // Optimize: select only needed fields to reduce data transfer
     const dbUser = await prismaSC.tB_M_USER.findFirst({
       where: {
         USERNAME: username,
         TB_M_USER_APPLICATION: {
           some: {
-            APPLICATION: "SARSYS",
+            APPLICATION: "BK030",
           },
         },
       },
-      // select: { ID: true, USERNAME: true, PASSWORD: true },
+      select: { 
+        ID: true, 
+        USERNAME: true, 
+        PASSWORD: true,
+        IN_ACTIVE_DIRECTORY: true
+      },
     });
 
     if (!dbUser) {
@@ -78,13 +84,13 @@ export const userRepository = {
       }
     }
 
-    // Ambil semua role user dari TB_M_AUTHORIZATION + TB_M_ROLE (aplikasi SARSYS)
+    // Ambil semua role user dari TB_M_AUTHORIZATION + TB_M_ROLE (aplikasi BK030)
     const roles = await prismaSC.$queryRaw<Array<{ ID: string; NAME: string }>>`
       SELECT DISTINCT r.ID, r.NAME
       FROM TB_M_ROLE r
       INNER JOIN TB_M_AUTHORIZATION a ON r.ID = a.ROLE
-      WHERE r.APPLICATION = 'SARSYS'
-        AND a.APPLICATION = 'SARSYS'
+      WHERE r.APPLICATION = 'BK030'
+        AND a.APPLICATION = 'BK030'
         AND a.USERNAME = ${username}
       ORDER BY r.ID
     `;
@@ -112,7 +118,7 @@ export const userRepository = {
       WITH auth AS (
         SELECT [ROLE], [FUNCTION], [FEATURE]
         FROM dbo.TB_M_AUTHORIZATION
-        WHERE [USERNAME] = ${username} AND [APPLICATION] = 'SARSYS'
+        WHERE [USERNAME] = ${username} AND [APPLICATION] = 'BK030'
       ),
       base AS (
         SELECT m.*
@@ -122,7 +128,7 @@ export const userRepository = {
              (ma.ROLE_ID     IS NOT NULL AND ma.ROLE_ID     = a.[ROLE])
           OR (ma.FUNCTION_ID IS NOT NULL AND ma.FUNCTION_ID = a.[FUNCTION])
           OR (ma.FEATURE_ID  IS NOT NULL AND ma.FEATURE_ID  = a.[FEATURE])
-        WHERE m.APP_ID = 'SARSYS' AND ma.APP_ID = 'SARSYS'
+        WHERE m.APP_ID = 'BK030' AND ma.APP_ID = 'BK030'
       ),
       q AS (
         SELECT DISTINCT
@@ -245,25 +251,25 @@ export const userRepository = {
         SELECT DISTINCT r.ID, r.NAME, r.DESCRIPTION
         FROM TB_M_ROLE r
         INNER JOIN TB_M_AUTHORIZATION a ON r.ID = a.ROLE
-        WHERE r.APPLICATION = 'SARSYS'
+        WHERE r.APPLICATION = 'BK030'
           AND a.USERNAME    = ${username}
-          AND a.APPLICATION = 'SARSYS'
+          AND a.APPLICATION = 'BK030'
       `,
         prismaSC.$queryRaw<Array<{ ID: string }>>`
         SELECT DISTINCT f.ID
         FROM TB_M_FEATURE f
         INNER JOIN TB_M_AUTHORIZATION a ON f.ID = a.FEATURE
-        WHERE f.APPLICATION = 'SARSYS'
+        WHERE f.APPLICATION = 'BK030'
           AND a.USERNAME    = ${username}
-          AND a.APPLICATION = 'SARSYS'
+          AND a.APPLICATION = 'BK030'
       `,
         prismaSC.$queryRaw<Array<{ ID: string }>>`
         SELECT DISTINCT f.ID
         FROM TB_M_FUNCTION f
         INNER JOIN TB_M_AUTHORIZATION a ON f.ID = a.[FUNCTION]
-        WHERE f.APPLICATION = 'SARSYS'
+        WHERE f.APPLICATION = 'BK030'
           AND a.USERNAME    = ${username}
-          AND a.APPLICATION = 'SARSYS'
+          AND a.APPLICATION = 'BK030'
       `,
       ]);
 

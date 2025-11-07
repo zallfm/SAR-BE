@@ -313,4 +313,12 @@ export const applicationRepository = {
   }
 };
 
+// Export for testing purposes
+export const __testing = {
+  async resetDefaults() {
+    // Reset logic for testing - can be implemented if needed
+    // For now, this is a placeholder
+  }
+};
+
 
