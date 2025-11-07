@@ -183,6 +183,113 @@ export const uarSystemOwnerRepository = {
         });
     },
 
+    getUarSo(uarId: string, applicationId: string) {
+        return prisma.$transaction(async (tx) => {
+            // ===== DETAILS =====
+            const systemOwnerUsersPromise = tx.tB_R_UAR_SYSTEM_OWNER.findMany({
+                where: { UAR_ID: uarId, APPLICATION_ID: applicationId },
+                include: {
+                    TB_M_COMMENT_SYSTEM_OWNER: { orderBy: { CREATED_DT: 'asc' } },
+                },
+                orderBy: { NAME: 'asc' },
+            });
+
+            const divisionUsersPromise = tx.tB_R_UAR_DIVISION_USER.findMany({
+                where: {
+                    UAR_ID: uarId,
+                    APPLICATION_ID: applicationId,
+                    TB_M_DIVISION: {
+                        TB_R_WORKFLOW: { some: { UAR_ID: uarId, IS_APPROVED: 'Y' } },
+                    },
+                },
+                include: {
+                    TB_M_COMMENT_DIVISION_USER: { orderBy: { CREATED_DT: 'asc' } },
+                },
+                orderBy: { NAME: 'asc' },
+            });
+
+            // ===== APP NAME (untuk header) =====
+            const appPromise = tx.tB_M_APPLICATION.findUnique({
+                where: { APPLICATION_ID: applicationId },
+                select: { APPLICATION_ID: true, APPLICATION_NAME: true },
+            });
+
+            const [soUsers, divUsers, app] = await Promise.all([
+                systemOwnerUsersPromise,
+                divisionUsersPromise,
+                appPromise,
+            ]);
+
+            // ===== HEADER BUILDER =====
+            const uarPeriod =
+                soUsers[0]?.UAR_PERIOD ??
+                divUsers[0]?.UAR_PERIOD ??
+                null;
+
+            const allRows = [...soUsers, ...divUsers];
+
+            // createdDate = tanggal paling awal dari semua baris
+            const createdDate =
+                allRows
+                    .map((u) => u.CREATED_DT)
+                    .filter(Boolean)
+                    .sort((a: any, b: any) => new Date(a).getTime() - new Date(b).getTime())[0] ?? null;
+
+            // definisi selesai (silakan sesuaikan bila perlu)
+            const isDone = (u: any) => {
+                const yes = new Set(['Y', 'YES', 'APPROVED', 'DONE', 'COMPLETED']);
+                return (
+                    yes.has(String(u.REVIEW_STATUS ?? '').toUpperCase()) ||
+                    yes.has(String(u.SO_APPROVAL_STATUS ?? '').toUpperCase()) ||
+                    yes.has(String(u.REMEDIATED_STATUS ?? '').toUpperCase())
+                );
+            };
+
+            const total = allRows.length;
+            const done = allRows.filter(isDone).length;
+            const percent = total > 0 ? Math.floor((done / total) * 100) : 0;
+            const percentComplete = `${percent}% (${done} of ${total})`;
+
+            // completedDate = kalau semua selesai → ambil tanggal aksi terbaru
+            const completedDate =
+                done === total && total > 0
+                    ? allRows
+                        .map(
+                            (u) =>
+                                u.REMEDIATED_DT ??
+                                // u.SO_APPROVAL_DT ??
+                                u.REVIEWED_DT ??
+                                u.CHANGED_DT ??
+                                u.CREATED_DT
+                        )
+                        .filter(Boolean)
+                        .sort((a: any, b: any) => new Date(b).getTime() - new Date(a).getTime())[0] ?? null
+                    : null;
+
+            // status sederhana: 0 (belum), 1 (progres), 2 (complete)
+            const status =
+                total === 0 ? '0' : done === 0 ? '0' : done === total ? '2' : '1';
+
+            const header = {
+                uarId,
+                uarPeriod,
+                applicationId,
+                applicationName: app?.APPLICATION_NAME ?? null,
+                percentComplete,
+                createdDate,
+                completedDate,
+                status,
+            };
+
+            // ===== RETURN: tetap kompatibel dengan service =====
+            return {
+                header,                 // <-- tambahan (service kamu akan mengabaikan jika tidak dipass)
+                systemOwnerUsers: soUsers,
+                divisionUsers: divUsers,
+            };
+        });
+    },
+
 
 
     async batchUpdate(

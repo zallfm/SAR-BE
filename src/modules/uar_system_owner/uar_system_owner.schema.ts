@@ -66,6 +66,84 @@ export const getUarDetailsSchema: FastifySchema = {
         },
     },
 };
+export const getUarExcelSchema: FastifySchema = {
+  params: {
+    type: "object",
+    properties: {
+      uarId: { type: "string", description: "The UAR_ID" },
+      applicationId: { type: "string", description: "The Application_ID" },
+    },
+    required: ["uarId", "applicationId"],
+    additionalProperties: false,
+  },
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        data: {
+          type: "object",
+          properties: {
+            header: {
+              type: "object",
+              description: "UAR header summary",
+              properties: {
+                uarId:           { type: "string" },
+                uarPeriod:       { type: ["string", "null"] }, // bisa null kalau tidak ada detail
+                applicationId:   { type: "string" },
+                applicationName: { type: ["string", "null"] },
+                percentComplete: { type: "string" },           // contoh: "33% (1 of 3)"
+                createdDate:     { type: ["string", "null"], format: "date-time" },
+                completedDate:   { type: ["string", "null"], format: "date-time" },
+                status:          { type: "string", enum: ["0", "1", "2"] }, // 0=belum,1=progres,2=complete
+              },
+              required: ["uarId", "applicationId", "percentComplete", "status"],
+              additionalProperties: false,
+            },
+            systemOwnerUsers: {
+              type: "array",
+              items: { type: "object", additionalProperties: true },
+              description: "Detail baris System Owner",
+            },
+            divisionUsers: {
+              type: "array",
+              items: { type: "object", additionalProperties: true },
+              description: "Detail baris Division User (yang headernya approved)",
+            },
+          },
+          required: ["header", "systemOwnerUsers", "divisionUsers"],
+          additionalProperties: false,
+        },
+      },
+      required: ["data"],
+      additionalProperties: false,
+    },
+
+    // Opsional: definisikan bentuk error standar kamu biar konsisten
+    403: {
+      type: "object",
+      properties: {
+        success: { type: "boolean", const: false },
+        message: { type: "string" },
+        data:    { type: ["object", "null"] },
+        statusCode: { type: "number", const: 403 },
+      },
+      required: ["success", "message", "statusCode"],
+      additionalProperties: true,
+    },
+    404: {
+      type: "object",
+      properties: {
+        success: { type: "boolean", const: false },
+        message: { type: "string" },
+        data:    { type: ["object", "null"] },
+        statusCode: { type: "number", const: 404 },
+      },
+      required: ["success", "message", "statusCode"],
+      additionalProperties: true,
+    },
+  },
+};
+
 
 export const batchUpdateSchema: FastifySchema = {
     body: {

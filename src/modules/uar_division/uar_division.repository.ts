@@ -222,6 +222,7 @@ export const uarDivisionRepository = {
             },
             details: detailsWithSectionName,
         };
+        // console.log("results", result)
         return result;
     },
 
@@ -231,7 +232,7 @@ export const uarDivisionRepository = {
         userNoreg: string,
         userDivisionId: number
     ) {
-        const { uarId, items, comments } = dto; // 'decision' is no longer top-level
+        const { uarId, items, comments } = dto;
         const now = await getDbNow();
 
         const approvedItems = items
@@ -245,7 +246,6 @@ export const uarDivisionRepository = {
         try {
             return await prisma.$transaction(async (tx) => {
 
-                // 2. Run updateMany for Approved items (if any)
                 const approveUpdateResult = (approvedItems.length > 0)
                     ? await tx.tB_R_UAR_DIVISION_USER.updateMany({
                         where: {
@@ -254,7 +254,7 @@ export const uarDivisionRepository = {
                             OR: approvedItems,
                         },
                         data: {
-                            DIV_APPROVAL_STATUS: "1", // 'Approve'
+                            DIV_APPROVAL_STATUS: "1",
                             REVIEWED_BY: userNoreg,
                             REVIEWED_DT: now,
                         },

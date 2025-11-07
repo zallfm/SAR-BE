@@ -149,6 +149,35 @@ export const uarSystemOwnerService = {
         return { systemOwnerUsers, divisionUsers };
     },
 
+    async getUarSo(uarId: string, applicationId: string, userNoreg: string) {
+        const ownedApplicationIds = await getOwnedApplicationIds(userNoreg);
+
+        // Security check
+        if (!ownedApplicationIds.includes(applicationId)) {
+            throw new ApplicationError(
+                ERROR_CODES.API_UNAUTHORIZED,
+                "You are not authorized to view this application.",
+                { uarId, applicationId, userNoreg },
+                undefined,
+                403
+            );
+        }
+
+        const { header, systemOwnerUsers, divisionUsers } = await repo.getUarSo(uarId, applicationId);
+
+        if (systemOwnerUsers.length === 0 && divisionUsers.length === 0) {
+            throw new ApplicationError(
+                ERROR_CODES.APP_NOT_FOUND,
+                "No UAR data found for this ID and application.",
+                { uarId, applicationId },
+                undefined,
+                404
+            );
+        }
+        // console.log("header, systemOwnerUsers, divisionUsers", { header, systemOwnerUsers, divisionUsers })
+        return { header, systemOwnerUsers, divisionUsers };
+    },
+
 
     async batchUpdate(
         dto: UarSystemOwnerBatchUpdateDTO,
