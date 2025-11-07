@@ -8,6 +8,7 @@ import { systemRoutes } from "./master_data/master_config/master_config.routes";
 import { uarGenerateRoutes } from "./master_data/uar_generate/uar_generate.routes";
 import { uarDivisionRoutes } from "./uar_division/uar_division.routes";
 import { excelUarRoutes } from "./excel/excel.route";
+import { uarSystemOwnerRoutes } from "./uar_system_owner/uar_system_owner.routes";
 
 export async function indexRoutes(app: FastifyInstance) {
   app.register(async (r) => {
@@ -28,6 +29,7 @@ export async function indexRoutes(app: FastifyInstance) {
   }, { prefix: "/master_config" });
 
   app.register(uarDivisionRoutes, { prefix: "/uar_division" })
+  app.register(uarSystemOwnerRoutes, { prefix: "/uar_system_owner" })
   app.register(excelUarRoutes, { prefix: "/excel_uar" })
   app.register(async (r) => {
     r.addHook('preHandler', app.requireAnyPermission(['APPLICATION_VIEW', 'APPLICATION_MANAGE']));
