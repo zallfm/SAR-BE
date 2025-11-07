@@ -7,9 +7,12 @@ export const env = {
   DB_NAME: process.env.DB_NAME ?? "",
   DB_PASSWORD: process.env.DB_PASSWORD ?? "",
 
-  HRPORTAL_API:process.env.HRPORTAL_API ?? "unknown",
-  HRPORTAL_USER:process.env.HRPORTAL_USER ?? "unknown",
-  HRPORTAL_PASS:process.env.HRPORTAL_PASS ?? "unknown",
+  HRPORTAL_API: process.env.HRPORTAL_API ?? "unknown",
+  HRPORTAL_USER: process.env.HRPORTAL_USER ?? "unknown",
+  HRPORTAL_PASS: process.env.HRPORTAL_PASS ?? "unknown",
+
+  APPLICATION_ID: process.env.APPLICATION_ID ?? "SARSYS",
+  DYNAMIC_ROLE: process.env.DYNAMIC_ROLE ?? "adminsar",
 
   JWT_SECRET: process.env.JWT_SECRET ?? "changeme",
   TOKEN_EXPIRES_IN: Number(process.env.TOKEN_EXPIRES_IN ?? 8 * 60 * 60),
