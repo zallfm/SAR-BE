@@ -1,24 +1,41 @@
-import React, { useState, useMemo, useEffect } from "react";
-import type { User } from "../../../../types";
+import React, { useState, useMemo, useEffect } from 'react';
+import type { User } from '../../../../types';
+import type { Comment } from '../../../../data'; // Keep Comment type
+import { ChevronDownIcon } from '../../icons/ChevronDownIcon';
+import { CommentIcon } from '../../icons/CommentIcon';
+import RoleInfoModal from '../../common/Modal/RoleInfoModal';
+import CommentModal from '../../common/Modal/CommentModal';
+import { AuditAction } from '@/src/constants/auditActions';
+import { useAuthStore } from '@/src/store/authStore';
+import { postLogMonitoringApi } from '@/src/api/log_monitoring';
+import { useUarStore } from '@/src/store/uarStore'; // <-- Import store
 import type {
-  UarSystemOwnerRecord,
-  UarSystemOwnerDetail,
-  Comment,
-} from "../../../../data";
-import { initialUarSystemOwnerDetailData } from "../../../../data";
-import { ChevronDownIcon } from "../../icons/ChevronDownIcon";
-import { CommentIcon } from "../../icons/CommentIcon";
-import RoleInfoModal from "../../common/Modal/RoleInfoModal";
-import CommentModal from "../../common/Modal/CommentModal";
-import { AuditAction } from "@/src/constants/auditActions";
-import { useAuthStore } from "@/src/store/authStore";
-import { postLogMonitoringApi } from "@/src/api/log_monitoring";
+  SystemOwnerUarHeader, // <-- Use new store type for prop
+  SystemOwnerUarDetailItem, // <-- Use new store type for data
+  SystemOwnerBatchUpdatePayload, // <-- Use new store type for submit
+} from '@/src/types/uarSystemOwner';
 
-type ApprovalStatus = "Approved" | "Revoked";
-type TableData = UarSystemOwnerDetail & { approvalStatus: ApprovalStatus };
+// 1. Updated ApprovalStatus to match reference
+type ApprovalStatus = 'Approved' | 'Revoked' | null;
+
+// 2. Updated TableData to match reference structure
+type TableData = {
+  ID: string; // Composite key `USERNAME-ROLE_ID`
+  username: string;
+  noreg: string | null;
+  name: string | null;
+  company: string | null;
+  division: string | null;
+  position: string | null;
+  roleId: string;
+  roleDescription: string | null;
+  // Local state
+  approvalStatus: ApprovalStatus;
+  comments: Comment[];
+};
 
 interface UarSystemOwnerDetailPageProps {
-  record: UarSystemOwnerRecord;
+  record: SystemOwnerUarHeader; // <-- 3. Use store type for prop
   onBack: () => void;
   user: User;
 }
@@ -28,73 +45,127 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
   onBack,
   user,
 }) => {
-  const [tableData, setTableData] = useState<TableData[]>([]);
-  const [selectedRows, setSelectedRows] = useState<number[]>([]);
+  const { currentUser } = useAuthStore();
 
+  // --- Store State & Actions ---
+  const {
+    systemOwnerDetails, // <-- Get data from store
+    isLoading: isStoreLoading, // <-- Get loading state from store
+    error: storeError, // <-- Get error state from store
+    getSystemOwnerDetails,
+    clearSystemOwnerDetails,
+    batchUpdateSystemOwner,
+  } = useUarStore();
+
+  // --- Local Component State ---
+  const [tableData, setTableData] = useState<TableData[]>([]);
+  const [selectedRows, setSelectedRows] = useState<string[]>([]); // <-- 4. Changed to string[]
+
+  // State for modals
   const [isRoleInfoModalOpen, setIsRoleInfoModalOpen] = useState(false);
   const [selectedRoleInfo, setSelectedRoleInfo] =
-    useState<UarSystemOwnerDetail | null>(null);
+    useState<SystemOwnerUarDetailItem | null>(null); // <-- 5. Use store type
 
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   const [commentTarget, setCommentTarget] = useState<TableData | null>(null);
 
-  // Pagination
+  // Local Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  const { currentUser } = useAuthStore();
+  // --- Data Fetching & Mapping ---
 
+  // 6. Fetch data from store on mount
   useEffect(() => {
-    // Filter the full dataset based on the record's uarId
-    const relevantDetails = initialUarSystemOwnerDetailData
-      .filter((item) => item.uarId === record.uarId)
-      .map((item) => ({
-        ...item,
-        approvalStatus: "Approved" as ApprovalStatus,
-      }));
-    console.log("RELEVANT DETAIL", relevantDetails);
-    setTableData(relevantDetails);
-  }, [record.uarId]);
+    if (record.uarId && record.applicationId) {
+      const abortController = new AbortController();
+      getSystemOwnerDetails(
+        record.uarId,
+        record.applicationId,
+        abortController.signal
+      );
+    }
+  }, [record.uarId, record.applicationId, getSystemOwnerDetails]);
 
-  const handleRowApprovalChange = async (
-    id: number,
-    status: ApprovalStatus
-  ) => {
-    setTableData((prev) =>
-      prev.map((row) =>
-        row.ID === id ? { ...row, approvalStatus: status } : row
-      )
+  // 7. Populate local tableData when store's systemOwnerDetails changes
+  useEffect(() => {
+    const initialData: TableData[] = systemOwnerDetails.map(
+      (item: SystemOwnerUarDetailItem) => {
+        const uniqueId = `${item.USERNAME}-${item.ROLE_ID}`; // Create composite key
+
+        return {
+          ID: uniqueId,
+          username: item.USERNAME,
+          noreg: item.NOREG,
+          name: item.NAME,
+          company: item.COMPANY_NAME,
+          division: item.DIVISION_NAME,
+          position: item.POSITION_NAME,
+          roleId: item.ROLE_ID,
+          roleDescription: item.ROLE_NAME,
+          // Map API status to local state
+          approvalStatus:
+            item.DIV_APPROVAL_STATUS === '0'
+              ? null
+              : item.DIV_APPROVAL_STATUS === '1'
+                ? 'Approved'
+                : 'Revoked',
+          comments: [], // Comments are managed locally
+        };
+      }
     );
-    // ✅ Tambahkan log
+    setTableData(initialData);
+    setSelectedRows([]); // Reset selection
+    setCurrentPage(1); // Reset pagination
+  }, [systemOwnerDetails]);
+
+  // --- Event Handlers ---
+
+  const handleRowApprovalChange = (id: string, status: ApprovalStatus) => {
+    setTableData((prev) =>
+      prev.map((row) => (row.ID === id ? { ...row, approvalStatus: status } : row))
+    );
+
+    // Logging logic can stay
     const action =
-      status === "Approved" ? AuditAction.DATA_KEEP : AuditAction.DATA_REVOKE;
-    await createLog(
+      status === 'Approved' ? AuditAction.DATA_KEEP : AuditAction.DATA_REVOKE;
+    createLog(
       action,
-      `User ${
-        currentUser?.username ?? "unknown"
+      `User ${currentUser?.username ?? 'unknown'
       } set ${status} for ID ${id} in ${record.uarId}`,
-      "UarDivisionUserDetailPage.handleRowApprovalChange"
+      'UarSystemOwnerDetailPage.handleRowApprovalChange'
     );
   };
 
-  const handleBulkAction = async (status: ApprovalStatus) => {
+  const handleBulkAction = (status: ApprovalStatus) => {
     if (selectedRows.length === 0) return;
+
+    // Just update local UI state (per reference)
     setTableData((prev) =>
       prev.map((row) =>
-        selectedRows.includes(row.ID) ? { ...row, approvalStatus: status } : row
+        selectedRows.includes(row.ID)
+          ? { ...row, approvalStatus: status }
+          : row
       )
     );
+    setSelectedRows([]); // Clear selection
+
+    // Logging logic can stay
     const action =
-      status === "Approved"
+      status === 'Approved'
         ? AuditAction.DATA_KEEP_ALL
         : AuditAction.DATA_REVOKE_ALL;
-    await createLog(
+    createLog(
       action,
-      `User ${currentUser?.username ?? "unknown"} performed bulk ${status} on ${
-        selectedRows.length
+      `User ${currentUser?.username ?? 'unknown'} performed bulk ${status} on ${selectedRows.length
       } item(s) in ${record.uarId}`,
-      "UarSystenOwnerDetailPage.handleBulkAction"
+      'UarSystenOwnerDetailPage.handleBulkAction'
     );
+  };
+
+  const handleBackClick = () => {
+    clearSystemOwnerDetails(); // <-- 8. Clean up store state
+    onBack();
   };
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,32 +176,37 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
     }
   };
 
-  const handleSelectRow = (id: number) => {
+  const handleSelectRow = (id: string) => { // <-- 9. ID is string
     setSelectedRows((prev) =>
       prev.includes(id) ? prev.filter((rowId) => rowId !== id) : [...prev, id]
     );
   };
 
-  const handleRoleInfoClick = (role: UarSystemOwnerDetail) => {
-    setSelectedRoleInfo(role);
-    setIsRoleInfoModalOpen(true);
+  const handleRoleInfoClick = (row: TableData) => {
+    // Find the original API item to pass to the modal (per reference)
+    const originalItem = systemOwnerDetails.find(
+      (item) =>
+        item.USERNAME === row.username && item.ROLE_ID === row.roleId
+    );
+    if (originalItem) {
+      setSelectedRoleInfo(originalItem);
+      setIsRoleInfoModalOpen(true);
+    }
   };
 
   const handleOpenCommentModal = async (row: TableData) => {
     setCommentTarget(row);
-    setIsCommentModalOpen(true);
-
-    // ✅ kirim log monitoring
+    setIsRoleInfoModalOpen(true);
+    // Logging logic can stay
     try {
       await createLog(
         AuditAction.DATA_COMMENT_OPEN,
-        `User ${
-          currentUser?.username ?? "unknown"
+        `User ${currentUser?.username ?? 'unknown'
         } opened comment modal for role ${row.roleId} in ${record.uarId}`,
-        "UarSystemOwnerDetailPage.handleOpenCommentModal"
+        'UarSystemOwnerDetailPage.handleOpenCommentModal'
       );
     } catch (err) {
-      console.warn("Gagal mencatat log buka comment:", err);
+      console.warn('Gagal mencatat log buka comment:', err);
     }
   };
 
@@ -154,59 +230,81 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
             : row
         )
       );
-      // ✅ kirim log monitoring
+      // Logging logic can stay
       try {
         await createLog(
           AuditAction.DATA_COMMENT_SUBMIT,
-          `User ${currentUser?.username ?? "unknown"} added a comment on role ${
-            commentTarget.roleId
+          `User ${currentUser?.username ?? 'unknown'} added a comment on role ${commentTarget.roleId
           } in ${record.uarId}`,
-          "UarSystemOwnerDetailPage.handleSubmitComment"
+          'UarSystemOwnerDetailPage.handleSubmitComment'
         );
       } catch (err) {
-        console.warn("Gagal mencatat log submit comment:", err);
+        console.warn('Gagal mencatat log submit comment:', err);
       }
     }
     handleCloseCommentModal();
   };
 
+  // --- Utility Functions ---
   const createLog = async (
     action: string,
     description: string,
     location: string
   ) => {
+    // (This function is unchanged)
     try {
       await postLogMonitoringApi({
-        userId: currentUser?.username ?? "anonymous",
-        module: "UAR System Owner Detail",
+        userId: currentUser?.username ?? 'anonymous',
+        module: 'UAR System Owner Detail',
         action,
-        status: "Success",
+        status: 'Success',
         description,
         location,
         timestamp: new Date().toISOString(),
       });
     } catch (err) {
-      console.warn("Gagal mencatat log:", err);
+      console.warn('Gagal mencatat log:', err);
     }
   };
 
+  // --- Pagination (Derived from local state) ---
   const totalItems = tableData.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = tableData.slice(startIndex, startIndex + itemsPerPage);
-  const startItem = totalItems > 0 ? startIndex + 1 : 0;
-  const endItem = Math.min(startIndex + itemsPerPage, totalItems);
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+
+  // 10. Added safeCurrentPage logic from reference
+  const safeCurrentPage = Math.max(1, Math.min(currentPage, totalPages));
+  useEffect(() => {
+    if (currentPage !== safeCurrentPage) {
+      setCurrentPage(safeCurrentPage);
+    }
+  }, [currentPage, safeCurrentPage]);
+
+  const { currentData, startItem, endItem } = useMemo(() => {
+    const startIndex = (safeCurrentPage - 1) * itemsPerPage;
+    const paginatedData = tableData.slice(
+      startIndex,
+      startIndex + itemsPerPage
+    );
+
+    return {
+      currentData: paginatedData,
+      startItem: totalItems > 0 ? startIndex + 1 : 0,
+      endItem: Math.min(startIndex + itemsPerPage, totalItems),
+    };
+  }, [tableData, safeCurrentPage, itemsPerPage, totalItems]);
+
   const isAllSelectedOnPage =
     currentData.length > 0 &&
     currentData.every((d) => selectedRows.includes(d.ID));
 
+  // --- Render ---
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-800">UAR System Owner</h2>
         <div className="text-sm text-gray-500 mt-1 flex items-center flex-wrap">
           <button
-            onClick={onBack}
+            onClick={handleBackClick} // <-- 11. Use new handler
             className="text-blue-600 hover:underline hover:text-blue-800 transition-colors"
             aria-label="Back to UAR System Owner list"
           >
@@ -221,33 +319,69 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
         <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => handleBulkAction("Approved")}
+              onClick={() => handleBulkAction('Approved')}
+              disabled={selectedRows.length === 0 || isStoreLoading} // <-- 12. Add loading state
               className="px-6 py-2 text-sm font-semibold text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed"
-              disabled={selectedRows.length === 0}
             >
               Keep
             </button>
             <button
-              onClick={() => handleBulkAction("Revoked")}
+              onClick={() => handleBulkAction('Revoked')}
+              disabled={selectedRows.length === 0 || isStoreLoading} // <-- 12. Add loading state
               className="px-6 py-2 text-sm font-semibold text-red-700 bg-red-100 rounded-lg hover:bg-red-200 transition-colors disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed"
-              disabled={selectedRows.length === 0}
             >
               Revoke
             </button>
           </div>
           <button
             onClick={async () => {
-              await createLog(
-                AuditAction.DATA_SUBMIT,
-                `User ${
-                  currentUser?.username ?? "unknown"
-                } submitted review for ${record.uarId}`,
-                "UarDivisionUserDetailPage.SubmitButton"
-              );
+              const changedItems = tableData
+                .filter((row) => row.approvalStatus !== null)
+                .map((row) => ({
+                  username: row.username,
+                  roleId: row.roleId,
+                  decision: row.approvalStatus!, // 'Approved' or 'Revoked'
+                }));
+
+              if (changedItems.length === 0) {
+                alert('No changes to submit.');
+                return;
+              }
+
+              const payload: SystemOwnerBatchUpdatePayload = {
+                uarId: record.uarId,
+                applicationId: record.applicationId,
+                items: changedItems,
+              };
+
+              // Call the store action
+              const { error } = await batchUpdateSystemOwner(payload);
+
+              if (error) {
+                alert(`Error: ${error.message}`);
+                // Log failure
+                await createLog(
+                  AuditAction.DATA_SUBMIT,
+                  `User ${currentUser?.username ?? 'unknown'
+                  } failed to submit review for ${record.uarId}: ${error.message
+                  }`,
+                  'UarSystemOwnerDetailPage.SubmitButton'
+                );
+              } else {
+                alert('Submit successful.');
+                // Log success
+                await createLog(
+                  AuditAction.DATA_SUBMIT,
+                  `User ${currentUser?.username ?? 'unknown'
+                  } submitted review for ${record.uarId}`,
+                  'UarSystemOwnerDetailPage.SubmitButton'
+                );
+              }
             }}
-            className="px-8 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+            disabled={isStoreLoading} // <-- 12. Add loading state
+            className="px-8 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed"
           >
-            Submit
+            {isStoreLoading ? 'Submitting...' : 'Submit'}
           </button>
         </div>
 
@@ -297,84 +431,108 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
               </tr>
             </thead>
             <tbody>
-              {currentData.map((row) => (
-                <tr
-                  key={row.ID}
-                  className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50"
-                >
-                  <td className="px-4 py-2 text-sm">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      checked={selectedRows.includes(row.ID)}
-                      onChange={() => handleSelectRow(row.ID)}
-                      aria-label={`Select row ${row.ID}`}
-                    />
-                  </td>
-                  <td className="px-4 py-2 text-sm">{row.username}</td>
-                  <td className="px-4 py-2 text-sm">{row.noreg}</td>
-                  <td className="px-4 py-2 text-sm">{row.name}</td>
-                  <td className="px-4 py-2 text-sm">{row.company}</td>
-                  <td className="px-4 py-2 text-sm">{row.division}</td>
-                  <td className="px-4 py-2 text-sm">{row.position}</td>
-                  <td className="px-4 py-2 text-sm">
-                    <button
-                      onClick={() => handleRoleInfoClick(row)}
-                      className="text-blue-600 hover:underline cursor-pointer"
-                    >
-                      {row.roleId}
-                    </button>
-                  </td>
-                  <td className="px-4 py-2 text-sm">{row.roleDescription}</td>
-                  <td className="px-4 py-2 text-sm">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() =>
-                          handleRowApprovalChange(row.ID, "Approved")
-                        }
-                        className={`px-3 py-1 text-xs font-semibold rounded-full min-w-[70px] transition-colors ${
-                          row.approvalStatus === "Approved"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-white text-gray-500 border border-gray-300 hover:bg-gray-100"
-                        }`}
-                      >
-                        Keep
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleRowApprovalChange(row.ID, "Revoked")
-                        }
-                        className={`px-3 py-1 text-xs font-semibold rounded-full min-w-[70px] transition-colors ${
-                          row.approvalStatus === "Revoked"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-white text-gray-500 border border-gray-300 hover:bg-gray-100"
-                        }`}
-                      >
-                        Revoke
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-4 py-2 text-sm">
-                    <div className="group relative flex justify-center">
-                      <button
-                        onClick={() => handleOpenCommentModal(row)}
-                        className={
-                          row.comments && row.comments.length > 0
-                            ? "text-blue-600 hover:text-blue-800"
-                            : "text-gray-400 hover:text-blue-600"
-                        }
-                      >
-                        <CommentIcon />
-                      </button>
-                      <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-max px-2 py-1 bg-blue-600 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                        {row.comments && row.comments.length > 0
-                          ? "View Comments"
-                          : "Add Comment"}
-                      </div>
-                    </div>
+              {/* --- 14. Handle Store Loading/Error States --- */}
+              {isStoreLoading ? (
+                <tr>
+                  <td colSpan={11} className="text-center p-6 text-gray-500">
+                    Loading details...
                   </td>
                 </tr>
-              ))}
+              ) : storeError ? (
+                <tr>
+                  <td colSpan={11} className="text-center p-6 text-red-600">
+                    Error: {storeError}
+                  </td>
+                </tr>
+              ) : currentData.length === 0 ? (
+                <tr>
+                  <td colSpan={11} className="text-center p-6 text-gray-500">
+                    No details found for this UAR.
+                  </td>
+                </tr>
+              ) : (
+                // --- Render Table Rows ---
+                currentData.map((row) => (
+                  <tr
+                    key={row.ID}
+                    className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50"
+                  >
+                    <td className="px-4 py-2 text-sm">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        checked={selectedRows.includes(row.ID)}
+                        onChange={() => handleSelectRow(row.ID)} // <-- ID is string
+                        aria-label={`Select row ${row.ID}`}
+                      />
+                    </td>
+                    <td className="px-4 py-2 text-sm">{row.username}</td>
+                    <td className="px-4 py-2 text-sm">{row.noreg}</td>
+                    <td className="px-4 py-2 text-sm">{row.name}</td>
+                    <td className="px-4 py-2 text-sm">{row.company}</td>
+                    <td className="px-4 py-2 text-sm">{row.division}</td>
+                    <td className="px-4 py-2 text-sm">{row.position}</td>
+                    <td className="px-4 py-2 text-sm">
+                      <button
+                        onClick={() => handleRoleInfoClick(row)}
+                        className="text-blue-600 hover:underline cursor-pointer"
+                      >
+                        {row.roleId}
+                      </button>
+                    </td>
+                    <td className="px-4 py-2 text-sm">
+                      {row.roleDescription}
+                    </td>
+                    <td className="px-4 py-2 text-sm">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() =>
+                            handleRowApprovalChange(row.ID, 'Approved') // <-- ID is string
+                          }
+                          className={`px-3 py-1 text-xs font-semibold rounded-md min-w-[70px] transition-colors ${ // <-- 15. Matched button style from reference
+                            row.approvalStatus === 'Approved'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-white text-gray-500 border border-gray-300 hover:bg-gray-100'
+                            }`}
+                        >
+                          Keep
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleRowApprovalChange(row.ID, 'Revoked') // <-- ID is string
+                          }
+                          className={`px-3 py-1 text-xs font-semibold rounded-md min-w-[70px] transition-colors ${ // <-- 15. Matched button style from reference
+                            row.approvalStatus === 'Revoked'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-white text-gray-500 border border-gray-300 hover:bg-gray-100'
+                            }`}
+                        >
+                          Revoke
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-4 py-2 text-sm">
+                      <div className="group relative flex justify-center">
+                        <button
+                          onClick={() => handleOpenCommentModal(row)}
+                          className={
+                            row.comments && row.comments.length > 0
+                              ? 'text-blue-600 hover:text-blue-800'
+                              : 'text-gray-400 hover:text-blue-600'
+                          }
+                        >
+                          <CommentIcon />
+                        </button>
+                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-max px-2 py-1 bg-blue-600 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                          {row.comments && row.comments.length > 0
+                            ? 'View Comments'
+                            : 'Add Comment'}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -408,7 +566,7 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
             <div className="flex gap-2">
               <button
                 onClick={() => setCurrentPage((p) => p - 1)}
-                disabled={currentPage === 1}
+                disabled={safeCurrentPage === 1} // <-- Use safeCurrentPage
                 className="px-2 py-1 border bg-white border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
                 aria-label="Previous Page"
               >
@@ -416,7 +574,7 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
               </button>
               <button
                 onClick={() => setCurrentPage((p) => p + 1)}
-                disabled={currentPage >= totalPages}
+                disabled={safeCurrentPage >= totalPages} // <-- Use safeCurrentPage
                 className="px-2 py-1 border bg-white border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
                 aria-label="Next Page"
               >
@@ -430,6 +588,7 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
       {isRoleInfoModalOpen && selectedRoleInfo && (
         <RoleInfoModal
           onClose={() => setIsRoleInfoModalOpen(false)}
+          // @ts-expect-error // TODO: fix this type
           roleInfo={selectedRoleInfo}
         />
       )}
@@ -438,7 +597,7 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
         <CommentModal
           onClose={handleCloseCommentModal}
           onSubmit={handleSubmitComment}
-          targetUser={commentTarget.name}
+          targetUser={"Hesti"}
           commentingUser={`${user.name} (${user.role})`}
           comments={commentTarget.comments || []}
         />

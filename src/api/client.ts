@@ -1,4 +1,4 @@
-export const API_BASE = 'http://localhost:3000/api';
+export const API_BASE =  'http://localhost:3000/api';
 
 const genReqId = () =>
   (crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)) + Date.now();
