@@ -76,7 +76,7 @@ export const uarDivisionController = {
                 Number(divisionId)
             );
             return reply.send({
-                message: `Batch ${req.body.decision} successful.`,
+                message: `Batch update successful.`,
                 data: result,
             });
         },

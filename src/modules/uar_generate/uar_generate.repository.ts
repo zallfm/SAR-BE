@@ -10,14 +10,24 @@ type GenParams = { period: string; application_id: string; createdBy: string };
  * - Sumber: TB_M_AUTH_MAPPING (NOREG valid)
  * - Step: INSERT/UPSERT ke TB_R_WORKFLOW (SEQ_NO = 1) -> MERGE ke TB_R_UAR_DIVISION_USER
  */
+
+/**
+ * DIVISION USER:
+ * - Sumber: TB_M_AUTH_MAPPING (NOREG valid)
+ * - Step: INSERT/UPSERT ke TB_R_WORKFLOW (SEQ_NO = 1) -> MERGE ke TB_R_UAR_DIVISION_USER
+ */
 async function mergeDivisionUserTx(tx: TxLike, p: GenParams): Promise<MergeCount> {
   const rows = await tx.$queryRaw<{ inserted: number; updated: number }[]>`
 SET XACT_ABORT ON;
 
 DECLARE @PERIOD_RAW NVARCHAR(30) = ${p.period};
 DECLARE @APP_ID     NVARCHAR(50) = ${p.application_id};
+DECLARE @APP_ID     NVARCHAR(50) = ${p.application_id};
 DECLARE @CREATED_BY VARCHAR(50)  = ${p.createdBy};
 
+-- =========================
+-- Normalisasi periode UAR => YYYYMM
+-- =========================
 -- =========================
 -- Normalisasi periode UAR => YYYYMM
 -- =========================
