@@ -1,6 +1,8 @@
-import { prismaSC } from "../../db/prisma";
-import type { User } from "../../types/auth.js";
-import { hrPortalClient } from "./hrPortal";
+import { prismaSC } from '../../db/prisma';
+import type { User } from '../../types/auth.js';
+import { TB_M_USER } from '../../generated/prisma-sc/index';
+import { hrPortalClient } from './hrPortal';
+import { env } from '../../config/env';
 
 type InternalUser = User & { password: string; id?: string | number };
 
@@ -27,7 +29,7 @@ function buildMenuTree(rows: MenuRow[]): MenuNode[] {
 
   for (const r of rows) {
     const node = byId.get(r.MENU_ID)!;
-    const parent = r.MENU_PARENT ?? "";
+    const parent = r.MENU_PARENT ?? '';
     if (parent && byId.has(parent)) {
       byId.get(parent)!.children.push(node);
     } else {
@@ -36,20 +38,18 @@ function buildMenuTree(rows: MenuRow[]): MenuNode[] {
   }
   return roots;
 }
+
+const applicationId = env.APPLICATION_ID;
 export const userRepository = {
-  async login(
-    username: string,
-    password: string
-  ): Promise<InternalUser | null> {
-    // Optimize: select only needed fields to reduce data transfer
+  async login(username: string, password: string): Promise<InternalUser | null> {
     const dbUser = await prismaSC.tB_M_USER.findFirst({
       where: {
         USERNAME: username,
         TB_M_USER_APPLICATION: {
           some: {
-            APPLICATION: "BK030",
-          },
-        },
+            APPLICATION: applicationId
+          }
+        }
       },
       select: { 
         ID: true, 
@@ -60,27 +60,23 @@ export const userRepository = {
     });
 
     if (!dbUser) {
-      throw new Error("Username or password incorrect");
+      throw new Error("Username or password incorrect")
     }
 
     if (dbUser.IN_ACTIVE_DIRECTORY) {
-      console.log(
-        `User ${username} has IN_ACTIVE_DIRECTORY=1, authenticating via HR Portal`
-      );
+      console.log(`User ${username} has IN_ACTIVE_DIRECTORY=1, authenticating via HR Portal`)
       const hrPortalAuth = await hrPortalClient.checkSCMobile(
         username,
-        password
+        password,
       );
 
       if (!hrPortalAuth.success) {
-        throw new Error("Username or password incorrect");
+        throw new Error('Username or password incorrect');
       }
     } else {
-      console.log(
-        `User ${username} has IN_ACTIVE_DIRECTORY=0, using local password verification`
-      );
+      console.log(`User ${username} has IN_ACTIVE_DIRECTORY=0, using local password verification`)
       if (dbUser.PASSWORD !== password) {
-        throw new Error("Username or password incorrect");
+        throw new Error('Username or password incorrect');
       }
     }
 
@@ -89,8 +85,7 @@ export const userRepository = {
       SELECT DISTINCT r.ID, r.NAME
       FROM TB_M_ROLE r
       INNER JOIN TB_M_AUTHORIZATION a ON r.ID = a.ROLE
-      WHERE r.APPLICATION = 'BK030'
-        AND a.APPLICATION = 'BK030'
+      WHERE r.APPLICATION = ${applicationId}
         AND a.USERNAME = ${username}
       ORDER BY r.ID
     `;
@@ -118,7 +113,7 @@ export const userRepository = {
       WITH auth AS (
         SELECT [ROLE], [FUNCTION], [FEATURE]
         FROM dbo.TB_M_AUTHORIZATION
-        WHERE [USERNAME] = ${username} AND [APPLICATION] = 'BK030'
+        WHERE [USERNAME] = ${username} AND [APPLICATION] = ${applicationId}
       ),
       base AS (
         SELECT m.*
@@ -128,7 +123,7 @@ export const userRepository = {
              (ma.ROLE_ID     IS NOT NULL AND ma.ROLE_ID     = a.[ROLE])
           OR (ma.FUNCTION_ID IS NOT NULL AND ma.FUNCTION_ID = a.[FUNCTION])
           OR (ma.FEATURE_ID  IS NOT NULL AND ma.FEATURE_ID  = a.[FEATURE])
-        WHERE m.APP_ID = 'BK030' AND ma.APP_ID = 'BK030'
+        WHERE m.APP_ID = ${applicationId} AND ma.APP_ID = ${applicationId}
       ),
       q AS (
         SELECT DISTINCT
@@ -179,40 +174,39 @@ export const userRepository = {
       try {
         await prismaSC.tB_R_AUDIT_TRAIL.create({
           data: {
-            ACTION_TYPE: "R",
-            TABLE_NAME: "TB_M_MENU",
-            TABLE_ITEM: "getMenu",
+            ACTION_TYPE: 'R',
+            TABLE_NAME: 'TB_M_MENU',
+            TABLE_ITEM: 'getMenu',
             VALUE_BEFORE: null,
             VALUE_AFTER: `Query executed in ${executionTime}ms for user ${username}`,
             MODIFIED_BY: username,
             MODIFIED_DATE: new Date(),
           },
         });
-      } catch {}
+      } catch { }
 
       return groupedMenus;
     } catch (err) {
       // Saat dev, bagusnya log detail error
-      console.error("getMenu error:", err);
-      throw new Error("Internal Server Error");
+      console.error('getMenu error:', err);
+      throw new Error('Internal Server Error');
     }
   },
+
 
   async getProfile(username: string) {
     try {
       // 1) Ambil user basic info (SC)
-      const userRows = await prismaSC.$queryRaw<
-        Array<{
-          USERNAME: string;
-          FIRST_NAME: string | null;
-          LAST_NAME: string | null;
-          ID: string;
-          REG_NO: string | null;
-          COMPANY: string | null;
-          BIRTH_DATE: Date | string | null;
-          ADDRESS: string | null;
-        }>
-      >`
+      const userRows = await prismaSC.$queryRaw<Array<{
+        USERNAME: string;
+        FIRST_NAME: string | null;
+        LAST_NAME: string | null;
+        ID: string;
+        REG_NO: string | null;
+        COMPANY: string | null;
+        BIRTH_DATE: Date | string | null;
+        ADDRESS: string | null;
+      }>>`
       SELECT
         u.USERNAME,
         u.FIRST_NAME,
@@ -228,55 +222,53 @@ export const userRepository = {
 
       const user = userRows[0];
       if (!user) {
-        throw new Error("User not found in SC database");
+        throw new Error('User not found in SC database');
       }
 
       // 2) Ambil detail company (jika ada)
       const company = user.COMPANY
         ? await prismaSC.tB_M_COMPANY.findFirst({
-            where: { ID: user.COMPANY },
-            select: {
-              ID: true,
-              NAME: true,
-              DESCRIPTION: true,
-            },
-          })
+          where: { ID: user.COMPANY },
+          select: {
+            ID: true,
+            NAME: true,
+            DESCRIPTION: true
+          },
+        })
         : null;
 
       // 3) Ambil roles, features, functions (paralel)
       const [roles, features, functions] = await Promise.all([
-        prismaSC.$queryRaw<
-          Array<{ ID: string; NAME: string; DESCRIPTION: string }>
-        >`
+        prismaSC.$queryRaw<Array<{ ID: string; NAME: string; DESCRIPTION: string }>>`
         SELECT DISTINCT r.ID, r.NAME, r.DESCRIPTION
         FROM TB_M_ROLE r
         INNER JOIN TB_M_AUTHORIZATION a ON r.ID = a.ROLE
-        WHERE r.APPLICATION = 'BK030'
+        WHERE r.APPLICATION = ${applicationId}
           AND a.USERNAME    = ${username}
-          AND a.APPLICATION = 'BK030'
+          AND a.APPLICATION = ${applicationId}
       `,
         prismaSC.$queryRaw<Array<{ ID: string }>>`
         SELECT DISTINCT f.ID
         FROM TB_M_FEATURE f
         INNER JOIN TB_M_AUTHORIZATION a ON f.ID = a.FEATURE
-        WHERE f.APPLICATION = 'BK030'
+        WHERE f.APPLICATION = ${applicationId}
           AND a.USERNAME    = ${username}
-          AND a.APPLICATION = 'BK030'
+          AND a.APPLICATION = ${applicationId}
       `,
         prismaSC.$queryRaw<Array<{ ID: string }>>`
         SELECT DISTINCT f.ID
         FROM TB_M_FUNCTION f
         INNER JOIN TB_M_AUTHORIZATION a ON f.ID = a.[FUNCTION]
-        WHERE f.APPLICATION = 'BK030'
+        WHERE f.APPLICATION = ${applicationId}
           AND a.USERNAME    = ${username}
-          AND a.APPLICATION = 'BK030'
+          AND a.APPLICATION = ${applicationId}
       `,
       ]);
 
       return {
         user: {
           username: user.USERNAME,
-          name: `${user.FIRST_NAME ?? ""} ${user.LAST_NAME ?? ""}`.trim(),
+          name: `${user.FIRST_NAME ?? ''} ${user.LAST_NAME ?? ''}`.trim(),
           id: user.ID,
           regNo: user.REG_NO,
           company: user.COMPANY,
@@ -286,46 +278,44 @@ export const userRepository = {
           address: user.ADDRESS,
           companyInfo: company
             ? {
-                id: company.ID,
-                name: company.NAME,
-                description: company.DESCRIPTION ?? null,
-              }
+              id: company.ID,
+              name: company.NAME,
+              description: company.DESCRIPTION ?? null
+            }
             : null,
           // area/division dihilangkan karena sumbernya tidak tersedia di prisma utama
         },
-        features: features.map((f) => f.ID),
-        functions: functions.map((fn) => fn.ID),
-        roles: roles.map((r) => r.ID),
+        features: features.map(f => f.ID),
+        functions: functions.map(fn => fn.ID),
+        roles: roles.map(r => r.ID),
       };
     } catch {
-      throw new Error("Internal Server Error");
+      throw new Error('Internal Server Error');
     }
   },
   groupMenusByParent(menus: any[]) {
     const strip = (s?: string | null): string | null =>
-      s ? s.replace(/^\d+/, "") : s ?? null;
+      s ? s.replace(/^\d+/, '') : s ?? null;
 
     const rows = menus.map((m) => {
-      const rawId = m.MENU_ID ?? "";
-      const rawParent = m.MENU_PARENT ?? "";
+      const rawId = m.MENU_ID ?? '';
+      const rawParent = m.MENU_PARENT ?? '';
 
-      const idClean = strip(rawId) ?? "";
+      const idClean = strip(rawId) ?? '';
       const parentClean =
-        rawParent === "menu" || !rawParent
-          ? "menu"
-          : strip(rawParent) ?? "menu";
-      const orderNo = parseInt(rawId.match(/^\d+/)?.[0] ?? "9999", 20);
+        rawParent === 'menu' || !rawParent ? 'menu' : strip(rawParent) ?? 'menu';
+      const orderNo = parseInt((rawId.match(/^\d+/)?.[0] ?? '9999'), 20);
 
       return {
         menuId: idClean,
-        menuText: m.MENU_TEXT ?? "",
-        menuTips: m.MENU_TIPS ?? "",
+        menuText: m.MENU_TEXT ?? '',
+        menuTips: m.MENU_TIPS ?? '',
         isActive: m.IS_ACTIVE ?? false,
         visibility: m.VISIBILITY ?? false,
-        url: m.URL ?? "",
-        glyph: m.GLYPH ?? "",
-        separator: m.SEPARATOR ?? "",
-        target: m.TARGET ?? "",
+        url: m.URL ?? '',
+        glyph: m.GLYPH ?? '',
+        separator: m.SEPARATOR ?? '',
+        target: m.TARGET ?? '',
         parent: parentClean,
         orderNo,
       };
@@ -337,23 +327,23 @@ export const userRepository = {
     const roots: any[] = [];
     for (const r of rows) {
       const node = byId.get(r.menuId)!;
-      if (r.parent && r.parent !== "menu" && byId.has(r.parent)) {
+      if (r.parent && r.parent !== 'menu' && byId.has(r.parent)) {
         byId.get(r.parent)!.submenu.push(node);
       } else {
         roots.push(node);
       }
     }
 
-    const sortByOrder = (a: any, b: any) =>
-      (a.orderNo ?? 9999) - (b.orderNo ?? 9999);
+    const sortByOrder = (a: any, b: any) => (a.orderNo ?? 9999) - (b.orderNo ?? 9999);
     const sortTree = (nodes: any[]) => {
       nodes.sort(sortByOrder);
-      nodes.forEach(
-        (n) => n.submenu && n.submenu.length && sortTree(n.submenu)
-      );
+      nodes.forEach(n => n.submenu && n.submenu.length && sortTree(n.submenu));
     };
     sortTree(roots);
 
     return roots;
-  },
+  }
+
+
+
 };

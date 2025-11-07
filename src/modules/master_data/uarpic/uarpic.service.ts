@@ -1,13 +1,13 @@
 import type { FastifyInstance } from "fastify";
+import { Prisma } from "../../../generated/prisma"; // Added Prisma import
 import { ApplicationError } from "../../../core/errors/applicationError";
 import { ERROR_CODES } from "../../../core/errors/errorCodes";
 import { ERROR_MESSAGES } from "../../../core/errors/errorMessages";
-import { Prisma } from "../../../generated/prisma/index.js"; // Added Prisma import
 // Removed: import { initialUarPic } from "./uarpic.repository";
 // Removed: import { UarPic } from "../../../types/uarPic";
-import { currentRequestId, currentUserId } from "../../../core/requestContext";
 import { generateID } from "../../../utils/idHelper";
 import { publishMonitoringLog } from "../../log_monitoring/log_publisher";
+import { currentRequestId, currentUserId } from "../../../core/requestContext";
 
 // --- Prisma Type Definitions ---
 // Assumes Prisma model is named 'TB_M_UAR_PIC'
@@ -69,7 +69,7 @@ async function dupeCheck(
     throw new ApplicationError(
       ERROR_CODES.APP_ALREADY_EXISTS,
       ERROR_MESSAGES[ERROR_CODES.APP_ALREADY_EXISTS] ||
-        "UAR PIC with this MAIL already exists",
+      "UAR PIC with this MAIL already exists",
       400 // 400 (Bad Request) or 409 (Conflict) are appropriate
     );
   }
@@ -176,7 +176,7 @@ export const uarPicService = {
     PIC_NAME: string,
     DIVISION_ID: number,
     MAIL: string,
-    CREATED_BY: string
+    CREATED_BY: string,
   ) {
     const lowerCaseMail = MAIL.toLowerCase();
 
@@ -232,15 +232,15 @@ export const uarPicService = {
         data: uarPicData,
       });
       const userId = currentUserId();
-      const reqId = currentRequestId();
+      const reqId = currentRequestId()
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "UAR_PIC",
         action: "UAR_PIC_CREATE",
         status: "Success",
         description: `Create UAR PIC ${newData.PIC_NAME}`,
-        location: "/applications",
-      }).catch((e) => console.warn({ e, reqId }, "monitoring log failed"));
+        location: "/applications"
+      }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
       return newData;
     } catch (e: any) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
@@ -312,15 +312,15 @@ export const uarPicService = {
         data: uarPicData,
       });
       const userId = currentUserId();
-      const reqId = currentRequestId();
+      const reqId = currentRequestId()
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "UAR_PIC",
         action: "UAR_PIC_UPDATE",
         status: "Success",
         description: `Create UAR PIC ${updatedUarPic.PIC_NAME}`,
-        location: "/applications",
-      }).catch((e) => console.warn({ e, reqId }, "monitoring log failed"));
+        location: "/applications"
+      }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
       return updatedUarPic;
     } catch (e: any) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
@@ -360,15 +360,15 @@ export const uarPicService = {
         where: { ID },
       });
       const userId = currentUserId();
-      const reqId = currentRequestId();
+            const reqId = currentRequestId()
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "UAR_PIC",
         action: "UAR_PIC_DELETE",
         status: "Success",
         description: `Create UAR PIC ${deletedUarPic.PIC_NAME}`,
-        location: "/applications",
-      }).catch((e) => console.warn({ e, reqId }, "monitoring log failed"));
+        location: "/applications"
+      }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
       return deletedUarPic; // Return deleted item
     } catch (e: any) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {

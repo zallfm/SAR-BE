@@ -1,5 +1,5 @@
-import { PrismaClient as PrismaSC } from "../generated/prisma-sc/index.js";
-import { PrismaClient as PrismaSAR } from "../generated/prisma/index.js";
+import { PrismaClient as PrismaSAR } from "../generated/prisma";
+import { PrismaClient as PrismaSC } from "../generated/prisma-sc";
 
 declare global {
   var prisma: PrismaSAR | undefined;
@@ -21,7 +21,7 @@ export const prismaSC =
   global.prismaSC ||
   new PrismaSC({
     log: ["error"],
-  });
+  })
 
 if (process.env.NODE_ENV !== "production") {
   global.prisma = prisma;

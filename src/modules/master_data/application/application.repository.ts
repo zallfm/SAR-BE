@@ -230,7 +230,7 @@ export const applicationRepository = {
       PERSONAL_NAME: row.PERSONNEL_NAME ?? "",
       DIVISION_NAME: row.DIVISION_NAME ?? "",
       MAIL: row.MAIL ?? "",
-      DEPARTEMENT_NAME: row.DEPARTMENT_NAME ?? "",
+      DEPARTMENT_NAME: row.DEPARTMENT_NAME ?? "",
       canBeOwner: true,
       canBeCustodian: true,
     };
@@ -265,12 +265,12 @@ export const applicationRepository = {
           PERSONNEL_NAME: true,
           DIVISION_NAME: true,
           MAIL: true,
-          DEPARTMENT_NAME: true,
           TB_M_DIVISION: {
             select: {
               DIVISION_NAME: true,
             },
           },
+          DEPARTMENT_NAME: true,
         },
       }),
       prisma.tB_M_EMPLOYEE.count({ where }),
@@ -283,11 +283,11 @@ export const applicationRepository = {
       PERSONAL_NAME: r.PERSONNEL_NAME ?? "",
       DIVISION_NAME: r.TB_M_DIVISION?.DIVISION_NAME ?? "",
       MAIL: r.MAIL ?? "",
-      DEPARTEMENT_NAME: r.DEPARTMENT_NAME ?? "",
+      DEPARTMENT_NAME: r.DEPARTMENT_NAME ?? "",
       canBeOwner: true,
       canBeCustodian: true,
     }));
-    // console.log("items", items)
+    console.log("items", items)
     return { items, total };
   },
   // Validasi Security Center: minimal sudah pernah digunakan oleh satu aplikasi

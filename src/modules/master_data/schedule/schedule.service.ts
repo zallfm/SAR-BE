@@ -1,13 +1,21 @@
 import type { FastifyInstance } from "fastify";
+import { Prisma, TB_M_SCHEDULE } from "../../../generated/prisma";
 import { ApplicationError } from "../../../core/errors/applicationError";
 import { ERROR_CODES } from "../../../core/errors/errorCodes";
 import { ERROR_MESSAGES } from "../../../core/errors/errorMessages";
-import { currentRequestId, currentUserId } from "../../../core/requestContext";
-import { uarSO1, uarSO2, uarSO3, uarSO4, uarSO5 } from "../../../data/mockup";
-import { Prisma, TB_M_SCHEDULE } from "../../../generated/prisma/index.js";
 import { UarPic } from "../../../types/uarPic";
-import { publishMonitoringLog } from "../../log_monitoring/log_publisher";
 import { uarPicSchema } from "../uarpic/uarpic.schemas";
+import {
+  applications,
+  uarSO1,
+  uarSO2,
+  uarSO3,
+  uarSO4,
+  uarSO5,
+} from "../../../data/mockup";
+import { Schedule } from "../../../types/schedule";
+import { publishMonitoringLog } from "../../log_monitoring/log_publisher";
+import { currentRequestId, currentUserId } from "../../../core/requestContext";
 
 type ScheduleWhereInput = Prisma.TB_M_SCHEDULEWhereInput;
 type ScheduleCompoundId =
@@ -179,7 +187,7 @@ export const scheduleService = {
       SCHEDULE_UAR_DT: string;
       SCHEDULE_STATUS: string;
       CREATED_BY: string;
-    }
+    },
   ) {
     console.log("scheddata", data);
     const dataForDb = {
@@ -197,18 +205,19 @@ export const scheduleService = {
         data: dataForDb,
       });
       const userId = currentUserId();
-      const reqId = currentRequestId();
+      const reqId = currentRequestId()
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "SCHE",
         action: "SCHEDULE_CREATE",
         status: "Success",
         description: `Create SCHEDULE ${newSchedule.APPLICATION_ID}`,
-        location: "/applications",
-      }).catch((e) => console.warn({ e, reqId }, "monitoring log failed"));
+        location: "/applications"
+      }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
       return formatSchedule(newSchedule as any); // Cast as any to bypass include
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
+
         if (e.code === "P2002") {
           throw new ApplicationError(
             ERROR_CODES.APP_ALREADY_EXISTS,
@@ -270,15 +279,15 @@ export const scheduleService = {
         data: dataForUpdate,
       });
       const userId = currentUserId();
-      const reqId = currentRequestId();
+      const reqId = currentRequestId()
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "SCHE",
         action: "SCHEDULE_UPDATE",
         status: "Success",
         description: `Create SCHEDULE ${updatedSchedule.APPLICATION_ID}`,
-        location: "/applications",
-      }).catch((e) => console.warn({ e, reqId }, "monitoring log failed"));
+        location: "/applications"
+      }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
       return formatSchedule(updatedSchedule as any); // Cast as any to bypass include
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
@@ -331,15 +340,15 @@ export const scheduleService = {
         },
       });
       const userId = currentUserId();
-      const reqId = currentRequestId();
+      const reqId = currentRequestId()
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "SCHE",
         action: "SCHEDULE_UPDATE",
         status: "Success",
         description: `Create SCHEDULE ${updatedSchedule.APPLICATION_ID}`,
-        location: "/applications",
-      }).catch((e) => console.warn({ e, reqId }, "monitoring log failed"));
+        location: "/applications"
+      }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
       return formatSchedule(updatedSchedule as any); // Cast as any to bypass include
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
@@ -378,15 +387,15 @@ export const scheduleService = {
         },
       });
       const userId = currentUserId();
-      const reqId = currentRequestId();
+      const reqId = currentRequestId()
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "SCHE",
         action: "SCHEDULE_DELETE",
         status: "Success",
         description: `Create SCHEDULE ${deletedSchedule.APPLICATION_ID}`,
-        location: "/applications",
-      }).catch((e) => console.warn({ e, reqId }, "monitoring log failed"));
+        location: "/applications"
+      }).catch(e => console.warn({ e, reqId }, "monitoring log failed"));
       return formatSchedule(deletedSchedule as any); // Cast as any to bypass include
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
@@ -573,8 +582,7 @@ async function createManyWithManualDuplicateCheck(
 
   if (afterInternalDedupCount < originalInputCount) {
     console.log(
-      `Removed ${
-        originalInputCount - afterInternalDedupCount
+      `Removed ${originalInputCount - afterInternalDedupCount
       } duplicates from the input data.`
     );
   }

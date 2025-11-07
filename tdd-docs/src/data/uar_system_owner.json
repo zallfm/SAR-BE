@@ -1,30 +1,30 @@
 {
-  "name": "schedule",
-  "displayName": "Schedule",
-  "description": "Schedule management",
+  "name": "uar_system_owner",
+  "displayName": "Uar_system_owner",
+  "description": "Module for uar_system_owner",
   "functions": [
     {
-      "name": "unknown",
-      "description": "Handles POST request to /",
-      "signature": "GET /",
+      "name": "uarIdapplicationsapplicationId",
+      "description": "Handles GET request to /:uarId/applications/:applicationId",
+      "signature": "GET /:uarId/applications/:applicationId",
       "method": "GET",
-      "endpoint": "/",
+      "endpoint": "/:uarId/applications/:applicationId",
       "testScenarios": [
         {
           "phase": "RED",
-          "description": "Test unknown should fail initially",
-          "testCode": "it('should unknown', async () => {\n  // TODO: Implement test\n});",
+          "description": "Test uarIdapplicationsapplicationId should fail initially",
+          "testCode": "it('should uarIdapplicationsapplicationId', async () => {\n  // TODO: Implement test\n});",
           "expectedResult": "Test should fail"
         },
         {
           "phase": "GREEN",
-          "description": "Test unknown should pass after implementation",
-          "testCode": "it('should unknown', async () => {\n  // TODO: Implement test\n});",
+          "description": "Test uarIdapplicationsapplicationId should pass after implementation",
+          "testCode": "it('should uarIdapplicationsapplicationId', async () => {\n  // TODO: Implement test\n});",
           "expectedResult": "Test should pass"
         },
         {
           "phase": "REFACTOR",
-          "description": "Refactor unknown implementation",
+          "description": "Refactor uarIdapplicationsapplicationId implementation",
           "testCode": "// TODO: Refactor code\n// All tests should still pass",
           "expectedResult": "Code refactored, tests still pass"
         }
@@ -32,21 +32,21 @@
       "todos": [
         {
           "id": "1",
-          "task": "Implement unknown function",
+          "task": "Implement uarIdapplicationsapplicationId function",
           "status": "pending",
           "priority": "high",
-          "description": "Create implementation for unknown"
+          "description": "Create implementation for uarIdapplicationsapplicationId"
         }
       ],
       "bddScenarios": [
         {
-          "feature": "unknown Feature",
-          "description": "As a developer, I want to unknown so that I can handle the request",
+          "feature": "uarIdapplicationsapplicationId Feature",
+          "description": "As a developer, I want to uarIdapplicationsapplicationId so that I can handle the request",
           "scenarios": [
             {
-              "name": "unknown Success Scenario",
+              "name": "uarIdapplicationsapplicationId Success Scenario",
               "given": "Given I have valid request",
-              "when": "When I call unknown",
+              "when": "When I call uarIdapplicationsapplicationId",
               "then": "Then I should receive successful response",
               "testCode": "// TODO: Implement BDD test"
             }
@@ -89,47 +89,47 @@
         "acceptanceCriteria": [
           {
             "id": "ac-1",
-            "description": "Test unknown should fail initially",
-            "testScenarioId": "unknown-scenario-1",
+            "description": "Test uarIdapplicationsapplicationId should fail initially",
+            "testScenarioId": "uarIdapplicationsapplicationId-scenario-1",
             "status": "PENDING"
           },
           {
             "id": "ac-2",
-            "description": "Test unknown should pass after implementation",
-            "testScenarioId": "unknown-scenario-2",
+            "description": "Test uarIdapplicationsapplicationId should pass after implementation",
+            "testScenarioId": "uarIdapplicationsapplicationId-scenario-2",
             "status": "PENDING"
           },
           {
             "id": "ac-3",
-            "description": "Refactor unknown implementation",
-            "testScenarioId": "unknown-scenario-3",
+            "description": "Refactor uarIdapplicationsapplicationId implementation",
+            "testScenarioId": "uarIdapplicationsapplicationId-scenario-3",
             "status": "PENDING"
           }
         ]
       }
     },
     {
-      "name": "APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDT",
-      "description": "Handles PUT request to /:APPLICATION_ID/:SCHEDULE_SYNC_START_DT/:SCHEDULE_UAR_DT",
-      "signature": "PUT /:APPLICATION_ID/:SCHEDULE_SYNC_START_DT/:SCHEDULE_UAR_DT",
-      "method": "PUT",
-      "endpoint": "/:APPLICATION_ID/:SCHEDULE_SYNC_START_DT/:SCHEDULE_UAR_DT",
+      "name": "batchupdate",
+      "description": "Handles POST request to /batch-update",
+      "signature": "POST /batch-update",
+      "method": "POST",
+      "endpoint": "/batch-update",
       "testScenarios": [
         {
           "phase": "RED",
-          "description": "Test APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDT should fail initially",
-          "testCode": "it('should APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDT', async () => {\n  // TODO: Implement test\n});",
+          "description": "Test batchupdate should fail initially",
+          "testCode": "it('should batchupdate', async () => {\n  // TODO: Implement test\n});",
           "expectedResult": "Test should fail"
         },
         {
           "phase": "GREEN",
-          "description": "Test APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDT should pass after implementation",
-          "testCode": "it('should APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDT', async () => {\n  // TODO: Implement test\n});",
+          "description": "Test batchupdate should pass after implementation",
+          "testCode": "it('should batchupdate', async () => {\n  // TODO: Implement test\n});",
           "expectedResult": "Test should pass"
         },
         {
           "phase": "REFACTOR",
-          "description": "Refactor APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDT implementation",
+          "description": "Refactor batchupdate implementation",
           "testCode": "// TODO: Refactor code\n// All tests should still pass",
           "expectedResult": "Code refactored, tests still pass"
         }
@@ -137,21 +137,21 @@
       "todos": [
         {
           "id": "1",
-          "task": "Implement APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDT function",
+          "task": "Implement batchupdate function",
           "status": "pending",
           "priority": "high",
-          "description": "Create implementation for APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDT"
+          "description": "Create implementation for batchupdate"
         }
       ],
       "bddScenarios": [
         {
-          "feature": "APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDT Feature",
-          "description": "As a developer, I want to APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDT so that I can handle the request",
+          "feature": "batchupdate Feature",
+          "description": "As a developer, I want to batchupdate so that I can handle the request",
           "scenarios": [
             {
-              "name": "APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDT Success Scenario",
+              "name": "batchupdate Success Scenario",
               "given": "Given I have valid request",
-              "when": "When I call APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDT",
+              "when": "When I call batchupdate",
               "then": "Then I should receive successful response",
               "testCode": "// TODO: Implement BDD test"
             }
@@ -194,47 +194,47 @@
         "acceptanceCriteria": [
           {
             "id": "ac-1",
-            "description": "Test APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDT should fail initially",
-            "testScenarioId": "APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDT-scenario-1",
+            "description": "Test batchupdate should fail initially",
+            "testScenarioId": "batchupdate-scenario-1",
             "status": "PENDING"
           },
           {
             "id": "ac-2",
-            "description": "Test APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDT should pass after implementation",
-            "testScenarioId": "APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDT-scenario-2",
+            "description": "Test batchupdate should pass after implementation",
+            "testScenarioId": "batchupdate-scenario-2",
             "status": "PENDING"
           },
           {
             "id": "ac-3",
-            "description": "Refactor APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDT implementation",
-            "testScenarioId": "APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDT-scenario-3",
+            "description": "Refactor batchupdate implementation",
+            "testScenarioId": "batchupdate-scenario-3",
             "status": "PENDING"
           }
         ]
       }
     },
     {
-      "name": "APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDTstatus",
-      "description": "Handles PUT request to /:APPLICATION_ID/:SCHEDULE_SYNC_START_DT/:SCHEDULE_UAR_DT/status",
-      "signature": "PUT /:APPLICATION_ID/:SCHEDULE_SYNC_START_DT/:SCHEDULE_UAR_DT/status",
-      "method": "PUT",
-      "endpoint": "/:APPLICATION_ID/:SCHEDULE_SYNC_START_DT/:SCHEDULE_UAR_DT/status",
+      "name": "comment",
+      "description": "Handles POST request to /comment",
+      "signature": "POST /comment",
+      "method": "POST",
+      "endpoint": "/comment",
       "testScenarios": [
         {
           "phase": "RED",
-          "description": "Test APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDTstatus should fail initially",
-          "testCode": "it('should APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDTstatus', async () => {\n  // TODO: Implement test\n});",
+          "description": "Test comment should fail initially",
+          "testCode": "it('should comment', async () => {\n  // TODO: Implement test\n});",
           "expectedResult": "Test should fail"
         },
         {
           "phase": "GREEN",
-          "description": "Test APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDTstatus should pass after implementation",
-          "testCode": "it('should APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDTstatus', async () => {\n  // TODO: Implement test\n});",
+          "description": "Test comment should pass after implementation",
+          "testCode": "it('should comment', async () => {\n  // TODO: Implement test\n});",
           "expectedResult": "Test should pass"
         },
         {
           "phase": "REFACTOR",
-          "description": "Refactor APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDTstatus implementation",
+          "description": "Refactor comment implementation",
           "testCode": "// TODO: Refactor code\n// All tests should still pass",
           "expectedResult": "Code refactored, tests still pass"
         }
@@ -242,21 +242,21 @@
       "todos": [
         {
           "id": "1",
-          "task": "Implement APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDTstatus function",
+          "task": "Implement comment function",
           "status": "pending",
           "priority": "high",
-          "description": "Create implementation for APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDTstatus"
+          "description": "Create implementation for comment"
         }
       ],
       "bddScenarios": [
         {
-          "feature": "APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDTstatus Feature",
-          "description": "As a developer, I want to APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDTstatus so that I can handle the request",
+          "feature": "comment Feature",
+          "description": "As a developer, I want to comment so that I can handle the request",
           "scenarios": [
             {
-              "name": "APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDTstatus Success Scenario",
+              "name": "comment Success Scenario",
               "given": "Given I have valid request",
-              "when": "When I call APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDTstatus",
+              "when": "When I call comment",
               "then": "Then I should receive successful response",
               "testCode": "// TODO: Implement BDD test"
             }
@@ -299,20 +299,20 @@
         "acceptanceCriteria": [
           {
             "id": "ac-1",
-            "description": "Test APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDTstatus should fail initially",
-            "testScenarioId": "APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDTstatus-scenario-1",
+            "description": "Test comment should fail initially",
+            "testScenarioId": "comment-scenario-1",
             "status": "PENDING"
           },
           {
             "id": "ac-2",
-            "description": "Test APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDTstatus should pass after implementation",
-            "testScenarioId": "APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDTstatus-scenario-2",
+            "description": "Test comment should pass after implementation",
+            "testScenarioId": "comment-scenario-2",
             "status": "PENDING"
           },
           {
             "id": "ac-3",
-            "description": "Refactor APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDTstatus implementation",
-            "testScenarioId": "APPLICATIONIDSCHEDULESYNCSTARTDTSCHEDULEUARDTstatus-scenario-3",
+            "description": "Refactor comment implementation",
+            "testScenarioId": "comment-scenario-3",
             "status": "PENDING"
           }
         ]

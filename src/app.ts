@@ -39,7 +39,7 @@ export async function buildApp() {
 
   // ✅ 2️⃣ Aktifkan CORS untuk frontend kamu (Vite di port 5173)
   await app.register(cors, {
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173", env.FE_PROD],
+    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
@@ -101,7 +101,7 @@ export async function buildApp() {
 
   await app.register(authRoutes, { prefix: "/api/auth" });
   await app.register(indexRoutes, { prefix: "/api/sar" });
-
+  
   // TDD Documentation routes
   const { tddRoutes } = await import("./api/tdd/tdd.routes");
   await app.register(tddRoutes);

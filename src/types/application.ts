@@ -9,7 +9,7 @@ export interface SystemUser {
   PERSONAL_NAME: string;
   DIVISION_NAME: string;
   MAIL: string;
-  DEPARTEMENT_NAME: string;
+  DEPARTMENT_NAME: string;
   canBeOwner: boolean;     // eligible sebagai System Owner
   canBeCustodian: boolean; // eligible sebagai System Custodian
 }

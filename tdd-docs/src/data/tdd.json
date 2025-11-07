@@ -214,111 +214,6 @@
       }
     },
     {
-      "name": "tdd",
-      "description": "Handles GET request to /tdd",
-      "signature": "GET /tdd/*",
-      "method": "GET",
-      "endpoint": "/tdd/*",
-      "testScenarios": [
-        {
-          "phase": "RED",
-          "description": "Test tdd should fail initially",
-          "testCode": "it('should tdd', async () => {\n  // TODO: Implement test\n});",
-          "expectedResult": "Test should fail"
-        },
-        {
-          "phase": "GREEN",
-          "description": "Test tdd should pass after implementation",
-          "testCode": "it('should tdd', async () => {\n  // TODO: Implement test\n});",
-          "expectedResult": "Test should pass"
-        },
-        {
-          "phase": "REFACTOR",
-          "description": "Refactor tdd implementation",
-          "testCode": "// TODO: Refactor code\n// All tests should still pass",
-          "expectedResult": "Code refactored, tests still pass"
-        }
-      ],
-      "todos": [
-        {
-          "id": "1",
-          "task": "Implement tdd function",
-          "status": "pending",
-          "priority": "high",
-          "description": "Create implementation for tdd"
-        }
-      ],
-      "bddScenarios": [
-        {
-          "feature": "tdd Feature",
-          "description": "As a developer, I want to tdd so that I can handle the request",
-          "scenarios": [
-            {
-              "name": "tdd Success Scenario",
-              "given": "Given I have valid request",
-              "when": "When I call tdd",
-              "then": "Then I should receive successful response",
-              "testCode": "// TODO: Implement BDD test"
-            }
-          ]
-        }
-      ],
-      "dod": {
-        "criteria": [
-          {
-            "id": "dod-1",
-            "description": "All test scenarios implemented and passing",
-            "status": "PENDING",
-            "evidence": ""
-          },
-          {
-            "id": "dod-2",
-            "description": "Code coverage meets minimum threshold (70%)",
-            "status": "PENDING",
-            "evidence": ""
-          },
-          {
-            "id": "dod-3",
-            "description": "Error handling implemented for all error cases",
-            "status": "PENDING",
-            "evidence": ""
-          },
-          {
-            "id": "dod-4",
-            "description": "Code reviewed and approved",
-            "status": "PENDING",
-            "evidence": ""
-          },
-          {
-            "id": "dod-5",
-            "description": "Documentation updated",
-            "status": "PENDING",
-            "evidence": ""
-          }
-        ],
-        "acceptanceCriteria": [
-          {
-            "id": "ac-1",
-            "description": "Test tdd should fail initially",
-            "testScenarioId": "tdd-scenario-1",
-            "status": "PENDING"
-          },
-          {
-            "id": "ac-2",
-            "description": "Test tdd should pass after implementation",
-            "testScenarioId": "tdd-scenario-2",
-            "status": "PENDING"
-          },
-          {
-            "id": "ac-3",
-            "description": "Refactor tdd implementation",
-            "testScenarioId": "tdd-scenario-3",
-            "status": "PENDING"
-          }
-        ]
-      }
-    },
-    {
       "name": "tddapievidencemodulefunction",
       "description": "Handles GET request to /tdd/api/evidence/:module/:function",
       "signature": "GET /tdd/api/evidence/:module/:function",
@@ -733,6 +628,111 @@
             "id": "ac-3",
             "description": "Refactor tddapievidenceexport implementation",
             "testScenarioId": "tddapievidenceexport-scenario-3",
+            "status": "PENDING"
+          }
+        ]
+      }
+    },
+    {
+      "name": "tdd",
+      "description": "Handles GET request to /tdd",
+      "signature": "GET /tdd/*",
+      "method": "GET",
+      "endpoint": "/tdd/*",
+      "testScenarios": [
+        {
+          "phase": "RED",
+          "description": "Test tdd should fail initially",
+          "testCode": "it('should tdd', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should fail"
+        },
+        {
+          "phase": "GREEN",
+          "description": "Test tdd should pass after implementation",
+          "testCode": "it('should tdd', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should pass"
+        },
+        {
+          "phase": "REFACTOR",
+          "description": "Refactor tdd implementation",
+          "testCode": "// TODO: Refactor code\n// All tests should still pass",
+          "expectedResult": "Code refactored, tests still pass"
+        }
+      ],
+      "todos": [
+        {
+          "id": "1",
+          "task": "Implement tdd function",
+          "status": "pending",
+          "priority": "high",
+          "description": "Create implementation for tdd"
+        }
+      ],
+      "bddScenarios": [
+        {
+          "feature": "tdd Feature",
+          "description": "As a developer, I want to tdd so that I can handle the request",
+          "scenarios": [
+            {
+              "name": "tdd Success Scenario",
+              "given": "Given I have valid request",
+              "when": "When I call tdd",
+              "then": "Then I should receive successful response",
+              "testCode": "// TODO: Implement BDD test"
+            }
+          ]
+        }
+      ],
+      "dod": {
+        "criteria": [
+          {
+            "id": "dod-1",
+            "description": "All test scenarios implemented and passing",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-2",
+            "description": "Code coverage meets minimum threshold (70%)",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-3",
+            "description": "Error handling implemented for all error cases",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-4",
+            "description": "Code reviewed and approved",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-5",
+            "description": "Documentation updated",
+            "status": "PENDING",
+            "evidence": ""
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac-1",
+            "description": "Test tdd should fail initially",
+            "testScenarioId": "tdd-scenario-1",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-2",
+            "description": "Test tdd should pass after implementation",
+            "testScenarioId": "tdd-scenario-2",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-3",
+            "description": "Refactor tdd implementation",
+            "testScenarioId": "tdd-scenario-3",
             "status": "PENDING"
           }
         ]

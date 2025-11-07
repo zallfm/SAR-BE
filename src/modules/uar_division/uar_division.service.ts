@@ -21,6 +21,11 @@ export const uarDivisionService = {
             limit: number;
             period?: string;
             uarId?: string;
+            status?: 'InProgress' | 'Finished';
+            createdDateStart?: string;
+            createdDateEnd?: string;
+            completedDateStart?: string;
+            completedDateEnd?: string;
         },
         userDivisionId: number
     ) {
@@ -97,6 +102,14 @@ export const uarDivisionService = {
         }
         return rows;
     },
+
+
+    async getUar(uarId: string, userDivisionId: number) {
+        const rows = await repo.getUar(uarId, userDivisionId);
+        // console.log("rowss", rows)
+        return rows;
+    },
+
 
 
     async batchUpdate(

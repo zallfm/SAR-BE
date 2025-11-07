@@ -3,6 +3,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
 import { ServiceResponse } from '../models/ServiceResponse';
 import { authService } from '../../../modules/auth/auth.service';
+import { env } from '../../../config/env';
 
 // Payload JWT yang kamu pakai (sesuaikan kalau ada field lain)
 type JwtPayload = {
@@ -63,6 +64,8 @@ const DEFAULT_PUBLIC = [
   '/job/start',
   '/tools',
 ];
+
+const dynamicRole = env.DYNAMIC_ROLE
 
 const startsWithAny = (url: string, bases: string[]) =>
   bases.some((p) => url.startsWith(p));
@@ -139,7 +142,7 @@ export default fp<AuthOpts>(async function authorizePlugin(app: FastifyInstance,
           .status(401)
           .send(ServiceResponse.failure('Unauthorized', null, 401));
       }
-      if (u.roles?.includes('SAR_ADMIN')) return; // super admin bypass
+      if (u.roles?.includes(dynamicRole)) return; // super admin bypass
       const ok = u.features?.includes(permission) || u.functions?.includes(permission);
       if (!ok) {
         return reply
@@ -163,7 +166,7 @@ export default fp<AuthOpts>(async function authorizePlugin(app: FastifyInstance,
           .status(401)
           .send(ServiceResponse.failure('Unauthorized', null, 401));
       }
-      if (u.roles?.includes('SAR_ADMIN')) return;
+      if (u.roles?.includes(dynamicRole)) return;
 
       const ok = perms.some(
         (p) => u.features?.includes(p) || u.functions?.includes(p)
@@ -190,7 +193,7 @@ export default fp<AuthOpts>(async function authorizePlugin(app: FastifyInstance,
           .status(401)
           .send(ServiceResponse.failure('Unauthorized', null, 401));
       }
-      if (u.roles?.includes('SAR_ADMIN')) return;
+      if (u.roles?.includes(dynamicRole)) return;
 
       const ok = perms.every(
         (p) => u.features?.includes(p) || u.functions?.includes(p)
