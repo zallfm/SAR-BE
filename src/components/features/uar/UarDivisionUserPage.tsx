@@ -87,7 +87,7 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = filename || `UAR_${record.uarId}.xlsx`;
+      a.download = filename || `${record.uarId}_FROM_DIV_USER.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -133,7 +133,7 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
 
   const startItem = useMemo(() => {
     if (totalItems === 0 || !divisionUserMeta) return 0;
-    console.log("divuserData", divisionUserMeta);
+    // console.log("divuserData", divisionUserMeta);
     return (divisionUserMeta.page - 1) * divisionUserMeta.limit + 1;
   }, [divisionUserMeta, totalItems]);
 
