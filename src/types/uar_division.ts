@@ -1,14 +1,13 @@
 
 export interface UarDivisionBatchUpdateDTO {
     uarId: string;
-    decision: "Approve" | "Revoke";
     comments?: string;
     items: {
         username: string;
         roleId: string;
+        decision: "Approved" | "Revoked";
     }[];
 }
-
 
 export interface UarHeader {
     uarId: string;

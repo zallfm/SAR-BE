@@ -231,37 +231,60 @@ export const uarDivisionRepository = {
         userNoreg: string,
         userDivisionId: number
     ) {
-        const { uarId, decision, items, comments } = dto;
+        const { uarId, items, comments } = dto; // 'decision' is no longer top-level
         const now = await getDbNow();
-        const divApprovalStatus = decision === "Approve" ? "1" : "2";
+
+        const approvedItems = items
+            .filter(item => item.decision === "Approved")
+            .map(item => ({ USERNAME: item.username, ROLE_ID: item.roleId }));
+
+        const revokedItems = items
+            .filter(item => item.decision === "Revoked")
+            .map(item => ({ USERNAME: item.username, ROLE_ID: item.roleId }));
 
         try {
             return await prisma.$transaction(async (tx) => {
-                const userUpdateResult = await tx.tB_R_UAR_DIVISION_USER.updateMany({
-                    where: {
-                        UAR_ID: uarId,
-                        DIVISION_ID: userDivisionId,
-                        OR: items.map((item) => ({
-                            USERNAME: item.username,
-                            ROLE_ID: item.roleId,
-                        })),
-                    },
-                    data: {
-                        DIV_APPROVAL_STATUS: divApprovalStatus,
-                        REVIEWED_BY: userNoreg,
-                        REVIEWED_DT: now,
-                    },
-                });
+
+                // 2. Run updateMany for Approved items (if any)
+                const approveUpdateResult = (approvedItems.length > 0)
+                    ? await tx.tB_R_UAR_DIVISION_USER.updateMany({
+                        where: {
+                            UAR_ID: uarId,
+                            DIVISION_ID: userDivisionId,
+                            OR: approvedItems,
+                        },
+                        data: {
+                            DIV_APPROVAL_STATUS: "1", // 'Approve'
+                            REVIEWED_BY: userNoreg,
+                            REVIEWED_DT: now,
+                        },
+                    })
+                    : { count: 0 }; // Default result if none
+
+                const revokeUpdateResult = (revokedItems.length > 0)
+                    ? await tx.tB_R_UAR_DIVISION_USER.updateMany({
+                        where: {
+                            UAR_ID: uarId,
+                            DIVISION_ID: userDivisionId,
+                            OR: revokedItems,
+                        },
+                        data: {
+                            DIV_APPROVAL_STATUS: "2",
+                            REVIEWED_BY: userNoreg,
+                            REVIEWED_DT: now,
+                        },
+                    })
+                    : { count: 0 };
+
+                const userUpdateResult = {
+                    count: approveUpdateResult.count + revokeUpdateResult.count
+                };
 
                 const allItemsInUar = await tx.tB_R_UAR_DIVISION_USER.findMany({
-                    where: {
-                        UAR_ID: uarId,
-                        DIVISION_ID: userDivisionId,
-                    },
-                    select: {
-                        DIV_APPROVAL_STATUS: true,
-                    },
+                    where: { UAR_ID: uarId, DIVISION_ID: userDivisionId, },
+                    select: { DIV_APPROVAL_STATUS: true, },
                 });
+
 
                 const totalItems = allItemsInUar.length;
                 let rejectedCount = 0;

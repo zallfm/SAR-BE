@@ -79,7 +79,6 @@ export const uarDivisionService = {
                 status: newStatus
             };
         });
-        // console.log("headers", headers)
 
         return { data: headers, total };
     },
@@ -96,15 +95,16 @@ export const uarDivisionService = {
                 404
             );
         }
-        // console.log("rowss", rows)
         return rows;
     },
+
 
     async getUar(uarId: string, userDivisionId: number) {
         const rows = await repo.getUar(uarId, userDivisionId);
         // console.log("rowss", rows)
         return rows;
     },
+
 
 
     async batchUpdate(
@@ -142,7 +142,7 @@ export const uarDivisionService = {
             module: "UAR_DIV",
             action: "BATCH_UPDATE",
             status: "Success",
-            description: `Batch ${dto.decision} for UAR ${dto.uarId} on ${dto.items.length} items.`,
+            description: `Batch update for UAR ${dto.uarId} on ${dto.items.length} items.`,
             location: "/uar-division/batch-update",
         }).catch((e) => console.warn({ e, reqId }, "monitoring log failed"));
 
