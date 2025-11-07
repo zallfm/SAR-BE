@@ -35,10 +35,11 @@ export type BackendGetApplicationResponse = {
 export type SystemUser = {
   NOREG: string;
   DIVISION_ID:number;
+  DEPARTMENT_ID: number;
   PERSONAL_NAME: string;
   DIVISION_NAME: string;
   MAIL: string;
-  DEPARTEMENT_NAME: string;
+  DEPARTMENT_NAME: string;
   canBeOwner: boolean;      // eligible as System Owner
   canBeCustodian: boolean;
 }
