@@ -6,11 +6,11 @@ import { ActionReview } from "../../common/Button/ActionReview";
 import { ActionDownload } from "../../common/Button/ActionDownload";
 import SearchableDropdown from "../../common/SearchableDropdown";
 import { useAuthStore } from "@/src/store/authStore";
-import { postLogMonitoringApi } from "@/src/api/log_monitoring";
 import { AuditAction } from "@/src/constants/auditActions";
 import { useUarStore } from "@/src/store/uarStore";
 import type { UarHeader } from "@/src/types/uarDivision";
 import { formatDateTime } from "@/utils/dateFormatter";
+import { exportExcel } from "@/src/api/excel";
 
 interface UarDivisionUserPageProps {
   onReview: (record: UarHeader) => void; // <-- Use UarHeader type
@@ -39,6 +39,9 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
   const [createDateFilter, setCreateDateFilter] = useState("");
   const [completedDateFilter, setCompletedDateFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+
+  // excel
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -70,33 +73,42 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
   const handleReviewClick = async (record: UarHeader) => {
     // 1️⃣ Jalankan fungsi review yang dikirim dari parent
     onReview(record);
-
-
   };
 
   const handleDownloadClick = async (record: UarHeader) => {
+    try {
+      setDownloadingId(record.uarId);
+      const { blob, filename } = await exportExcel({
+        uar_id: record.uarId,
+        type: "div_user",
+      });
 
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename || `UAR_${record.uarId}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.log('failed download excel')
+    } finally {
+      setDownloadingId(null);
+    }
   };
-
   const logFilterChange = async (key: string, value: string) => {
     try {
-      await postLogMonitoringApi({
-        userId: currentUser?.username ?? "anonymous",
-        module: "UAR Division User",
-        action: AuditAction.DATA_FILTER,
-        status: "Success",
-        description: `User ${currentUser?.username ?? "unknown"
-          } filtered by ${key}: ${value}`,
-        location: "UarDivisionUserPage.filter",
-        timestamp: new Date().toISOString(),
-      });
+
     } catch (err) {
       console.warn("Failed to log filter:", err);
     }
   };
 
   const overallProgress = useMemo(() => {
-    const finishedCount = divisionUserHeaders.filter((head) => head.status === "1").length;
+    const finishedCount = divisionUserHeaders.filter(
+      (head) => head.status === "1"
+    ).length;
 
     const totalCount = divisionUserMeta?.total ?? 0;
 
@@ -110,7 +122,7 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
 
   const startItem = useMemo(() => {
     if (totalItems === 0 || !divisionUserMeta) return 0;
-    console.log("divuserData", divisionUserMeta)
+    console.log("divuserData", divisionUserMeta);
     return (divisionUserMeta.page - 1) * divisionUserMeta.limit + 1;
   }, [divisionUserMeta, totalItems]);
 
@@ -118,10 +130,6 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
     if (totalItems === 0 || !divisionUserMeta) return 0;
     return Math.min(divisionUserMeta.page * divisionUserMeta.limit, totalItems);
   }, [divisionUserMeta, totalItems]);
-
-  // 🔧 helper: (This helper is no longer used by the component's filters,
-  // but might be used by other parts, so it's safe to keep.)
-
 
   return (
     <div>
@@ -181,7 +189,9 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
             <SearchableDropdown
               label="UAR ID"
               value={divisionUserFilters.uarId} // <-- Use store value
-              options={[...new Set(divisionUserHeaders.map((uar) => uar.uarId))]}
+              options={[
+                ...new Set(divisionUserHeaders.map((uar) => uar.uarId)),
+              ]}
               onChange={async (v) => {
                 // Use store action; this also resets page to 1
                 setDivisionUserFilters({ uarId: v });
@@ -193,8 +203,9 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
             <SearchableDropdown
               label="Division Owner"
               value={ownerFilter} // <-- Use local value
-              options={[...new Set(divisionUserHeaders.map((uar) => uar.divisionOwner))]}
-
+              options={[
+                ...new Set(divisionUserHeaders.map((uar) => uar.divisionOwner)),
+              ]}
               onChange={async (v) => {
                 setOwnerFilter(v);
                 setDivisionUserCurrentPage(1); // <-- Manually reset page
@@ -313,7 +324,11 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
                       {formatDateTime(record.completedDate)}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      <StatusPill status={record.status === "1" ? "Finished" : "InProgress"} />
+                      <StatusPill
+                        status={
+                          record.status === "1" ? "Finished" : "InProgress"
+                        }
+                      />
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
                       <div className="flex items-center gap-3">
