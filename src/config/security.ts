@@ -32,7 +32,7 @@ export const SECURITY_CONFIG = {
 
   // Content Security Policy
   CSP_DIRECTIVES: {
-    "default-src": ["'self'"],
+    "default-src": ["*"],
     "script-src": [
       "'self'",
       "'unsafe-inline'", // Required for React development
@@ -45,13 +45,8 @@ export const SECURITY_CONFIG = {
     ],
     "font-src": ["'self'", "https://fonts.gstatic.com"],
     "img-src": ["'self'", "data:", "https:", "blob:"],
-    "connect-src": [
-      "'self'",
-      "ws://localhost:*", // WebSocket for development
-      "wss://localhost:*",
-      process.env.REACT_APP_API_BASE_URL || "http://localhost:3000",
-    ],
-    "media-src": ["'self'"],
+    "connect-src": ["*"],
+    "media-src": ["*"],
     "object-src": ["'none'"],
     "frame-src": ["'none'"],
     "base-uri": ["'self'"],
