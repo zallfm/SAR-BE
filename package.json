@@ -18,14 +18,15 @@
     "test:tdd": "jest --watch --coverage",
     "prisma:gen:sar": "prisma generate --schema=prisma/sar/schema.prisma",
     "prisma:gen:sc": "prisma generate --schema=prisma/sc/schema_sc.prisma",
-    "prisma:gen:all": "pnpm run prisma:gen:sar && pnpm run prisma:gen:sc",
+    "prisma:gen:all": "npm run prisma:gen:sar && npm run prisma:gen:sc",
     "tdd:generate": "tsx scripts/generate-tdd-docs.ts",
     "tdd:watch": "tsx watch scripts/generate-tdd-docs.ts",
     "tdd:dev": "npm run tdd:generate && npm run dev",
     "predev": "npm run tdd:generate",
     "tdd:generate-evidence": "tsx scripts/generate-test-evidence.ts",
     "tdd:watch-evidence": "tsx scripts/watch-test-results.ts",
-    "tdd:test": "npm run test:coverage && npm run tdd:generate-evidence"
+    "tdd:test": "npm run test:coverage && npm run tdd:generate-evidence",
+    "build:onprem": "docker build --platform linux/amd64 --target export --output build -f Dockerfile.onprem ."
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
