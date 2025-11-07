@@ -101,7 +101,7 @@ export const authService = {
         description: 'Account locked due to too many failed attempts'
       });
 
-      // 🔎 monitoring (non-blocking)
+      // 🔎 monitoring (non-blocking, fire-and-forget)
       publishMonitoringLog(app, {
         userId: username,
         module: "AUTH",
@@ -109,7 +109,7 @@ export const authService = {
         status: "Error",
         description: "Account locked due to too many failed attempts",
         location: "/login"
-      }).catch(e => app.log.warn({ err: e }, "monitoring log failed (account locked)"));
+      });
 
 
       throw new ApplicationError(
@@ -128,6 +128,8 @@ export const authService = {
 
 
     // 2) authenticate
+    // Note: userRepository.login already validates password, so safeCompare is redundant
+    // But we keep it for additional security layer
     const user = await userRepository.login(username, password);
     const valid = !!user && safeCompare(password, user.password);
 
@@ -143,6 +145,7 @@ export const authService = {
           description: 'Account locked due to too many failed attempts (threshold reached)'
         });
 
+        // 🔎 monitoring (non-blocking, fire-and-forget)
         publishMonitoringLog(app, {
           userId: username,
           module: "AUTH",
@@ -150,7 +153,7 @@ export const authService = {
           status: "Error",
           description: "Account locked (threshold reached)",
           location: "/login"
-        }).catch(e => app.log.warn({ err: e }, "monitoring log failed (threshold reached)"));
+        });
 
 
         throw new ApplicationError(
@@ -180,6 +183,7 @@ export const authService = {
         description: `Invalid credentials (${remaining} attempt${remaining === 1 ? '' : 's'} left)`
       });
 
+      // 🔎 monitoring (non-blocking, fire-and-forget)
       publishMonitoringLog(app, {
         userId: username,
         module: "AUTH",
@@ -187,7 +191,7 @@ export const authService = {
         status: "Error",
         description: `Invalid credentials (${remaining} attempts left)`,
         location: "/login"
-      }).catch(e => app.log.warn({ err: e }, "monitoring log failed (invalid)"));
+      });
 
       const message =
         remaining > 0
@@ -234,6 +238,7 @@ export const authService = {
       requestId,
       description: 'User logged in successfully'
     });
+    // 🔎 monitoring (non-blocking, fire-and-forget)
     publishMonitoringLog(app, {
       userId: user!.username,
       module: "AUTH",
@@ -241,7 +246,7 @@ export const authService = {
       status: "Success",
       description: "User logged in successfully",
       location: "/login"
-    }).catch(e => app.log.warn({ err: e }, "monitoring log failed (success)"));
+    });
     return { token, expiresIn: env.TOKEN_EXPIRES_IN, user: publicUser };
   },
   async getMenu(username: string) {

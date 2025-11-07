@@ -8,6 +8,13 @@ async function getDbNow(): Promise<Date> {
     return rows[0]?.now ?? new Date();
 }
 
+function createFullDayFilter(dateString: string) {
+    const date = new Date(dateString);
+    const gte = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const lt = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+    return { gte, lt };
+}
+
 export const uarDivisionRepository = {
     async listUars(params: {
         page: number;
@@ -15,8 +22,65 @@ export const uarDivisionRepository = {
         userDivisionId: number;
         period?: string;
         uarId?: string;
+        status?: 'InProgress' | 'Finished';
+        createdDate?: string;
+        completedDate?: string;
     }) {
-        const { page, limit, userDivisionId, period, uarId } = params;
+        const {
+            page, limit, userDivisionId, period, uarId,
+            status, createdDate, completedDate
+        } = params;
+
+        let workflowFilteredUarIds: string[] | undefined = undefined;
+        const whereWorkflow: any = {
+            DIVISION_ID: userDivisionId,
+        };
+        const hasWorkflowFilter = createdDate || completedDate;
+
+        if (createdDate) {
+            whereWorkflow.CREATED_DT = createFullDayFilter(createdDate);
+        }
+        if (completedDate) {
+            whereWorkflow.APPROVED_DT = createFullDayFilter(completedDate);
+        }
+
+        if (hasWorkflowFilter) {
+            const workflowUars = await prisma.tB_R_WORKFLOW.findMany({
+                where: whereWorkflow,
+                select: { UAR_ID: true },
+                distinct: ['UAR_ID']
+            });
+            workflowFilteredUarIds = workflowUars.map(w => w.UAR_ID);
+
+            if (workflowFilteredUarIds.length === 0) {
+                return { data: [], total: 0, workflowStatus: [], completionStats: [] };
+            }
+        }
+
+        let inProgressUarIds: string[] | undefined;
+        if (status) {
+            const whereStatus: any = {
+                DIVISION_ID: userDivisionId,
+                OR: [
+                    { DIV_APPROVAL_STATUS: '0' },
+                ]
+            };
+
+            if (workflowFilteredUarIds) {
+                whereStatus.UAR_ID = { in: workflowFilteredUarIds };
+            }
+
+            const inProgressUars = await prisma.tB_R_UAR_DIVISION_USER.findMany({
+                where: whereStatus, 
+                select: { UAR_ID: true },
+                distinct: ['UAR_ID']
+            });
+            inProgressUarIds = inProgressUars.map(u => u.UAR_ID);
+
+            if (status === 'InProgress' && inProgressUarIds.length === 0) {
+                return { data: [], total: 0, workflowStatus: [], completionStats: [] };
+            }
+        }
 
         const whereUar: any = {
             DIVISION_ID: userDivisionId,
@@ -24,14 +88,50 @@ export const uarDivisionRepository = {
         if (period) {
             whereUar.UAR_PERIOD = period;
         }
+
+        const uarIdFilter: any = {};
         if (uarId) {
-            whereUar.UAR_ID = { contains: uarId };
+            uarIdFilter.contains = uarId;
         }
 
+        if (workflowFilteredUarIds) {
+            uarIdFilter.in = workflowFilteredUarIds;
+        }
+
+        if (status && inProgressUarIds) {
+            if (status === 'InProgress') {
+                if (uarIdFilter.in) {
+                    const inProgressSet = new Set(inProgressUarIds);
+                    uarIdFilter.in = uarIdFilter.in.filter((id: string) => inProgressSet.has(id));
+                } else {
+                    uarIdFilter.in = inProgressUarIds;
+                }
+            } else { // 'Finished'
+                const inProgressSet = new Set(inProgressUarIds);
+                if (uarIdFilter.in) {
+                    // Difference: UAR must be in date list but NOT in inProgress list
+                    uarIdFilter.in = uarIdFilter.in.filter((id: string) => !inProgressSet.has(id));
+                } else {
+                    // No date filter, just use notIn
+                    uarIdFilter.notIn = inProgressUarIds;
+                }
+            }
+        }
+
+        if (Object.keys(uarIdFilter).length > 0) {
+            whereUar.UAR_ID = uarIdFilter;
+        }
+
+        // If filters combined to produce an empty list, stop.
+        if (uarIdFilter.in && uarIdFilter.in.length === 0) {
+            return { data: [], total: 0, workflowStatus: [], completionStats: [] };
+        }
+
+
+        // --- 5. EXECUTE MAIN QUERY (WITH PAGINATION) ---
         const [dataRaw, totalGroups] = await Promise.all([
             prisma.tB_R_UAR_DIVISION_USER.findMany({
-                where: whereUar,
-                // MODIFIED: Select UAR_ID, UAR_PERIOD, and the related Division Name
+                where: whereUar, // This now contains all filters
                 select: {
                     UAR_ID: true,
                     UAR_PERIOD: true,
@@ -44,13 +144,14 @@ export const uarDivisionRepository = {
                 distinct: ["UAR_ID", "UAR_PERIOD"],
                 orderBy: { UAR_ID: "desc" },
                 skip: (page - 1) * limit,
-                take: limit,
+                take: limit, // Limit is applied here, AFTER filtering
             }),
             prisma.tB_R_UAR_DIVISION_USER.groupBy({
                 by: ["UAR_ID", "UAR_PERIOD"],
-                where: whereUar,
+                where: whereUar, // Same filters to get accurate total
             }),
         ]);
+
         const totalRows = totalGroups.length;
 
         const uarIds = dataRaw.map((d) => d.UAR_ID);
@@ -58,10 +159,11 @@ export const uarDivisionRepository = {
             return { data: [], total: 0, workflowStatus: [], completionStats: [] };
         }
 
+        // --- 6. GET DATA FOR THE PAGINATED RESULTS ---
         const [workflowStatus, completionStats] = await Promise.all([
             prisma.tB_R_WORKFLOW.findMany({
                 where: {
-                    UAR_ID: { in: uarIds },
+                    UAR_ID: { in: uarIds }, // Only get wf data for the 10 on the page
                     DIVISION_ID: userDivisionId,
                 },
                 distinct: ["UAR_ID"],
@@ -91,6 +193,8 @@ export const uarDivisionRepository = {
 
         return { data: dataRaw, total: totalRows, workflowStatus, completionStats };
     },
+
+
 
     async getUarDetails(uarId: string, userDivisionId: number) {
         return prisma.tB_R_UAR_DIVISION_USER.findMany({

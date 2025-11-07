@@ -51,7 +51,12 @@ export const userRepository = {
           }
         }
       },
-      // select: { ID: true, USERNAME: true, PASSWORD: true },
+      select: { 
+        ID: true, 
+        USERNAME: true, 
+        PASSWORD: true,
+        IN_ACTIVE_DIRECTORY: true
+      },
     });
 
     if (!dbUser) {
