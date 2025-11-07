@@ -120,7 +120,7 @@ export const authService = {
           lockedUntil: info.lockedUntil,
           remainingMs: info.remainingMs,
           maxAttempts: SECURITY_CONFIG.MAX_LOGIN_ATTEMPTS,
-        }, // <-- details ke FE
+        },
         requestId,
         423
       );

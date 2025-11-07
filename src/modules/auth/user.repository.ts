@@ -97,7 +97,7 @@ export const userRepository = {
     // console.log("roles", roles)
     // Tentukan role utama (kalau punya lebih dari satu role)
     const primary = roles?.[0];
-    const dynamicRole = (primary?.NAME ?? "Administrator").toUpperCase();
+    const dynamicRole = (primary?.NAME ?? "SAR-ADMIN").toUpperCase();
 
     // Return hasil dinamis
     return {
@@ -107,7 +107,7 @@ export const userRepository = {
       name: dbUser.USERNAME,
       divisionId: 2,
       noreg: "100000",
-      role: dynamicRole as User["role"], // contoh: "DPH", "SO", "ADMINISTRATOR"
+      role: dynamicRole as User["role"],
     };
   },
 
