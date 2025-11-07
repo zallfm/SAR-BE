@@ -1,14 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  initialUarSystemOwnerData,
-  initialUarSystemOwnerDetailData,
-} from "../../../../data";
-import type { UarSystemOwnerRecord } from "../../../../data";
 import { ChevronDownIcon } from "../../icons/ChevronDownIcon";
-import { SearchIcon } from "../../icons/SearchIcon";
 import { ProgressCheckIcon } from "../../icons/ProgressCheckIcon";
-import { SendIcon } from "../../icons/SendIcon";
-import { DownloadActionIcon } from "../../icons/DownloadActionIcon";
 import StatusPill from "../StatusPill/StatusPill";
 import { ActionReview } from "../../common/Button/ActionReview";
 import { ActionDownload } from "../../common/Button/ActionDownload";
@@ -16,148 +8,84 @@ import SearchableDropdown from "../../common/SearchableDropdown";
 import { postLogMonitoringApi } from "@/src/api/log_monitoring";
 import { AuditAction } from "@/src/constants/auditActions";
 import { useAuthStore } from "@/src/store/authStore";
+import { useUarStore } from "@/src/store/uarStore";
+import type { SystemOwnerUarHeader } from "@/src/types/uarSystemOwner";
+import { formatDateTime } from "@/utils/dateFormatter";
 
 interface UarSystemOwnerPageProps {
-  onReview: (record: UarSystemOwnerRecord) => void;
+  onReview: (record: SystemOwnerUarHeader) => void; // <-- Gunakan tipe UarHeader
 }
 
 const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
   onReview,
 }) => {
-  const [records] = useState<UarSystemOwnerRecord[]>(initialUarSystemOwnerData);
+  // --- Data dari Zustand Store ---
+  const {
+    systemOwnerHeaders,
+    systemOwnerMeta,
+    systemOwnerFilters,
+    systemOwnerCurrentPage,
+    systemOwnerItemsPerPage,
+    isLoading,
+    error,
+    getSystemOwnerList,
+    setSystemOwnerFilters,
+    setSystemOwnerCurrentPage,
+    setSystemOwnerItemsPerPage,
+    selectSystemOwner, // <-- Untuk aksi review
+  } = useUarStore();
 
-  // Filters
-  const [periodFilter, setPeriodFilter] = useState("");
-  const [uarFilter, setUarFilter] = useState("");
+  const { currentUser } = useAuthStore();
+
   const [ownerFilter, setOwnerFilter] = useState("");
   const [createDateFilter, setCreateDateFilter] = useState("");
   const [completedDateFilter, setCompletedDateFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const { currentUser } = useAuthStore();
+  useEffect(() => {
+    const abortController = new AbortController();
 
-  const progressData = useMemo(() => {
-    const progressMap = new Map<string, { reviewed: number; total: number }>();
-    initialUarSystemOwnerDetailData.forEach((detail) => {
-      const progress = progressMap.get(detail.uarId) || {
-        reviewed: 0,
-        total: 0,
-      };
-      progress.total += 1;
-      if (detail.reviewed) {
-        progress.reviewed += 1;
-      }
-      progressMap.set(detail.uarId, progress);
-    });
-    return progressMap;
-  }, []);
-
-  const enhancedRecords = useMemo(() => {
-    const computePeriod = (uarId: string) => {
-      const parts = uarId.split("_");
-      if (parts.length > 1 && parts[1].length === 6 && /^\d+$/.test(parts[1])) {
-        const month = parts[1].substring(0, 2);
-        const year = `20${parts[1].substring(2)}`;
-        return `${year}-${month}`;
-      }
-      return null;
+    const extraFilters = {
+      owner: ownerFilter || undefined,
+      createdDate: createDateFilter || undefined,
+      completedDate: completedDateFilter || undefined,
+      status: statusFilter || undefined,
     };
 
-    return records.map((record) => {
-      const progress = progressData.get(record.uarId);
-      const reviewed = progress?.reviewed ?? 0;
-      const total = progress?.total ?? 0;
-      const isFinished = total > 0 && reviewed === total;
-      const percentComplete =
-        total > 0
-          ? `${Math.round((reviewed / total) * 100)}% (${reviewed} of ${total})`
-          : "0% (0 of 0)";
+    // Panggil action dari store
+    getSystemOwnerList({ ...extraFilters, signal: abortController.signal });
 
-      return {
-        ...record,
-        percentComplete,
-        status: isFinished ? ("Finished" as const) : ("InProgress" as const),
-        periodKey: computePeriod(record.uarId),
-        searchableUarId: record.uarId.toLowerCase(),
-        searchableOwner: record.divisionOwner.toLowerCase(),
-      };
-    });
-  }, [records, progressData]);
+    return () => {
+      abortController.abort();
+    };
+  }, [
+    getSystemOwnerList,
+    systemOwnerFilters, // Filter dari store
+    ownerFilter,        // Filter lokal
+    createDateFilter,
+    completedDateFilter,
+    statusFilter,
+    systemOwnerCurrentPage,
+    systemOwnerItemsPerPage,
+  ]);
 
-  const overallProgress = useMemo(() => {
-    const totalCount = enhancedRecords.length;
-    const finishedCount = enhancedRecords.filter(
-      (record) => record.status === "Finished"
-    ).length;
+  // --- Event Handlers ---
+  const handleReviewClick = async (record: SystemOwnerUarHeader) => {
+    // 1. Set record yang dipilih di store
+    selectSystemOwner(record);
 
-    return { finishedCount, totalCount };
-  }, [enhancedRecords]);
-
-  const filteredRecords = useMemo(() => {
-    const normalizedUarFilter = uarFilter.trim().toLowerCase();
-    const normalizedOwnerFilter = ownerFilter.trim().toLowerCase();
-
-    return enhancedRecords.filter((record) => {
-      if (
-        normalizedUarFilter &&
-        !record.searchableUarId.includes(normalizedUarFilter)
-      ) {
-        return false;
-      }
-
-      if (
-        normalizedOwnerFilter &&
-        !record.searchableOwner.includes(normalizedOwnerFilter)
-      ) {
-        return false;
-      }
-
-      if (statusFilter && record.status !== statusFilter) {
-        return false;
-      }
-
-      if (periodFilter && record.periodKey !== periodFilter) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [enhancedRecords, periodFilter, statusFilter, uarFilter, ownerFilter]);
-
-  const totalItems = filteredRecords.length;
-  const totalPages =
-    totalItems === 0 ? 1 : Math.ceil(totalItems / itemsPerPage);
-
-  useEffect(() => {
-    if (totalItems === 0) {
-      if (currentPage !== 1) {
-        setCurrentPage(1);
-      }
-      return;
-    }
-
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalItems, totalPages]);
-
-  const handleReviewClick = async (record: UarSystemOwnerRecord) => {
-    // 1️⃣ Jalankan fungsi review yang dikirim dari parent
+    // 2. Jalankan fungsi navigasi dari parent
     onReview(record);
 
-    // 2️⃣ Kirim log monitoring
+    // 3. Kirim log monitoring
     try {
       await postLogMonitoringApi({
         userId: currentUser?.username ?? "anonymous",
         module: "UAR System Owner",
         action: AuditAction.DATA_REVIEW,
         status: "Success",
-        description: `User ${currentUser?.username ?? "unknown"} reviewed UAR ${
-          record.uarId
-        }`,
+        description: `User ${currentUser?.username ?? "unknown"} reviewed UAR ${record.uarId
+          }`,
         location: "UarSystemOwnerPage.handleReviewClick",
         timestamp: new Date().toISOString(),
       });
@@ -166,16 +94,16 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
     }
   };
 
-  const handleDownloadClick = async (record: UarSystemOwnerRecord) => {
+  const handleDownloadClick = async (record: SystemOwnerUarHeader) => {
+    // ... (logika download tetap sama)
     try {
       await postLogMonitoringApi({
         userId: currentUser?.username ?? "anonymous",
         module: "UAR System Owner",
         action: AuditAction.DATA_DOWNLOAD,
         status: "Success",
-        description: `User ${
-          currentUser?.username ?? "unknown"
-        } downloaded UAR ${record.uarId}`,
+        description: `User ${currentUser?.username ?? "unknown"
+          } downloaded UAR ${record.uarId}`,
         location: "UarSystemOwnerPage.handleDownloadClick",
         timestamp: new Date().toISOString(),
       });
@@ -184,35 +112,16 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
     }
   };
 
-  const { paginatedRecords, startItem, endItem } = useMemo(() => {
-    if (totalItems === 0) {
-      return {
-        paginatedRecords: [] as typeof enhancedRecords,
-        startItem: 0,
-        endItem: 0,
-      };
-    }
-
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-
-    return {
-      paginatedRecords: filteredRecords.slice(startIndex, endIndex),
-      startItem: startIndex + 1,
-      endItem: endIndex,
-    };
-  }, [filteredRecords, totalItems, currentPage, itemsPerPage, enhancedRecords]);
-
   const logFilterChange = async (key: string, value: string) => {
+    // ... (logika log filter tetap sama)
     try {
       await postLogMonitoringApi({
         userId: currentUser?.username ?? "anonymous",
         module: "UAR System Owner",
         action: AuditAction.DATA_FILTER,
         status: "Success",
-        description: `User ${
-          currentUser?.username ?? "unknown"
-        } filtered by ${key}: ${value}`,
+        description: `User ${currentUser?.username ?? "unknown"
+          } filtered by ${key}: ${value}`,
         location: "UarSystemOwnerPage.filter",
         timestamp: new Date().toISOString(),
       });
@@ -221,17 +130,26 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
     }
   };
 
-  // 🔧 Helper konversi tanggal ke format yyyy-mm-dd
-  const normalizeToYMD = (s: string): string | null => {
-    if (!s) return null;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; // sudah format yyyy-mm-dd
-    const m = s.match(/^(\d{2})-(\d{2})-(\d{4})$/);
-    if (m) {
-      const [_, dd, mm, yyyy] = m;
-      return `${yyyy}-${mm}-${dd}`;
-    }
-    return null;
-  };
+  const overallProgress = useMemo(() => {
+    const finishedCount = systemOwnerHeaders.filter((head) => head.status === "1").length;
+    const totalCount = systemOwnerMeta?.total ?? 0;
+    return { finishedCount, totalCount };
+  }, [systemOwnerMeta, systemOwnerHeaders]);
+
+  const paginatedRecords = systemOwnerHeaders;
+  const totalItems = systemOwnerMeta?.total ?? 0;
+  const totalPages = systemOwnerMeta?.totalPages ?? 1;
+
+  const startItem = useMemo(() => {
+    if (totalItems === 0 || !systemOwnerMeta) return 0;
+    return (systemOwnerMeta.page - 1) * systemOwnerMeta.limit + 1;
+  }, [systemOwnerMeta, totalItems]);
+
+  const endItem = useMemo(() => {
+    if (totalItems === 0 || !systemOwnerMeta) return 0;
+    return Math.min(systemOwnerMeta.page * systemOwnerMeta.limit, totalItems);
+  }, [systemOwnerMeta, totalItems]);
+
 
   return (
     <div>
@@ -243,26 +161,23 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
         <div className="mb-6">
           {/* Top Row: Period and Progress Card */}
           <div className="flex justify-between items-start gap-4 mb-4 flex-wrap">
-            {/* Period Input */}
+            {/* Period Input (terhubung ke store) */}
             <div className="relative w-full max-w-sm">
               <input
-                type={periodFilter ? "month" : "text"}
+                type={systemOwnerFilters.period ? "month" : "text"}
                 placeholder="Period"
-                value={periodFilter}
+                value={systemOwnerFilters.period} // <-- Gunakan store value
                 onChange={async (e) => {
                   const v = e.target.value;
-                  setPeriodFilter(v);
-                  setCurrentPage(1);
+                  setSystemOwnerFilters({ period: v }); // <-- Gunakan store action
                   if (v) await logFilterChange("period", v);
                 }}
                 onFocus={(e) => {
                   e.target.type = "month";
-                  try {
-                    e.currentTarget.showPicker();
-                  } catch {}
+                  try { e.currentTarget.showPicker(); } catch { }
                 }}
                 onBlur={(e) => {
-                  if (!e.target.value) e.target.type = "text";
+                  if (!systemOwnerFilters.period) e.target.type = "text";
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />
@@ -287,26 +202,26 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
           <div className="flex items-center gap-4 flex-wrap">
             <SearchableDropdown
               label="UAR ID"
-              value={uarFilter}
+              value={systemOwnerFilters.uarId} // <-- Gunakan store value
               onChange={async (v) => {
-                setUarFilter(v);
-                setCurrentPage(1);
+                setSystemOwnerFilters({ uarId: v }); // <-- Gunakan store action
                 if (v) await logFilterChange("uarId", v);
               }}
-              options={[...new Set(records.map((r) => r.uarId))]}
+              options={[...new Set(systemOwnerHeaders.map((r) => r.uarId))]}
               placeholder="UAR ID"
             />
             <SearchableDropdown
               label="Division Owner"
-              value={ownerFilter}
+              value={ownerFilter} // <-- Gunakan state lokal
               onChange={async (v) => {
                 setOwnerFilter(v);
-                setCurrentPage(1);
+                setSystemOwnerCurrentPage(1); // <-- Reset paginasi manual
                 if (v) await logFilterChange("divisionOwner", v);
               }}
-              options={[...new Set(records.map((r) => r.divisionOwner))]}
-              placeholder="Division Owner"
+              options={[...new Set(systemOwnerHeaders.map((r) => r.applicationName))]} // <-- Ganti ke applicationName
+              placeholder="Application Name" // <-- Ganti ke applicationName
             />
+            {/* Filter Tanggal (state lokal) */}
             <div className="relative">
               <input
                 type={createDateFilter ? "date" : "text"}
@@ -315,15 +230,11 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
                 onChange={async (e) => {
                   const v = e.target.value;
                   setCreateDateFilter(v);
-                  setCurrentPage(1);
+                  setSystemOwnerCurrentPage(1); // <-- Reset paginasi manual
                   if (v) await logFilterChange("createdDate", v);
                 }}
-                onFocus={(e) => {
-                  e.target.type = "date";
-                }}
-                onBlur={(e) => {
-                  if (!e.target.value) e.target.type = "text";
-                }}
+                onFocus={(e) => { e.target.type = "date"; }}
+                onBlur={(e) => { if (!e.target.value) e.target.type = "text"; }}
                 className="w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />
             </div>
@@ -335,15 +246,11 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
                 onChange={async (e) => {
                   const v = e.target.value;
                   setCompletedDateFilter(v);
-                  setCurrentPage(1);
+                  setSystemOwnerCurrentPage(1); // <-- Reset paginasi manual
                   if (v) await logFilterChange("completedDate", v);
                 }}
-                onFocus={(e) => {
-                  e.target.type = "date";
-                }}
-                onBlur={(e) => {
-                  if (!e.target.value) e.target.type = "text";
-                }}
+                onFocus={(e) => { e.target.type = "date"; }}
+                onBlur={(e) => { if (!e.target.value) e.target.type = "text"; }}
                 className="w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-lg appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />
             </div>
@@ -352,7 +259,7 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
               value={statusFilter}
               onChange={async (v) => {
                 setStatusFilter(v);
-                setCurrentPage(1);
+                setSystemOwnerCurrentPage(1); // <-- Reset paginasi manual
                 if (v) await logFilterChange("status", v);
               }}
               options={["Finished", "InProgress"]}
@@ -369,7 +276,7 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
               <tr className="border-b-2 border-gray-200">
                 {[
                   "UAR ID",
-                  "Division Owner",
+                  "Application Name", // <-- Ganti nama kolom
                   "Percent Complete",
                   "Create Date",
                   "Completed Date",
@@ -383,40 +290,57 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
               </tr>
             </thead>
             <tbody>
-              {paginatedRecords.map((record) => {
-                return (
+              {/* Tampilkan error atau loading state */}
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="text-center p-6 text-gray-500">
+                    Loading...
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan={7} className="text-center p-6 text-red-600">
+                    Error: {error}
+                  </td>
+                </tr>
+              ) : paginatedRecords.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center p-6 text-gray-500">
+                    No records found.
+                  </td>
+                </tr>
+              ) : (
+                paginatedRecords.map((record) => (
                   <tr
-                    key={record.ID}
+                    key={`${record.uarId}-${record.applicationId}`} // <-- Key unik
                     className="bg-white border-b border-gray-200 last:border-b-0 hover:bg-gray-50"
                   >
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                       {record.uarId}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      {record.divisionOwner}
+                      {record.applicationName} {/* <-- Sesuai UarHeader */}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      {record.percentComplete}
+                      {record.percentComplete} {/* <-- Sesuai UarHeader */}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      {record.createDate}
+                      {formatDateTime(record.createdDate)} {/* <-- Format tanggal */}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      {record.completedDate}
+                      {formatDateTime(record.completedDate)} {/* <-- Format tanggal */}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      <StatusPill status={record.status} />
+                      <StatusPill status={record.status === "1" ? "Finished" : "InProgress"} />
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
                       <div className="flex items-center gap-3">
                         <div className="group relative">
-                          {/* Button Review */}
                           <ActionReview
                             onClick={() => handleReviewClick(record)}
                           />
                         </div>
                         <div className="group relative">
-                          {/* Button download */}
                           <ActionDownload
                             onClick={() => handleDownloadClick(record)}
                           />
@@ -424,21 +348,23 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
                       </div>
                     </td>
                   </tr>
-                );
-              })}
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
-        {/* Pagination */}
+        {/* Pagination (terhubung ke store) */}
         <div className="flex justify-between items-center mt-6 text-sm text-gray-500">
           <div className="flex items-center gap-2">
             <div className="relative">
               <select
-                value={itemsPerPage}
+                value={systemOwnerItemsPerPage} // <-- Gunakan store value
                 onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value));
-                  setCurrentPage(1);
+                  const value = Number(e.target.value);
+                  if (!Number.isNaN(value) && value > 0) {
+                    setSystemOwnerItemsPerPage(value); // <-- Gunakan store action
+                  }
                 }}
                 className="pl-3 pr-8 py-1.5 border border-gray-300 rounded-md hover:bg-gray-100 appearance-none bg-white"
                 aria-label="Items per page"
@@ -459,8 +385,12 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
             </span>
             <div className="flex gap-2">
               <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage <= 1}
+                onClick={() =>
+                  setSystemOwnerCurrentPage( // <-- Gunakan store action
+                    Math.max(1, systemOwnerCurrentPage - 1)
+                  )
+                }
+                disabled={systemOwnerCurrentPage <= 1} // <-- Gunakan store value
                 className="px-2 py-1 border bg-white border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
                 aria-label="Previous Page"
               >
@@ -468,9 +398,11 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
               </button>
               <button
                 onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  setSystemOwnerCurrentPage( // <-- Gunakan store action
+                    Math.min(totalPages, systemOwnerCurrentPage + 1)
+                  )
                 }
-                disabled={currentPage >= totalPages}
+                disabled={systemOwnerCurrentPage >= totalPages} // <-- Gunakan store value
                 className="px-2 py-1 border bg-white border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
                 aria-label="Next Page"
               >

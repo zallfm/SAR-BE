@@ -39,7 +39,6 @@ export type BackendUarDetailResponse = {
 
 export type BatchUpdatePayload = {
     uarId: string;
-    decision: "Approve" | "Revoke";
     comments?: string;
     items: {
         username: string;
