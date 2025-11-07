@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { uarSystemOwnerService as svc } from "./uar_system_owner.service";
-import type { UarSystemOwnerBatchUpdateDTO } from "../../types/uar_system_owner";
+import type { UarSystemOwnerAddCommentDTO, UarSystemOwnerBatchUpdateDTO } from "../../types/uar_system_owner";
 /**
  * Extracts authenticated user's noreg.
  * Assumes the auth plugin attaches { noreg: string } to req.auth.
@@ -79,6 +79,22 @@ export const uarSystemOwnerController = {
             );
             return reply.send({
                 message: `Batch update successful.`,
+                data: result,
+            });
+        },
+
+    addComment: (_app: FastifyInstance) =>
+        async (
+            req: FastifyRequest<{ Body: UarSystemOwnerAddCommentDTO }>,
+            reply: FastifyReply
+        ) => {
+            const { noreg } = getAuthInfo(req);
+            const result = await svc.addComment(
+                req.body,
+                noreg
+            );
+            return reply.send({
+                message: `Comments added successfully.`,
                 data: result,
             });
         },

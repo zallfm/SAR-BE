@@ -4,6 +4,7 @@ import { uarSystemOwnerRepository as repo } from "./uar_system_owner.repository"
 import type {
     UarSystemOwnerBatchUpdateDTO,
     UarHeader,
+    UarSystemOwnerAddCommentDTO,
 } from "../../types/uar_system_owner"
 import {
     currentRequestId,
@@ -185,7 +186,6 @@ export const uarSystemOwnerService = {
             );
         }
 
-        // Publish monitoring log
         const userId = currentUserId() ?? userNoreg;
         const reqId = currentRequestId();
         publishMonitoringLog(globalThis.app as any, {
@@ -195,6 +195,50 @@ export const uarSystemOwnerService = {
             status: "Success",
             description: `Batch update for UAR ${dto.uarId} / App ${dto.applicationId} on ${dto.items.length} items.`,
             location: "/uar-system-owner/batch-update",
+        }).catch((e) => console.warn({ e, reqId }, "monitoring log failed"));
+
+        return result;
+    },
+
+    async addComment(
+        dto: UarSystemOwnerAddCommentDTO,
+        userNoreg: string
+    ) {
+        if (!dto.comments || dto.comments.trim().length === 0) {
+            throw new ApplicationError(
+                ERROR_CODES.VAL_INVALID_FORMAT,
+                "Comments cannot be empty.",
+                dto, undefined, 400
+            );
+        }
+        if (!dto.items || dto.items.length === 0) {
+            throw new ApplicationError(
+                ERROR_CODES.VAL_INVALID_FORMAT,
+                "You must select at least one item to comment on.",
+                dto, undefined, 400
+            );
+        }
+
+        const ownedApplicationIds = await getOwnedApplicationIds(userNoreg);
+        if (!ownedApplicationIds.includes(dto.applicationId)) {
+            throw new ApplicationError(
+                ERROR_CODES.API_UNAUTHORIZED,
+                "You are not authorized to comment on this application.",
+                dto, undefined, 403
+            );
+        }
+
+        const result = await repo.addComment(dto, userNoreg);
+
+        const userId = currentUserId() ?? userNoreg;
+        const reqId = currentRequestId();
+        publishMonitoringLog(globalThis.app as any, {
+            userId,
+            module: "UAR_SO",
+            action: "ADD_COMMENT",
+            status: "Success",
+            description: `Added comment for UAR ${dto.uarId} / App ${dto.applicationId} on ${dto.items.length} items.`,
+            location: "/uar-system-owner/comment", // <-- Note the new location
         }).catch((e) => console.warn({ e, reqId }, "monitoring log failed"));
 
         return result;

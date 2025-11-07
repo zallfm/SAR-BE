@@ -4,6 +4,7 @@ import {
     listUarSchema,
     getUarDetailsSchema,
     batchUpdateSchema,
+    addCommentSchema,
 } from "../../modules/uar_system_owner/uar_system_owner.schema";
 
 export async function uarSystemOwnerRoutes(app: FastifyInstance) {
@@ -24,4 +25,11 @@ export async function uarSystemOwnerRoutes(app: FastifyInstance) {
         { schema: batchUpdateSchema },
         uarSystemOwnerController.batchUpdate(app)
     );
+
+    app.post(
+        "/comment",
+        { schema: addCommentSchema },
+        uarSystemOwnerController.addComment(app)
+    );
+
 }

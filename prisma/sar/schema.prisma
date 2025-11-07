@@ -328,67 +328,69 @@ model TB_R_LOG_H {
 }
 
 model TB_R_UAR_DIVISION_USER {
-  UAR_PERIOD          String            @db.NVarChar(6)
-  UAR_ID              String            @db.NVarChar(20)
-  USERNAME            String            @db.NVarChar(50)
-  NOREG               String?           @db.NVarChar(8)
-  NAME                String?           @db.NVarChar(80)
-  POSITION_NAME       String?           @db.NVarChar(10)
-  DIVISION_ID         Int
-  DEPARTMENT_ID       Int
-  SECTION_ID          Int?
-  ORG_CHANGED_STATUS  String?           @db.Char(1)
-  APPLICATION_ID      String?           @db.NVarChar(20)
-  ROLE_ID             String            @db.NVarChar(20)
-  REVIEWER_NOREG      String?           @db.NVarChar(8)
-  REVIEWER_NAME       String?           @db.NVarChar(80)
-  REVIEW_STATUS       String?           @db.Char(1)
-  REVIEWED_BY         String?           @db.NVarChar(8)
-  REVIEWED_DT         DateTime?         @db.Date
-  DIV_APPROVAL_STATUS String?           @db.Char(1)
-  SO_APPROVAL_STATUS  String?           @db.Char(1)
-  REMEDIATED_STATUS   String?           @db.Char(1)
-  REMEDIATED_DT       DateTime?         @db.Date
-  CREATED_BY          String            @db.NVarChar(20)
-  CREATED_DT          DateTime          @db.Date
-  CHANGED_BY          String?           @db.NVarChar(20)
-  CHANGED_DT          DateTime?         @db.Date
-  TB_M_APPLICATION    TB_M_APPLICATION? @relation(fields: [APPLICATION_ID], references: [APPLICATION_ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_TB_R_UAR_DIVISION_USER_APP")
-  TB_M_DIVISION       TB_M_DIVISION     @relation(fields: [DIVISION_ID], references: [DIVISION_ID], onUpdate: NoAction, map: "FK_TB_R_UAR_DIVISION_USER_DIV")
+  UAR_PERIOD                 String                       @db.NVarChar(6)
+  UAR_ID                     String                       @db.NVarChar(20)
+  USERNAME                   String                       @db.NVarChar(50)
+  NOREG                      String?                      @db.NVarChar(8)
+  NAME                       String?                      @db.NVarChar(80)
+  POSITION_NAME              String?                      @db.NVarChar(10)
+  DIVISION_ID                Int
+  DEPARTMENT_ID              Int
+  SECTION_ID                 Int?
+  ORG_CHANGED_STATUS         String?                      @db.Char(1)
+  APPLICATION_ID             String?                      @db.NVarChar(20)
+  ROLE_ID                    String                       @db.NVarChar(20)
+  REVIEWER_NOREG             String?                      @db.NVarChar(8)
+  REVIEWER_NAME              String?                      @db.NVarChar(80)
+  REVIEW_STATUS              String?                      @db.Char(1)
+  REVIEWED_BY                String?                      @db.NVarChar(8)
+  REVIEWED_DT                DateTime?                    @db.Date
+  DIV_APPROVAL_STATUS        String                       @db.Char(1)
+  SO_APPROVAL_STATUS         String                       @db.Char(1)
+  REMEDIATED_STATUS          String?                      @db.Char(1)
+  REMEDIATED_DT              DateTime?                    @db.Date
+  CREATED_BY                 String                       @db.NVarChar(20)
+  CREATED_DT                 DateTime                     @db.Date
+  CHANGED_BY                 String?                      @db.NVarChar(20)
+  CHANGED_DT                 DateTime?                    @db.Date
+  TB_M_COMMENT_DIVISION_USER TB_M_COMMENT_DIVISION_USER[]
+  TB_M_APPLICATION           TB_M_APPLICATION?            @relation(fields: [APPLICATION_ID], references: [APPLICATION_ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_TB_R_UAR_DIVISION_USER_APP")
+  TB_M_DIVISION              TB_M_DIVISION                @relation(fields: [DIVISION_ID], references: [DIVISION_ID], onUpdate: NoAction, map: "FK_TB_R_UAR_DIVISION_USER_DIV")
 
   @@id([UAR_PERIOD, UAR_ID, USERNAME, DIVISION_ID, DEPARTMENT_ID, ROLE_ID], map: "PK_TB_R_UAR_DIVISION_USER")
 }
 
 model TB_R_UAR_SYSTEM_OWNER {
-  UAR_PERIOD         String            @db.NVarChar(6)
-  UAR_ID             String            @db.NVarChar(20)
-  USERNAME           String            @db.NVarChar(50)
-  NOREG              String?           @db.NVarChar(8)
-  NAME               String?           @db.NVarChar(80)
-  POSITION_NAME      String?           @db.NVarChar(10)
-  DIVISION_ID        Int?
-  DEPARTMENT_ID      Int?
-  SECTION_ID         Int?
-  ORG_CHANGED_STATUS String?           @db.Char(1)
-  COMPANY_CD         Int?
-  APPLICATION_ID     String?           @db.NVarChar(20)
-  ROLE_ID            String            @db.NVarChar(20)
-  REVIEWER_NOREG     String?           @db.NVarChar(8)
-  REVIEWER_NAME      String?           @db.NVarChar(80)
-  REVIEW_STATUS      String?           @db.Char(1)
-  REVIEWED_BY        String?           @db.NVarChar(8)
-  REVIEWED_DT        DateTime?         @db.Date
-  SO_APPROVAL_STATUS String?           @db.Char(1)
-  SO_APPROVAL_BY     String?           @db.NVarChar(8)
-  SO_APPROVAL_DT     DateTime?         @db.Date
-  REMEDIATED_STATUS  String?           @db.Char(1)
-  REMEDIATED_DT      DateTime?         @db.Date
-  CREATED_BY         String            @db.NVarChar(20)
-  CREATED_DT         DateTime          @db.Date
-  CHANGED_BY         String?           @db.NVarChar(20)
-  CHANGED_DT         DateTime?         @db.Date
-  TB_M_APPLICATION   TB_M_APPLICATION? @relation(fields: [APPLICATION_ID], references: [APPLICATION_ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_TB_R_UAR_SYSTEM_OWNER_APP")
-  TB_M_DIVISION      TB_M_DIVISION?    @relation(fields: [DIVISION_ID], references: [DIVISION_ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_TB_R_UAR_SYSTEM_OWNER_DIV")
+  UAR_PERIOD                String                      @db.NVarChar(6)
+  UAR_ID                    String                      @db.NVarChar(20)
+  USERNAME                  String                      @db.NVarChar(50)
+  NOREG                     String?                     @db.NVarChar(8)
+  NAME                      String?                     @db.NVarChar(80)
+  POSITION_NAME             String?                     @db.NVarChar(10)
+  DIVISION_ID               Int?
+  DEPARTMENT_ID             Int?
+  SECTION_ID                Int?
+  ORG_CHANGED_STATUS        String?                     @db.Char(1)
+  COMPANY_CD                Int?
+  APPLICATION_ID            String?                     @db.NVarChar(20)
+  ROLE_ID                   String                      @db.NVarChar(20)
+  REVIEWER_NOREG            String?                     @db.NVarChar(8)
+  REVIEWER_NAME             String?                     @db.NVarChar(80)
+  REVIEW_STATUS             String?                     @db.Char(1)
+  REVIEWED_BY               String?                     @db.NVarChar(8)
+  REVIEWED_DT               DateTime?                   @db.Date
+  SO_APPROVAL_STATUS        String?                     @db.Char(1)
+  SO_APPROVAL_BY            String?                     @db.NVarChar(8)
+  SO_APPROVAL_DT            DateTime?                   @db.Date
+  REMEDIATED_STATUS         String?                     @db.Char(1)
+  REMEDIATED_DT             DateTime?                   @db.Date
+  CREATED_BY                String                      @db.NVarChar(20)
+  CREATED_DT                DateTime                    @db.Date
+  CHANGED_BY                String?                     @db.NVarChar(20)
+  CHANGED_DT                DateTime?                   @db.Date
+  TB_M_COMMENT_SYSTEM_OWNER TB_M_COMMENT_SYSTEM_OWNER[]
+  TB_M_APPLICATION          TB_M_APPLICATION?           @relation(fields: [APPLICATION_ID], references: [APPLICATION_ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_TB_R_UAR_SYSTEM_OWNER_APP")
+  TB_M_DIVISION             TB_M_DIVISION?              @relation(fields: [DIVISION_ID], references: [DIVISION_ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_TB_R_UAR_SYSTEM_OWNER_DIV")
 
   @@id([UAR_PERIOD, UAR_ID, USERNAME, ROLE_ID], map: "PK_TB_R_UAR_SYSTEM_OWNER")
 }
@@ -411,6 +413,7 @@ model TB_R_WORKFLOW {
   CREATED_DT       DateTime      @db.Date
   CHANGED_BY       String?       @db.NVarChar(20)
   CHANGED_DT       DateTime?     @db.Date
+  APPLICATION_ID   String?       @db.VarChar(50)
   TB_M_DIVISION    TB_M_DIVISION @relation(fields: [DIVISION_ID], references: [DIVISION_ID], onUpdate: NoAction, map: "FK_TB_R_WORKFLOW_DIVISION")
 
   @@id([UAR_ID, SEQ_NO, DIVISION_ID, DEPARTMENT_ID], map: "PK_TB_R_WORKFLOW")
@@ -658,4 +661,46 @@ model TB_H_NOTIFICATION {
   SENT_DT         DateTime @db.Date
   CREATED_BY      String   @db.NVarChar(20)
   CREATED_DT      DateTime @db.Date
+}
+
+model sysdiagrams {
+  name         String @db.NVarChar(128)
+  principal_id Int
+  diagram_id   Int    @id(map: "PK__sysdiagr__C2B05B61A2B558F9") @default(autoincrement())
+  version      Int?
+  definition   Bytes?
+
+  @@unique([principal_id, name], map: "UK_principal_name")
+}
+
+model TB_M_COMMENT_DIVISION_USER {
+  COMMENT_ID             BigInt                 @id(map: "PK_TB_M_COMMENT_DIVISION_USER") @default(autoincrement())
+  COMMENT_TEXT           String                 @db.NVarChar(Max)
+  COMMENTER_ID           String                 @db.NVarChar(50)
+  COMMENTER_NAME         String?                @db.NVarChar(80)
+  CREATED_DT             DateTime               @default(now(), map: "DF__TB_M_COMM__CREAT__3CBF0154") @db.Date
+  UAR_PERIOD             String                 @db.NVarChar(6)
+  UAR_ID                 String                 @db.NVarChar(20)
+  USERNAME               String                 @db.NVarChar(50)
+  DIVISION_ID            Int
+  DEPARTMENT_ID          Int
+  ROLE_ID                String                 @db.NVarChar(20)
+  TB_R_UAR_DIVISION_USER TB_R_UAR_DIVISION_USER @relation(fields: [UAR_PERIOD, UAR_ID, USERNAME, DIVISION_ID, DEPARTMENT_ID, ROLE_ID], references: [UAR_PERIOD, UAR_ID, USERNAME, DIVISION_ID, DEPARTMENT_ID, ROLE_ID], onUpdate: NoAction, map: "FK_COMMENT_DU_TO_UAR_DU")
+
+  @@index([UAR_PERIOD, UAR_ID, USERNAME, DIVISION_ID, DEPARTMENT_ID, ROLE_ID], map: "IX_COMMENT_DU_UAR_FK")
+}
+
+model TB_M_COMMENT_SYSTEM_OWNER {
+  COMMENT_ID            BigInt                @id(map: "PK_TB_M_COMMENT_SYSTEM_OWNER") @default(autoincrement())
+  COMMENT_TEXT          String                @db.NVarChar(Max)
+  COMMENTER_ID          String                @db.NVarChar(50)
+  COMMENTER_NAME        String?               @db.NVarChar(80)
+  CREATED_DT            DateTime              @default(now(), map: "DF__TB_M_COMM__CREAT__4830B400") @db.Date
+  UAR_PERIOD            String                @db.NVarChar(6)
+  UAR_ID                String                @db.NVarChar(20)
+  USERNAME              String                @db.NVarChar(50)
+  ROLE_ID               String                @db.NVarChar(20)
+  TB_R_UAR_SYSTEM_OWNER TB_R_UAR_SYSTEM_OWNER @relation(fields: [UAR_PERIOD, UAR_ID, USERNAME, ROLE_ID], references: [UAR_PERIOD, UAR_ID, USERNAME, ROLE_ID], onUpdate: NoAction, map: "FK_COMMENT_SO_TO_UAR_SO")
+
+  @@index([UAR_PERIOD, UAR_ID, USERNAME, ROLE_ID], map: "IX_COMMENT_SO_UAR_FK")
 }

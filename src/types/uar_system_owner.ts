@@ -9,6 +9,16 @@ export interface UarSystemOwnerBatchUpdateDTO {
     }[];
 }
 
+export interface UarSystemOwnerAddCommentDTO {
+    uarId: string;
+    applicationId: string;
+    comments: string;
+    items: Array<{
+        username: string;
+        roleId: string;
+    }>;
+}
+
 export interface UarHeader {
     uarId: string;
     uarPeriod: string;

@@ -8,14 +8,12 @@ async function getDbNow(): Promise<Date> {
 
 export const uarSystemOwnerRepository = {
 
-    /**
-     * Finds applications owned by a specific user NOREG.
-     */
+
     async findAppsByOwner(noreg: string) {
         return prisma.tB_M_APPLICATION.findMany({
             where: {
                 NOREG_SYSTEM_OWNER: noreg,
-                APPLICATION_STATUS: '1' // Assuming '1' is active
+                APPLICATION_STATUS: '0'
             },
             select: {
                 APPLICATION_ID: true,
@@ -24,9 +22,7 @@ export const uarSystemOwnerRepository = {
         });
     },
 
-    /**
-     * Lists UARs grouped by UAR_ID, Period, and Application.
-     */
+
     async listUars(params: {
         page: number;
         limit: number;
@@ -36,6 +32,23 @@ export const uarSystemOwnerRepository = {
         applicationId?: string;
     }) {
         const { page, limit, ownedApplicationIds, period, uarId, applicationId } = params;
+
+        const pendingDivisionUars = await prisma.tB_R_UAR_DIVISION_USER.groupBy({
+            by: ['UAR_ID', 'APPLICATION_ID'],
+            where: {
+                DIV_APPROVAL_STATUS: '0',
+
+                APPLICATION_ID: applicationId ? applicationId : { in: ownedApplicationIds },
+                ...(period && { UAR_PERIOD: period }),
+                ...(uarId && { UAR_ID: { contains: uarId } }),
+            },
+        });
+
+        const excludeList = pendingDivisionUars.map(p => ({
+            UAR_ID: p.UAR_ID,
+            APPLICATION_ID: p.APPLICATION_ID ?? undefined,
+        }));
+
 
         const whereUar: any = {
             APPLICATION_ID: { in: ownedApplicationIds },
@@ -47,9 +60,17 @@ export const uarSystemOwnerRepository = {
             whereUar.UAR_ID = { contains: uarId };
         }
         if (applicationId) {
-            whereUar.APPLICATION_ID = applicationId; // Overwrites the 'in'
+            whereUar.APPLICATION_ID = applicationId;
         }
 
+        if (excludeList.length > 0) {
+            whereUar.NOT = excludeList.map(ex => ({
+                AND: [
+                    { UAR_ID: ex.UAR_ID },
+                    { APPLICATION_ID: ex.APPLICATION_ID }
+                ]
+            }));
+        }
         const [dataRaw, totalGroups] = await Promise.all([
             prisma.tB_R_UAR_SYSTEM_OWNER.findMany({
                 where: whereUar,
@@ -82,33 +103,17 @@ export const uarSystemOwnerRepository = {
             return { data: [], total: 0, completionStats: [], dateStats: [] };
         }
 
-        // Get completion stats
         const completionStats = await prisma.tB_R_UAR_SYSTEM_OWNER.groupBy({
             by: ['UAR_ID', 'APPLICATION_ID', 'SO_APPROVAL_STATUS'],
             where: {
                 UAR_ID: { in: uarIds },
-                APPLICATION_ID: { in: appIds }, // Already filtered by ownedApplicationIds
+                APPLICATION_ID: { in: appIds },
             },
             _count: {
                 _all: true
             },
-            /*
-            select: {
-                UAR_ID: true,
-                APPLICATION_ID: true,
-                SO_APPROVAL_STATUS: true,
-                _count: { select: { _all: true } },
-                // Get the earliest created date and latest approval date for this group
-                // CREATED_DT: true,  <-- REMOVED (ERROR)
-                // SO_APPROVAL_DT: true, <-- REMOVED (ERROR)
-            }
-            */
-            // NOTE: The 'select' block is invalid inside a groupBy.
-            // The fields from 'by' and the aggregations from '_count'
-            // are returned automatically.
         });
 
-        // We need the raw items to find min/max dates
         const dateStats = await prisma.tB_R_UAR_SYSTEM_OWNER.findMany({
             where: {
                 UAR_ID: { in: uarIds },
@@ -123,49 +128,33 @@ export const uarSystemOwnerRepository = {
             }
         });
 
-        // This is a bit complex, let's just use the groupBy result
-        // The service layer will have to aggregate dates
-        /*
-        const remappedStats = completionStats.map(s => ({
-           ...s,
-           CREATED_DT: new Date(), // Placeholder, service layer should fix
-           SO_APPROVAL_DT: null, // Placeholder, service layer should fix
-        }));
-        */
-
-
         return { data: dataRaw, total: totalRows, completionStats: completionStats, dateStats };
     },
 
-    /**
-     * Gets details for a specific UAR and Application.
-     * Fetches items from TB_R_UAR_SYSTEM_OWNER.
-     * Fetches items from TB_R_UAR_DIVISION_USER where their division's workflow is approved.
-     */
+
     async getUarDetails(uarId: string, applicationId: string) {
 
-        // Use a transaction to ensure consistent reads
         return prisma.$transaction(async (tx) => {
 
-            // 1. Get users from System Owner table
             const systemOwnerUsers = tx.tB_R_UAR_SYSTEM_OWNER.findMany({
                 where: {
                     UAR_ID: uarId,
                     APPLICATION_ID: applicationId,
+                },
+                include: {
+                    TB_M_COMMENT_SYSTEM_OWNER: {
+                        orderBy: { CREATED_DT: 'asc' }
+                    }
                 },
                 orderBy: {
                     NAME: "asc",
                 },
             });
 
-            // 2. Get users from Division User table, IF their division has approved
             const divisionUsers = tx.tB_R_UAR_DIVISION_USER.findMany({
                 where: {
                     UAR_ID: uarId,
                     APPLICATION_ID: applicationId,
-                    // Relation query: Check if the related TB_M_DIVISION
-                    // has any TB_R_WORKFLOW entry for this UAR_ID
-                    // that is marked as IS_APPROVED = 'Y'.
                     TB_M_DIVISION: {
                         TB_R_WORKFLOW: {
                             some: {
@@ -174,6 +163,11 @@ export const uarSystemOwnerRepository = {
                             },
                         },
                     },
+                },
+                include: {
+                    TB_M_COMMENT_DIVISION_USER: {
+                        orderBy: { CREATED_DT: 'asc' }
+                    }
                 },
                 orderBy: {
                     NAME: "asc",
@@ -190,14 +184,12 @@ export const uarSystemOwnerRepository = {
     },
 
 
-    /**
-     * Batch updates items in the TB_R_UAR_SYSTEM_OWNER table.
-     */
+
     async batchUpdate(
         dto: UarSystemOwnerBatchUpdateDTO,
         userNoreg: string
     ) {
-        const { uarId, applicationId, items } = dto;
+        const { uarId, applicationId, items, comments } = dto;
         const now = await getDbNow();
 
         const approvedItems = items
@@ -208,10 +200,39 @@ export const uarSystemOwnerRepository = {
             .filter(item => item.decision === "Revoked")
             .map(item => ({ USERNAME: item.username, ROLE_ID: item.roleId }));
 
+        const hasComment = comments && comments.trim().length > 0;
+
         try {
             return await prisma.$transaction(async (tx) => {
 
-                // 1. Update Approved items
+                const commenter = await tx.tB_M_EMPLOYEE.findFirst({
+                    where: {
+                        NOREG: userNoreg,
+                        VALID_TO: { gte: now }
+                    },
+                    select: { PERSONNEL_NAME: true }
+                });
+                const commenterName = commenter?.PERSONNEL_NAME ?? null;
+
+                let uarPeriod: string | null = null;
+                if (hasComment && items.length > 0) {
+                    const firstItem = items[0];
+                    const uarRecord = await tx.tB_R_UAR_SYSTEM_OWNER.findFirst({
+                        where: {
+                            UAR_ID: uarId,
+                            APPLICATION_ID: applicationId,
+                            USERNAME: firstItem.username,
+                            ROLE_ID: firstItem.roleId
+                        },
+                        select: { UAR_PERIOD: true }
+                    });
+
+                    if (!uarRecord) {
+                        throw new Error(`Could not find UAR Period for UAR_ID ${uarId} to save comment.`);
+                    }
+                    uarPeriod = uarRecord.UAR_PERIOD;
+                }
+
                 const approveUpdateResult = (approvedItems.length > 0)
                     ? await tx.tB_R_UAR_SYSTEM_OWNER.updateMany({
                         where: {
@@ -220,14 +241,13 @@ export const uarSystemOwnerRepository = {
                             OR: approvedItems,
                         },
                         data: {
-                            SO_APPROVAL_STATUS: "1", // 'Approve'
+                            SO_APPROVAL_STATUS: "1",
                             SO_APPROVAL_BY: userNoreg,
                             SO_APPROVAL_DT: now,
                         },
                     })
                     : { count: 0 };
 
-                // 2. Update Revoked items
                 const revokeUpdateResult = (revokedItems.length > 0)
                     ? await tx.tB_R_UAR_SYSTEM_OWNER.updateMany({
                         where: {
@@ -236,12 +256,28 @@ export const uarSystemOwnerRepository = {
                             OR: revokedItems,
                         },
                         data: {
-                            SO_APPROVAL_STATUS: "2", // 'Revoke'
+                            SO_APPROVAL_STATUS: "2",
                             SO_APPROVAL_BY: userNoreg,
                             SO_APPROVAL_DT: now,
                         },
                     })
                     : { count: 0 };
+
+                if (hasComment && uarPeriod) {
+                    const commentData = items.map(item => ({
+                        COMMENT_TEXT: comments,
+                        COMMENTER_ID: userNoreg,
+                        COMMENTER_NAME: commenterName,
+                        UAR_PERIOD: uarPeriod!,
+                        UAR_ID: uarId,
+                        USERNAME: item.username,
+                        ROLE_ID: item.roleId,
+                    }));
+
+                    await tx.tB_M_COMMENT_SYSTEM_OWNER.createMany({
+                        data: commentData,
+                    });
+                }
 
                 return {
                     count: approveUpdateResult.count + revokeUpdateResult.count
@@ -249,7 +285,82 @@ export const uarSystemOwnerRepository = {
             });
         } catch (error) {
             console.error("System Owner batch update transaction failed:", error);
+            if (error instanceof Error) {
+                throw new Error(`Batch update failed: ${error.message}`);
+            }
             throw new Error("Batch update failed.");
+        }
+    },
+
+    async addComment(
+        dto: {
+            uarId: string,
+            applicationId: string,
+            comments: string,
+            // The items to attach the comment to
+            items: Array<{ username: string, roleId: string }>
+        },
+        userNoreg: string
+    ) {
+        const { uarId, applicationId, items, comments } = dto;
+
+        // We must have at least one item to link the comment to
+        if (!items || items.length === 0) {
+            throw new Error("No items selected to add a comment.");
+        }
+
+        try {
+            return await prisma.$transaction(async (tx) => {
+                // 1. Get Commenter Name
+                const now = await getDbNow();
+                const commenter = await tx.tB_M_EMPLOYEE.findFirst({
+                    where: {
+                        NOREG: userNoreg,
+                        VALID_TO: { gte: now } // Find active employee record
+                    },
+                    select: { PERSONNEL_NAME: true }
+                });
+                const commenterName = commenter?.PERSONNEL_NAME ?? null;
+
+                // 2. Get UAR_PERIOD from the first item
+                // (We assume all items in the batch share the same period)
+                const firstItem = items[0];
+                const uarRecord = await tx.tB_R_UAR_SYSTEM_OWNER.findFirst({
+                    where: {
+                        UAR_ID: uarId,
+                        APPLICATION_ID: applicationId,
+                        USERNAME: firstItem.username,
+                        ROLE_ID: firstItem.roleId
+                    },
+                    select: { UAR_PERIOD: true }
+                });
+
+                if (!uarRecord) {
+                    throw new Error(`Could not find UAR Period for UAR_ID ${uarId} to save comment.`);
+                }
+                const uarPeriod = uarRecord.UAR_PERIOD;
+
+                // 3. Prepare comment data for all selected items
+                const commentData = items.map(item => ({
+                    COMMENT_TEXT: comments,
+                    COMMENTER_ID: userNoreg,
+                    COMMENTER_NAME: commenterName,
+                    UAR_PERIOD: uarPeriod,
+                    UAR_ID: uarId,
+                    USERNAME: item.username,
+                    ROLE_ID: item.roleId,
+                }));
+
+                return tx.tB_M_COMMENT_SYSTEM_OWNER.createMany({
+                    data: commentData,
+                });
+            });
+        } catch (error) {
+            console.error("System Owner add comment transaction failed:", error);
+            if (error instanceof Error) {
+                throw new Error(`Add comment failed: ${error.message}`);
+            }
+            throw new Error("Add comment failed.");
         }
     },
 };

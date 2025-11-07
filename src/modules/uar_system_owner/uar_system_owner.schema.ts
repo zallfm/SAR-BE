@@ -100,3 +100,43 @@ export const batchUpdateSchema: FastifySchema = {
         },
     },
 };
+
+// In uar_system_owner.schema.ts
+
+export const addCommentSchema: FastifySchema = {
+    body: {
+        type: "object",
+        properties: {
+            uarId: { type: "string" },
+            applicationId: { type: "string" },
+            comments: { type: "string", minLength: 1 }, // Requires a non-empty comment
+            items: {
+                type: "array",
+                minItems: 1, // Must select at least one item
+                items: {
+                    type: "object",
+                    properties: {
+                        username: { type: "string" },
+                        roleId: { type: "string" },
+                    },
+                    required: ["username", "roleId"],
+                },
+            },
+        },
+        required: ["uarId", "applicationId", "comments", "items"],
+    },
+    response: {
+        200: {
+            type: "object",
+            properties: {
+                message: { type: "string" },
+                data: {
+                    type: "object",
+                    properties: {
+                        count: { type: "number" }
+                    }
+                },
+            },
+        },
+    },
+};
