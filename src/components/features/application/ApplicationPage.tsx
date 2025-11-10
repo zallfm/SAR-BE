@@ -24,7 +24,7 @@ import { useAuthStore } from "../../../../src/store/authStore";
 import { parseApiError } from "@/src/utils/apiError";
 
 const ApplicationPage: React.FC = () => {
-  const { currentUser } = useAuthStore();
+  
   const {
     applications,
     searchTerm,
