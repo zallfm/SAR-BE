@@ -6,6 +6,8 @@ import { UpTrendIcon } from "../../../components/icons/UpTrendIcon";
 import { DownTrendIcon } from "../../../components/icons/DownTrendIcon";
 import { getUarListApi } from "@/src/api/uarDivision";
 import { useAuthStore } from "@/src/store/authStore";
+// import { useNavigate } from "react-router-dom";
+// import { useUarStore } from "@/src/store/uarStore";
 
 interface StatCardProps {
   title: string;
@@ -49,12 +51,16 @@ const StatCard: React.FC<StatCardProps> = ({
   );
 };
 
+interface DashboardContentProps {
+  onStart: (uarId: string) => void;
+}
 interface TaskListProps {
   title: string;
   items: string[];
+  onStart: (uarId: string) => void;
 }
 
-const TaskList: React.FC<TaskListProps> = ({ title, items }) => (
+const TaskList: React.FC<TaskListProps> = ({ title, items, onStart }) => (
   <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex-1">
     <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
     <div className="space-y-2">
@@ -64,7 +70,7 @@ const TaskList: React.FC<TaskListProps> = ({ title, items }) => (
           className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0"
         >
           <p className="text-sm text-gray-600">{item}</p>
-          <button className="text-xs font-semibold bg-teal-100 text-teal-600 px-4 py-1.5 rounded-md hover:bg-teal-200 transition-colors">
+          <button className="text-xs font-semibold bg-teal-100 text-teal-600 px-4 py-1.5 rounded-md hover:bg-teal-200 transition-colors" onClick={() => onStart(item)}>
             START
           </button>
         </div>
@@ -78,7 +84,10 @@ const TaskList: React.FC<TaskListProps> = ({ title, items }) => (
   </div>
 );
 
-const DashboardContent: React.FC = () => {
+const DashboardContent: React.FC<DashboardContentProps> = ({onStart}) => {
+  //navigate
+  // const navigate = useNavigate()
+  // const {setDivisionUserFilters } = useUarStore();
   // const reviewItems = ['UAR_072025_IPPCS', 'UAR_072025_IPPCS', 'UAR_072025_PAS'];
   // const approveItems = ['UAR_072025_IPPCS', 'UAR_072025_IPPCS', 'UAR_072025_PAS'];
   //jwt
@@ -90,6 +99,12 @@ const DashboardContent: React.FC = () => {
   const [err, setErr] = useState<string | null>(null);
   // console.log("reviewItems", reviewItems);
   // console.log("approveItems", approveItems);
+
+  // handle navigate
+  // const handleStart = (uarId: string) => {
+  //   setDivisionUserFilters({uarId})
+  //   navigate(`/uar/division-user?uarId=${encodeURIComponent(uarId)}`)
+  // }
 
   useEffect(() => {
     const ac = new AbortController();
@@ -186,8 +201,8 @@ const DashboardContent: React.FC = () => {
       </div>
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TaskList title="To Do Review" items={reviewItems} />
-        <TaskList title="To Do Approve" items={approveItems} />
+        <TaskList title="To Do Review" items={reviewItems} onStart={onStart}/>
+        <TaskList title="To Do Approve" items={approveItems} onStart={onStart}/>
       </div>
     </div>
   );
