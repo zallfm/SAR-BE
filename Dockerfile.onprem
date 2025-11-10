@@ -1,0 +1,33 @@
+# Dockerfile for building deployment package (build.zip)
+# This generates a zip file for deployment on Ubuntu 22.04 LTS without Docker
+
+FROM node:lts-bookworm AS builder
+WORKDIR /build-stage
+
+# Copy package files
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copy the the files you need
+COPY . ./
+COPY .env.onprem ./.env
+
+# Ensure public directory exists
+# RUN mkdir -p public/uploads
+
+# Generate Prisma client for Ubuntu 22.04 (Debian with OpenSSL 3.0.x)
+RUN npm run prisma:gen:all
+RUN npm run build
+
+# Make startup script executable
+# RUN chmod +x start.sh 2>/dev/null || true
+
+# Create zip archive of build artifacts including Prisma files
+RUN apt-get update && apt-get install -y zip && \
+    zip -r /build.zip dist node_modules .env prisma package.json && \
+    rm -rf /var/lib/apt/lists/*
+
+# Export stage - exports build.zip to local PC
+# Build with: docker build --target export --output build -f Dockerfile.prod .
+FROM scratch AS export
+COPY --from=builder /build.zip /build.zip

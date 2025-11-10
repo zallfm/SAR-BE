@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsup && node scripts/fix-imports.js && node scripts/copy-prisma-generated.js",
+    "build:tsc": "tsc -p tsconfig.json && node scripts/fix-imports.js && node scripts/copy-prisma-generated.js",
     "start": "node dist/server.js",
     "test": "jest --passWithNoTests",
     "test:unit": "jest tests/unit --runInBand",
@@ -17,14 +18,15 @@
     "test:tdd": "jest --watch --coverage",
     "prisma:gen:sar": "prisma generate --schema=prisma/sar/schema.prisma",
     "prisma:gen:sc": "prisma generate --schema=prisma/sc/schema_sc.prisma",
-    "prisma:gen:all": "pnpm run prisma:gen:sar && pnpm run prisma:gen:sc",
+    "prisma:gen:all": "npm run prisma:gen:sar && npm run prisma:gen:sc",
     "tdd:generate": "tsx scripts/generate-tdd-docs.ts",
     "tdd:watch": "tsx watch scripts/generate-tdd-docs.ts",
     "tdd:dev": "npm run tdd:generate && npm run dev",
     "predev": "npm run tdd:generate",
     "tdd:generate-evidence": "tsx scripts/generate-test-evidence.ts",
     "tdd:watch-evidence": "tsx scripts/watch-test-results.ts",
-    "tdd:test": "npm run test:coverage && npm run tdd:generate-evidence"
+    "tdd:test": "npm run test:coverage && npm run tdd:generate-evidence",
+    "build:onprem": "docker build --platform linux/amd64 --target export --output build -f Dockerfile.onprem ."
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
@@ -60,6 +62,7 @@
     "jest": "^29.7.0",
     "prisma": "^6.17.1",
     "ts-jest": "^29.2.5",
+    "tsup": "^8.5.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3"
