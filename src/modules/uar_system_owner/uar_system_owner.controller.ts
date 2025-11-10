@@ -77,6 +77,8 @@ export const uarSystemOwnerController = {
             // service SEKARANG harus return: { header, systemOwnerUsers, divisionUsers }
             const { header, systemOwnerUsers, divisionUsers } =
                 await svc.getUarSo(uarId, applicationId, noreg);
+            // console.log("controller", header)
+            // console.log("systemOwnerUsers", systemOwnerUsers)
 
             return reply.send({
                 data: {

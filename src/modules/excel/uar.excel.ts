@@ -16,7 +16,7 @@ export async function buildUarExcelTemplate(
 ) {
   const type = opts?.type ?? "div_user";
 
-  const fallback = "field tidak ada";
+  const fallback = "field does not exist or data is empty";
   const v = <T>(x: T | null | undefined, fb = fallback) =>
     (x === null || x === undefined || x === "") ? fb : (x as any);
 
@@ -37,7 +37,7 @@ export async function buildUarExcelTemplate(
     details = Array.isArray(d) ? d : [];
   } else {
     if (!opts?.applicationId || !opts?.userNoreg) {
-      throw new Error("buildUarExcelTemplate: Untuk type 'so_user' wajib mengisi opts.applicationId dan opts.userNoreg");
+      throw new Error("buildUarExcelTemplate: For type 'so_user' it is mandatory to fill in opts.applicationId and opts.userNoreg");
     }
     const resp: any = await svcso.getUarSo(uarId, opts.applicationId, opts.userNoreg);
     const payload = resp?.header ? resp : (resp?.data ?? resp);
@@ -55,7 +55,7 @@ export async function buildUarExcelTemplate(
     (header?.DIVISION_NAME ?? header?.divisionName) ?? fallback;
 
   const departmentName =
-    (header?.DEPARTMENT_NAME ?? header?.departmentName) ?? fallback;
+    (header?.DEPARTMENT_NAME ?? header?.departmentName);
 
   const createdDateRaw =
     (header?.CREATED_DT ?? header?.createdDate) ?? null;

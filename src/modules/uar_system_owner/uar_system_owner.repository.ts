@@ -211,7 +211,7 @@ export const uarSystemOwnerRepository = {
             // ===== APP NAME (untuk header) =====
             const appPromise = tx.tB_M_APPLICATION.findUnique({
                 where: { APPLICATION_ID: applicationId },
-                select: { APPLICATION_ID: true, APPLICATION_NAME: true },
+                select: { APPLICATION_ID: true, APPLICATION_NAME: true, DIVISION_ID_OWNER: true },
             });
 
             const [soUsers, divUsers, app] = await Promise.all([
@@ -219,7 +219,54 @@ export const uarSystemOwnerRepository = {
                 divisionUsersPromise,
                 appPromise,
             ]);
+            // console.log("soUsers",soUsers)
+            const divisionIds = Array.from(
+                new Set(
+                    [...soUsers, ...divUsers]
+                        .map((u) => u.DIVISION_ID)
+                        .filter((v): v is number => v !== null && v !== undefined)
+                )
+            );
 
+            const divisions = divisionIds.length
+                ? await tx.tB_M_DIVISION.findMany({
+                    where: { DIVISION_ID: { in: divisionIds } },
+                    select: { DIVISION_ID: true, DIVISION_NAME: true },
+                })
+                : [];
+
+            const divMap = new Map(
+                divisions.map((d) => [d.DIVISION_ID, d.DIVISION_NAME])
+            );
+
+            const soUsersWithDivisionName = soUsers.map((u) => ({
+                ...u,
+                DIVISION_NAME: u.DIVISION_ID
+                    ? divMap.get(u.DIVISION_ID) ?? null
+                    : null,
+            }));
+
+            const divUsersWithDivisionName = divUsers.map((u) => ({
+                ...u,
+                DIVISION_NAME: divMap.get(u.DIVISION_ID) ?? null,
+            }));
+
+            // divisiona_name
+            const division = app?.DIVISION_ID_OWNER ? await tx.tB_M_DIVISION.findUnique({
+                where: { DIVISION_ID: app.DIVISION_ID_OWNER },
+                select: { DIVISION_NAME: true, DIVISION_ID: true }
+            }) : null
+
+            // department
+            const wf = await tx.tB_R_WORKFLOW.findFirst({
+                where: { UAR_ID: uarId },
+                select: { DEPARTMENT_ID: true },
+            });
+            const departmentId = wf?.DEPARTMENT_ID ?? null;
+            const depertmenName = departmentId ? await tx.tB_M_EMPLOYEE.findFirst({
+                where: { DEPARTMENT_ID: departmentId },
+                select: { DEPARTMENT_NAME: true }
+            }) : null
             // ===== HEADER BUILDER =====
             const uarPeriod =
                 soUsers[0]?.UAR_PERIOD ??
@@ -275,17 +322,20 @@ export const uarSystemOwnerRepository = {
                 uarPeriod,
                 applicationId,
                 applicationName: app?.APPLICATION_NAME ?? null,
+                divisionName: division?.DIVISION_NAME ?? null,
+                departmentName: depertmenName?.DEPARTMENT_NAME ?? null,
                 percentComplete,
                 createdDate,
                 completedDate,
                 status,
             };
+            // console.log("header", header)
 
             // ===== RETURN: tetap kompatibel dengan service =====
             return {
                 header,                 // <-- tambahan (service kamu akan mengabaikan jika tidak dipass)
-                systemOwnerUsers: soUsers,
-                divisionUsers: divUsers,
+                systemOwnerUsers: soUsersWithDivisionName,
+                divisionUsers: divUsersWithDivisionName,
             };
         });
     },

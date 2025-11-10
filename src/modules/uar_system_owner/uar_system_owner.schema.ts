@@ -91,6 +91,8 @@ export const getUarExcelSchema: FastifySchema = {
                 uarPeriod:       { type: ["string", "null"] }, // bisa null kalau tidak ada detail
                 applicationId:   { type: "string" },
                 applicationName: { type: ["string", "null"] },
+                divisionName: { type: ["string", "null"] },
+                departmentName: { type: ["string", "null"] },
                 percentComplete: { type: "string" },           // contoh: "33% (1 of 3)"
                 createdDate:     { type: ["string", "null"], format: "date-time" },
                 completedDate:   { type: ["string", "null"], format: "date-time" },
