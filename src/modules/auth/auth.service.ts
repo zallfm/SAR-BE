@@ -228,7 +228,8 @@ export const authService = {
       name: user!.name,
       role: user!.role,
       divisionId: 2,
-      noreg: "100000"
+      noreg: "100000",
+      departmentId: 200,
     };
 
     AuditLogger.logSuccess(AuditAction.LOGIN_SUCCESS, {

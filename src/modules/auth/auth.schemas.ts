@@ -30,6 +30,7 @@ export const loginSchema = {
                 name: { type: 'string' },
                 role: { type: 'string' },
                 divisionId: { type: 'number' },
+                departmentId: { type: 'number' },
                 noreg: { type: 'string' }
               }
             }

@@ -19,6 +19,7 @@ type GuardedUser = {
   username: string;
   divisionId: number;
   noreg: string;
+  departmentId: number;
   features: string[];
   functions: string[];
   roles: string[];
@@ -115,6 +116,7 @@ export default fp<AuthOpts>(async function authorizePlugin(app: FastifyInstance,
         username: profile?.user?.username ?? username,
         divisionId: 2,
         noreg: "100000",
+        departmentId: 200,
         features: profile?.features ?? [],
         functions: profile?.functions ?? [],
         roles: profile?.roles ?? [],

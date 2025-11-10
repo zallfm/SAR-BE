@@ -9,6 +9,7 @@ import type {
 import {
     currentRequestId,
     currentUserId,
+
 } from "../../core/requestContext";
 import { publishMonitoringLog } from "../log_monitoring/log_publisher";
 
@@ -27,11 +28,13 @@ export const uarDivisionService = {
             completedDateStart?: string;
             completedDateEnd?: string;
         },
-        userDivisionId: number
+        departmentId: number,
+        noreg: string
     ) {
         const { data, total, workflowStatus, completionStats } = await repo.listUars({
             ...params,
-            userDivisionId,
+            departmentId,
+            noreg
         });
 
         const wfStatusMap = new Map(workflowStatus.map((w) => [w.UAR_ID, w]));

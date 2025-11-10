@@ -47,7 +47,7 @@ export const uarSystemOwnerService = {
         const ownedApplicationIds = await getOwnedApplicationIds(userNoreg);
 
         // --- FIX 1: Destructure dateStats ---
-        const { data, total, completionStats, dateStats } = await repo.listUars({
+        const { data, total, completionStats, dateStats, divisionStats } = await repo.listUars({
             ...params,
             ownedApplicationIds,
         });
@@ -66,6 +66,23 @@ export const uarSystemOwnerService = {
             const current = percentMap.get(key)!;
             current.total += count;
             // '1' = Approved, '2' = Revoked
+            if (status === '1' || status === '2') {
+                current.completed += count;
+            }
+        }
+
+        for (const stat of divisionStats) {
+            const key = `${stat.UAR_ID}_${stat.APPLICATION_ID}`;
+            const count = stat._count._all;
+            const status = stat.DIV_APPROVAL_STATUS; // Use the division status field
+
+            if (!percentMap.has(key)) {
+                percentMap.set(key, { completed: 0, total: 0 });
+            }
+
+            const current = percentMap.get(key)!;
+            current.total += count;
+            // '1' = Approved, '2' = Revoked (assuming status codes are the same)
             if (status === '1' || status === '2') {
                 current.completed += count;
             }
@@ -112,7 +129,8 @@ export const uarSystemOwnerService = {
                 percentComplete: percentCompleteString,
                 createdDate: createdDate?.toISOString() ?? "",
                 completedDate: completedDate?.toISOString() ?? null,
-                status: newStatus
+                status: newStatus,
+                source: r.source
             };
         });
 

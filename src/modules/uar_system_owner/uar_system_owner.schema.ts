@@ -12,6 +12,7 @@ const UarHeaderItemSchema = {
         createdDate: { type: "string" },
         completedDate: { type: ["string", "null"] },
         status: { type: ["string", "null"], enum: ["1", "0", null] }, // 1 = Complete, 0 = In Progress
+        source: { type: "string" }
     },
 };
 

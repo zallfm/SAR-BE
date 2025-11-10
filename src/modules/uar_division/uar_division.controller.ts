@@ -5,7 +5,7 @@ import type { UarDivisionBatchUpdateDTO } from "../../types/uar_division";
 
 
 function getAuthInfo(req: FastifyRequest) {
-    const auth = req.auth as { divisionId: number; noreg: string };
+    const auth = req.auth as { divisionId: number; noreg: string; departmentId: number };
     if (!auth?.divisionId || !auth?.noreg) {
         throw new Error(
             "User authentication details (divisionId, noreg) not found. Check auth plugin."
@@ -33,7 +33,7 @@ export const uarDivisionController = {
             }>,
             reply: FastifyReply
         ) => {
-            const { divisionId } = getAuthInfo(req);
+            const { departmentId, noreg } = getAuthInfo(req);
             const { page = 1, limit = 10, period, uarId, status, completedDateEnd, completedDateStart, createdDateEnd, createdDateStart } = req.query ?? {};
 
             const result = await svc.list(
@@ -48,7 +48,8 @@ export const uarDivisionController = {
                     completedDateStart,
                     completedDateEnd,
                 },
-                Number(divisionId)
+                Number(departmentId),
+                noreg
             );
 
             return reply.send({

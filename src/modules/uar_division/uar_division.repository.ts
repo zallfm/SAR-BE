@@ -19,22 +19,24 @@ export const uarDivisionRepository = {
     async listUars(params: {
         page: number;
         limit: number;
-        userDivisionId: number;
         period?: string;
         uarId?: string;
         status?: 'InProgress' | 'Finished';
         createdDate?: string;
         completedDate?: string;
+        noreg?: string;
+        departmentId?: number;
     }) {
         const {
-            page, limit, userDivisionId, period, uarId,
-            status, createdDate, completedDate
+            page, limit, period, uarId,
+            status, createdDate, completedDate, departmentId, noreg
         } = params;
-
         let workflowFilteredUarIds: string[] | undefined = undefined;
         const whereWorkflow: any = {
-            DIVISION_ID: userDivisionId,
+            DEPARTMENT_ID: departmentId,
         };
+
+        console.log("WW", whereWorkflow)
         const hasWorkflowFilter = createdDate || completedDate;
 
         if (createdDate) {
@@ -60,7 +62,7 @@ export const uarDivisionRepository = {
         let inProgressUarIds: string[] | undefined;
         if (status) {
             const whereStatus: any = {
-                DIVISION_ID: userDivisionId,
+                DEPARTMENT_ID: departmentId,
                 OR: [
                     { DIV_APPROVAL_STATUS: '0' },
                 ]
@@ -71,7 +73,7 @@ export const uarDivisionRepository = {
             }
 
             const inProgressUars = await prisma.tB_R_UAR_DIVISION_USER.findMany({
-                where: whereStatus, 
+                where: whereStatus,
                 select: { UAR_ID: true },
                 distinct: ['UAR_ID']
             });
@@ -83,7 +85,9 @@ export const uarDivisionRepository = {
         }
 
         const whereUar: any = {
-            DIVISION_ID: userDivisionId,
+            DEPARTMENT_ID: departmentId,
+            REVIEWER_NOREG: noreg
+
         };
         if (period) {
             whereUar.UAR_PERIOD = period;
@@ -97,6 +101,8 @@ export const uarDivisionRepository = {
         if (workflowFilteredUarIds) {
             uarIdFilter.in = workflowFilteredUarIds;
         }
+
+        console.log(whereUar)
 
         if (status && inProgressUarIds) {
             if (status === 'InProgress') {
@@ -164,7 +170,7 @@ export const uarDivisionRepository = {
             prisma.tB_R_WORKFLOW.findMany({
                 where: {
                     UAR_ID: { in: uarIds }, // Only get wf data for the 10 on the page
-                    DIVISION_ID: userDivisionId,
+                    DEPARTMENT_ID: departmentId,
                 },
                 distinct: ["UAR_ID"],
                 orderBy: [
@@ -183,7 +189,7 @@ export const uarDivisionRepository = {
                 by: ['UAR_ID', 'DIV_APPROVAL_STATUS'],
                 where: {
                     UAR_ID: { in: uarIds },
-                    DIVISION_ID: userDivisionId
+                    DEPARTMENT_ID: departmentId
                 },
                 _count: {
                     _all: true

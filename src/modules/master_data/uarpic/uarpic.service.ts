@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { Prisma } from "../../../generated/prisma"; // Added Prisma import
+import { Prisma } from "../../../generated/prisma/index.js"; // Added Prisma import
 import { ApplicationError } from "../../../core/errors/applicationError";
 import { ERROR_CODES } from "../../../core/errors/errorCodes";
 import { ERROR_MESSAGES } from "../../../core/errors/errorMessages";
@@ -360,7 +360,7 @@ export const uarPicService = {
         where: { ID },
       });
       const userId = currentUserId();
-            const reqId = currentRequestId()
+      const reqId = currentRequestId()
       publishMonitoringLog(globalThis.app as any, {
         userId,
         module: "UAR_PIC",

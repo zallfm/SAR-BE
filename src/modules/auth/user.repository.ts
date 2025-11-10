@@ -1,6 +1,6 @@
 import { prismaSC } from '../../db/prisma';
 import type { User } from '../../types/auth.js';
-import { TB_M_USER } from '../../generated/prisma-sc/index';
+import { TB_M_USER } from '../../generated/prisma-sc/index.js';
 import { hrPortalClient } from './hrPortal';
 import { env } from '../../config/env';
 
@@ -51,9 +51,9 @@ export const userRepository = {
           }
         }
       },
-      select: { 
-        ID: true, 
-        USERNAME: true, 
+      select: {
+        ID: true,
+        USERNAME: true,
         PASSWORD: true,
         IN_ACTIVE_DIRECTORY: true
       },
@@ -102,6 +102,7 @@ export const userRepository = {
       name: dbUser.USERNAME,
       divisionId: 2,
       noreg: "100000",
+      departmentId: 200,
       role: dynamicRole as User["role"],
     };
   },

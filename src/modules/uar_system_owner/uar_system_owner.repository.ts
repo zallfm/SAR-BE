@@ -1,5 +1,6 @@
 import type { UarSystemOwnerBatchUpdateDTO } from "../../types/uar_system_owner";
 import { prisma } from "../../db/prisma";
+import { Prisma } from "../../generated/prisma/index.js";
 
 async function getDbNow(): Promise<Date> {
     const rows: Array<{ now: Date }> = await prisma.$queryRaw`SELECT GETDATE() AS now`;
@@ -33,104 +34,191 @@ export const uarSystemOwnerRepository = {
     }) {
         const { page, limit, ownedApplicationIds, period, uarId, applicationId } = params;
 
-        const pendingDivisionUars = await prisma.tB_R_UAR_DIVISION_USER.groupBy({
-            by: ['UAR_ID', 'APPLICATION_ID'],
-            where: {
-                DIV_APPROVAL_STATUS: '0',
+        // 2. BUILD SQL 'WHERE' FOR SYSTEM_OWNER (SO)
+        // This clause INCLUDES the application ID filters
+        const conditionsSO: Prisma.Sql[] = [];
 
-                APPLICATION_ID: applicationId ? applicationId : { in: ownedApplicationIds },
-                ...(period && { UAR_PERIOD: period }),
-                ...(uarId && { UAR_ID: { contains: uarId } }),
-            },
-        });
-
-        const excludeList = pendingDivisionUars.map(p => ({
-            UAR_ID: p.UAR_ID,
-            APPLICATION_ID: p.APPLICATION_ID ?? undefined,
-        }));
-
-
-        const whereUar: any = {
-            APPLICATION_ID: { in: ownedApplicationIds },
-        };
+        if (applicationId) {
+            conditionsSO.push(Prisma.sql`APPLICATION_ID = ${applicationId}`);
+        } else {
+            // Assumes ownedApplicationIds is never empty
+            conditionsSO.push(Prisma.sql`APPLICATION_ID IN (${Prisma.join(ownedApplicationIds)})`);
+        }
         if (period) {
-            whereUar.UAR_PERIOD = period;
+            conditionsSO.push(Prisma.sql`UAR_PERIOD = ${period}`);
+        }
+
+        if (uarId) {
+            conditionsSO.push(Prisma.sql`UAR_ID LIKE ${'%' + uarId + '%'}`);
+        }
+        const whereSql_SO = conditionsSO.length > 0
+            ? Prisma.sql`WHERE ${Prisma.join(conditionsSO, ' AND ')}`
+            : Prisma.empty;
+
+        // 3. BUILD SQL 'WHERE' FOR DIVISION_USER (DU)
+        // This clause EXCLUDES the application ID filters
+        const conditionsDU: Prisma.Sql[] = [];
+        if (period) {
+            conditionsDU.push(Prisma.sql`UAR_PERIOD = ${period}`);
         }
         if (uarId) {
-            whereUar.UAR_ID = { contains: uarId };
+            conditionsDU.push(Prisma.sql`UAR_ID LIKE ${'%' + uarId + '%'}`);
         }
         if (applicationId) {
-            whereUar.APPLICATION_ID = applicationId;
+            conditionsDU.push(Prisma.sql`APPLICATION_ID = ${applicationId}`);
         }
+        const whereSql_DU = conditionsDU.length > 0
+            ? Prisma.sql`WHERE ${Prisma.join(conditionsDU, ' AND ')}`
+            : Prisma.empty;
 
-        if (excludeList.length > 0) {
-            whereUar.NOT = excludeList.map(ex => ({
-                AND: [
-                    { UAR_ID: ex.UAR_ID },
-                    { APPLICATION_ID: ex.APPLICATION_ID }
-                ]
-            }));
-        }
-        const [dataRaw, totalGroups] = await Promise.all([
-            prisma.tB_R_UAR_SYSTEM_OWNER.findMany({
-                where: whereUar,
-                select: {
-                    UAR_ID: true,
-                    UAR_PERIOD: true,
-                    APPLICATION_ID: true,
-                    TB_M_APPLICATION: {
-                        select: {
-                            APPLICATION_NAME: true,
-                        },
-                    },
-                },
-                distinct: ["UAR_ID", "UAR_PERIOD", "APPLICATION_ID"],
-                orderBy: { UAR_ID: "desc" },
-                skip: (page - 1) * limit,
-                take: limit,
-            }),
-            prisma.tB_R_UAR_SYSTEM_OWNER.groupBy({
-                by: ["UAR_ID", "UAR_PERIOD", "APPLICATION_ID"],
-                where: whereUar,
-            }),
+
+        const allUarsSql = Prisma.sql`
+            SELECT UAR_ID, UAR_PERIOD, APPLICATION_ID, 'SYSTEM_OWNER' as source_flag
+            FROM TB_R_UAR_SYSTEM_OWNER
+            ${whereSql_SO} 
+            
+            UNION ALL
+            
+            SELECT UAR_ID, UAR_PERIOD, APPLICATION_ID, 'DIVISION_USER' as source_flag
+            FROM TB_R_UAR_DIVISION_USER
+            ${whereSql_DU}
+        `;
+
+        // 3. --- MODIFIED: Build the final queries with 'WITH' at the top ---
+        const offset = (page - 1) * limit;
+
+        const dataQuerySql = Prisma.sql`
+            WITH AllUARs AS (
+                ${allUarsSql}
+            ),
+            GroupedUARs AS (
+                SELECT
+                    UAR_ID, UAR_PERIOD, APPLICATION_ID,
+                    STRING_AGG(source_flag, ',') WITHIN GROUP (ORDER BY source_flag) as source
+                FROM AllUARs
+                GROUP BY UAR_ID, UAR_PERIOD, APPLICATION_ID
+            )
+            SELECT T.*, A.APPLICATION_NAME
+            FROM GroupedUARs AS T
+            LEFT JOIN TB_M_APPLICATION AS A ON T.APPLICATION_ID = A.APPLICATION_ID
+            ORDER BY T.UAR_ID DESC
+            OFFSET ${offset} ROWS
+            FETCH NEXT ${limit} ROWS ONLY
+        `;
+
+        const countQuerySql = Prisma.sql`
+            WITH AllUARs AS (
+                ${allUarsSql}
+            )
+            SELECT COUNT(*) as count
+            FROM (
+                -- We only need to group to get the distinct UARs for the count
+                SELECT UAR_ID, UAR_PERIOD, APPLICATION_ID
+                FROM AllUARs
+                GROUP BY UAR_ID, UAR_PERIOD, APPLICATION_ID
+            ) as SubQuery
+        `;
+        const [dataRawResults, totalGroups] = await Promise.all([
+            prisma.$queryRaw<Array<{
+                UAR_ID: string;
+                UAR_PERIOD: string;
+                APPLICATION_ID: string;
+                APPLICATION_NAME: string;
+                source: string; // The new flag field
+            }>>(dataQuerySql), // Use the new query variable
+
+            // Query for the total count
+            prisma.$queryRaw<Array<{ count: number }>>(countQuerySql) // Use the new query variable
         ]);
-        const totalRows = totalGroups.length;
 
+        const totalRows = totalGroups[0]?.count ?? 0;
+
+        // 5. --- (Unchanged) Map the results ---
+        const dataRaw = dataRawResults.map(row => ({
+            UAR_ID: row.UAR_ID,
+            UAR_PERIOD: row.UAR_PERIOD,
+            APPLICATION_ID: row.APPLICATION_ID,
+            source: row.source, // Add the source field
+            TB_M_APPLICATION: {
+                APPLICATION_NAME: row.APPLICATION_NAME
+            }
+        }));
         const uarIds = dataRaw.map((d) => d.UAR_ID);
         const appIds = dataRaw.map((d) => d.APPLICATION_ID as string);
 
         if (uarIds.length === 0) {
-            return { data: [], total: 0, completionStats: [], dateStats: [] };
+            return { data: [], total: 0, completionStats: [], dateStats: [], divisionStats: [] };
         }
 
-        const completionStats = await prisma.tB_R_UAR_SYSTEM_OWNER.groupBy({
-            by: ['UAR_ID', 'APPLICATION_ID', 'SO_APPROVAL_STATUS'],
-            where: {
-                UAR_ID: { in: uarIds },
-                APPLICATION_ID: { in: appIds },
-            },
-            _count: {
-                _all: true
-            },
-        });
+        const [completionStats, dateStats, divisionStats, dateStatsDU] = await Promise.all([
+            prisma.tB_R_UAR_SYSTEM_OWNER.groupBy({
+                by: ['UAR_ID', 'APPLICATION_ID', 'SO_APPROVAL_STATUS'],
+                where: {
+                    UAR_ID: { in: uarIds },
+                    APPLICATION_ID: { in: appIds },
+                },
+                _count: { _all: true },
 
-        const dateStats = await prisma.tB_R_UAR_SYSTEM_OWNER.findMany({
-            where: {
-                UAR_ID: { in: uarIds },
-                APPLICATION_ID: { in: appIds },
-            },
-            select: {
-                UAR_ID: true,
-                APPLICATION_ID: true,
-                SO_APPROVAL_STATUS: true,
-                CREATED_DT: true,
-                SO_APPROVAL_DT: true,
-            }
-        });
+            }),
 
-        return { data: dataRaw, total: totalRows, completionStats: completionStats, dateStats };
+            prisma.tB_R_UAR_SYSTEM_OWNER.findMany({
+                where: {
+                    UAR_ID: { in: uarIds },
+                    APPLICATION_ID: { in: appIds },
+                },
+                select: {
+                    UAR_ID: true,
+                    APPLICATION_ID: true,
+                    SO_APPROVAL_STATUS: true,
+                    CREATED_DT: true,
+                    SO_APPROVAL_DT: true,
+                }
+            }),
+
+            prisma.tB_R_UAR_DIVISION_USER.groupBy({
+                by: ['UAR_ID', 'APPLICATION_ID', 'DIV_APPROVAL_STATUS'],
+                where: {
+                    UAR_ID: { in: uarIds },
+                    APPLICATION_ID: { in: appIds },
+                },
+                _count: { _all: true },
+            }),
+
+            prisma.tB_R_UAR_DIVISION_USER.findMany({
+                where: {
+                    UAR_ID: { in: uarIds },
+                    APPLICATION_ID: { in: appIds },
+                },
+                select: {
+                    UAR_ID: true,
+                    APPLICATION_ID: true,
+                    CREATED_DT: true,
+                }
+            })
+        ]);
+
+        const mappedDateStatsDU = dateStatsDU.map(du => ({
+            UAR_ID: du.UAR_ID,
+            APPLICATION_ID: du.APPLICATION_ID,
+            CREATED_DT: du.CREATED_DT,
+            SO_APPROVAL_STATUS: null,
+            SO_APPROVAL_DT: null,
+        }));
+
+        const combinedDateStats = [
+            ...dateStats,
+            ...mappedDateStatsDU
+        ];
+
+        console.log("DATESTATS", combinedDateStats)
+        return {
+            data: dataRaw,
+            total: totalRows,
+            completionStats,
+            dateStats: combinedDateStats,
+            divisionStats
+        };
     },
-
 
     async getUarDetails(uarId: string, applicationId: string) {
 
