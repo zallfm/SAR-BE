@@ -33,11 +33,12 @@ export const uarDivisionRepository = {
             page, limit, period, uarId,
             status, createdDate, completedDate, reviewStatus, departmentId, noreg
         } = params;
+
         let workflowFilteredUarIds: string[] | undefined = undefined;
         const whereWorkflow: any = {
             DEPARTMENT_ID: departmentId,
         };
-
+        const dbPeriod = period ? period.replace('-', '') : undefined;
         const hasWorkflowFilter = createdDate || completedDate;
 
         if (createdDate) {
@@ -90,8 +91,8 @@ export const uarDivisionRepository = {
             REVIEWER_NOREG: noreg
 
         };
-        if (period) {
-            whereUar.UAR_PERIOD = period;
+        if (dbPeriod) {
+            whereUar.UAR_PERIOD = dbPeriod;
         }
 
         const uarIdFilter: any = {};

@@ -6,7 +6,7 @@ import type { UarSystemOwnerAddCommentDTO, UarSystemOwnerBatchUpdateDTO } from "
  * Assumes the auth plugin attaches { noreg: string } to req.auth.
  */
 function getAuthInfo(req: FastifyRequest) {
-    const auth = req.auth as { noreg: string };
+    const auth = req.auth as { noreg: string, divisionId: number };
     if (!auth?.noreg) {
         throw new Error(
             "User authentication details (noreg) not found. Check auth plugin."
@@ -26,12 +26,16 @@ export const uarSystemOwnerController = {
                     period?: string;
                     uarId?: string;
                     applicationId?: string;
+                    status?: 'InProgress' | 'Finished';
+                    createdDate?: string;
+                    completedDate?: string;
+                    reviewStatus?: 'pending';
                 };
             }>,
             reply: FastifyReply
         ) => {
-            const { noreg } = getAuthInfo(req);
-            const { page = 1, limit = 10, period, uarId, applicationId } = req.query ?? {};
+            const { noreg, divisionId } = getAuthInfo(req);
+            const { page = 1, limit = 10, period, uarId, applicationId, completedDate, createdDate, reviewStatus, status } = req.query ?? {};
 
             const result = await svc.list(
                 {
@@ -40,8 +44,14 @@ export const uarSystemOwnerController = {
                     period,
                     uarId,
                     applicationId,
+                    createdDate,
+                    completedDate,
+                    reviewStatus,
+                    status
                 },
-                noreg
+                divisionId,
+                noreg,
+
             );
 
             return reply.send({
