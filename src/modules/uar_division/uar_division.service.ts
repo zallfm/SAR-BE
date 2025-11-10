@@ -27,6 +27,7 @@ export const uarDivisionService = {
             createdDateEnd?: string;
             completedDateStart?: string;
             completedDateEnd?: string;
+            reviewStatus?: 'pending';
         },
         departmentId: number,
         noreg: string

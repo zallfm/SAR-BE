@@ -29,12 +29,13 @@ export const uarDivisionController = {
                     createdDateEnd?: string;
                     completedDateStart?: string;
                     completedDateEnd?: string;
+                    reviewStatus?: 'pending';
                 };
             }>,
             reply: FastifyReply
         ) => {
             const { departmentId, noreg } = getAuthInfo(req);
-            const { page = 1, limit = 10, period, uarId, status, completedDateEnd, completedDateStart, createdDateEnd, createdDateStart } = req.query ?? {};
+            const { page = 1, limit = 10, period, uarId, status, reviewStatus, completedDateEnd, completedDateStart, createdDateEnd, createdDateStart } = req.query ?? {};
 
             const result = await svc.list(
                 {
@@ -43,6 +44,7 @@ export const uarDivisionController = {
                     period,
                     uarId,
                     status,
+                    reviewStatus,
                     createdDateStart,
                     createdDateEnd,
                     completedDateStart,

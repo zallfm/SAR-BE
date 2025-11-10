@@ -66,6 +66,27 @@ export const uarSystemOwnerController = {
             return reply.send({ data });
         },
 
+    getUarSo: (_app: FastifyInstance) =>
+        async (
+            req: FastifyRequest<{ Params: { uarId: string; applicationId: string } }>,
+            reply: FastifyReply
+        ) => {
+            const { noreg } = getAuthInfo(req);
+            const { uarId, applicationId } = req.params;
+
+            // service SEKARANG harus return: { header, systemOwnerUsers, divisionUsers }
+            const { header, systemOwnerUsers, divisionUsers } =
+                await svc.getUarSo(uarId, applicationId, noreg);
+            // console.log("controller", header)
+            // console.log("systemOwnerUsers", systemOwnerUsers)
+
+            return reply.status(200).send({
+                success: true,
+                code: 'OK',
+                message: 'OK',
+                data: { header, systemOwnerUsers, divisionUsers },
+            });
+        },
 
     batchUpdate: (_app: FastifyInstance) =>
         async (
