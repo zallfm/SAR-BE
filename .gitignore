@@ -6,4 +6,9 @@ node_modules
 # Test coverage
 coverage
 *.lcov
-dist
+
+/dist
+generated
+build
+dist.zip
+.env

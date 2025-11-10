@@ -24,12 +24,17 @@ export const uarDivisionController = {
                     limit?: number;
                     period?: string;
                     uarId?: string;
+                    status?: 'InProgress' | 'Finished';
+                    createdDateStart?: string;
+                    createdDateEnd?: string;
+                    completedDateStart?: string;
+                    completedDateEnd?: string;
                 };
             }>,
             reply: FastifyReply
         ) => {
             const { divisionId } = getAuthInfo(req);
-            const { page = 1, limit = 10, period, uarId } = req.query ?? {};
+            const { page = 1, limit = 10, period, uarId, status, completedDateEnd, completedDateStart, createdDateEnd, createdDateStart } = req.query ?? {};
 
             const result = await svc.list(
                 {
@@ -37,6 +42,11 @@ export const uarDivisionController = {
                     limit: Number(limit),
                     period,
                     uarId,
+                    status,
+                    createdDateStart,
+                    createdDateEnd,
+                    completedDateStart,
+                    completedDateEnd,
                 },
                 Number(divisionId)
             );
@@ -63,6 +73,17 @@ export const uarDivisionController = {
             return reply.send({ data });
         },
 
+    getUar: (_app: FastifyInstance) =>
+        async (
+            req: FastifyRequest<{ Params: { id: string } }>,
+            reply: FastifyReply
+        ) => {
+            const { divisionId } = getAuthInfo(req);
+            const uarId = req.params.id;
+            const data = await svc.getUar(uarId, Number(divisionId));
+            return reply.send({ data });
+        },
+
 
     batchUpdate: (_app: FastifyInstance) =>
         async (
@@ -76,7 +97,7 @@ export const uarDivisionController = {
                 Number(divisionId)
             );
             return reply.send({
-                message: `Batch ${req.body.decision} successful.`,
+                message: `Batch update successful.`,
                 data: result,
             });
         },

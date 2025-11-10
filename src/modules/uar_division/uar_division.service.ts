@@ -21,6 +21,11 @@ export const uarDivisionService = {
             limit: number;
             period?: string;
             uarId?: string;
+            status?: 'InProgress' | 'Finished';
+            createdDateStart?: string;
+            createdDateEnd?: string;
+            completedDateStart?: string;
+            completedDateEnd?: string;
         },
         userDivisionId: number
     ) {
@@ -99,6 +104,14 @@ export const uarDivisionService = {
     },
 
 
+    async getUar(uarId: string, userDivisionId: number) {
+        const rows = await repo.getUar(uarId, userDivisionId);
+        // console.log("rowss", rows)
+        return rows;
+    },
+
+
+
     async batchUpdate(
         dto: UarDivisionBatchUpdateDTO,
         userNoreg: string,
@@ -134,7 +147,7 @@ export const uarDivisionService = {
             module: "UAR_DIV",
             action: "BATCH_UPDATE",
             status: "Success",
-            description: `Batch ${dto.decision} for UAR ${dto.uarId} on ${dto.items.length} items.`,
+            description: `Batch update for UAR ${dto.uarId} on ${dto.items.length} items.`,
             location: "/uar-division/batch-update",
         }).catch((e) => console.warn({ e, reqId }, "monitoring log failed"));
 

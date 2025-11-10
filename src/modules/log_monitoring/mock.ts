@@ -217,8 +217,8 @@ const mkDetails = (
   return Array.from({ length: 10 }, (_, i) => ({
     ID: i + 1,
     PROCESS_ID: processId,
-    MESSAGE_ID: `MSG-${processId}-${i + 1}`,
-    MESSAGE_TYPE: (i + 1) % 4 === 0 ? 'Warning' : 'Info',
+    MESSAGE_ID: `MSG${String(i + 1).padStart(3, "0")}`,
+    MESSAGE_TYPE: (i + 1) % 4 === 0 ? "WRN" : "INF",
     MESSAGE_DATE_TIME: base, // untuk mock: sama; real-nya bisa dihitung per-step
     LOCATION: `Module.FunctionName.Step${i + 1}`,
     MESSAGE_DETAIL: `Execution step ${i + 1} completed.${

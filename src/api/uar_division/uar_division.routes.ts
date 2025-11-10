@@ -5,6 +5,8 @@ import {
     listUarSchema,
     getUarDetailsSchema,
     batchUpdateSchema,
+    exportUarExcelSchema,
+    getUarSchema,
 } from "../../modules/uar_division/uar_division.schema";
 
 export async function uarDivisionRoutes(app: FastifyInstance) {
@@ -20,9 +22,21 @@ export async function uarDivisionRoutes(app: FastifyInstance) {
         uarDivisionController.getDetails(app)
     );
 
+    app.get(
+        "/excel/:id",
+        { schema: getUarSchema },
+        uarDivisionController.getUar(app)
+    );
+
     app.post(
         "/batch-update",
         { schema: batchUpdateSchema },
         uarDivisionController.batchUpdate(app)
     );
+
+    // app.get(
+    //     "/export",
+    //     {schema: exportUarExcelSchema},
+    //     uarDivisionController.exportExcel(app)
+    // )
 }
