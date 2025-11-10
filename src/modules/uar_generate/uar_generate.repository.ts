@@ -231,13 +231,13 @@ WHEN NOT MATCHED THEN
   INSERT (
     UAR_PERIOD, UAR_ID, USERNAME, ROLE_ID, APPLICATION_ID,
     DIVISION_ID, DEPARTMENT_ID, NOREG, NAME, POSITION_NAME, SECTION_ID,
-    REVIEWER_NOREG, REVIEWER_NAME,
+    REVIEWER_NOREG, REVIEWER_NAME, DIV_APPROVAL_STATUS, SO_APPROVAL_STATUS,
     CREATED_BY, CREATED_DT
   )
   VALUES (
     src.UAR_PERIOD, src.UAR_ID, src.USERNAME, src.ROLE_ID, src.APPLICATION_ID,
     src.DIVISION_ID, src.DEPARTMENT_ID, src.NOREG, src.NAME, src.POSITION_NAME, src.SECTION_ID,
-    src.REVIEWER_NOREG, src.REVIEWER_NAME,
+    src.REVIEWER_NOREG, src.REVIEWER_NAME, '0', '0',
     ${p.createdBy}, SYSDATETIME()
   )
 WHEN MATCHED THEN
@@ -533,6 +533,7 @@ export const uarGenerateRepository = {
   async generateAll(p: GenParams) {
     return prisma.$transaction(async (tx) => {
       const divisionUser = await mergeDivisionUserTx(tx, p);
+      // console.log("divisionUser", divisionUser)
       const systemOwner = await mergeSystemOwnerTx(tx, p);
       return { divisionUser, systemOwner };
     });

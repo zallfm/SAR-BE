@@ -16,7 +16,7 @@ export async function buildUarExcelTemplate(
 ) {
   const type = opts?.type ?? "div_user";
 
-  const fallback = "field does not exist or data is empty";
+  const fallback = "Not Found";
   const v = <T>(x: T | null | undefined, fb = fallback) =>
     (x === null || x === undefined || x === "") ? fb : (x as any);
 

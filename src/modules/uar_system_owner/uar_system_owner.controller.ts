@@ -80,12 +80,11 @@ export const uarSystemOwnerController = {
             // console.log("controller", header)
             // console.log("systemOwnerUsers", systemOwnerUsers)
 
-            return reply.send({
-                data: {
-                    header,
-                    systemOwnerUsers,
-                    divisionUsers,
-                },
+            return reply.status(200).send({
+                success: true,
+                code: 'OK',
+                message: 'OK',
+                data: { header, systemOwnerUsers, divisionUsers },
             });
         },
 

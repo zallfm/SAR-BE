@@ -15,7 +15,8 @@ describe("uarPicService", () => {
         mockApp,
         picName,
         divisionId,
-        mail
+        mail,
+        "Hesti"
       );
 
       expect(result.ID).toBe("SARPICCIO202510270001");
@@ -34,7 +35,7 @@ describe("uarPicService", () => {
       const mail = "bad.user@gmail.com";
 
       const act = () =>
-        uarPicService.createUarPic(mockApp, picName, divisionId, mail);
+        uarPicService.createUarPic(mockApp, picName, divisionId, mail, "Hesti");
 
       await expect(act()).rejects.toThrow(ApplicationError);
       await expect(act()).rejects.toHaveProperty(
@@ -57,7 +58,8 @@ describe("uarPicService", () => {
         id,
         picName,
         divisionId,
-        mail
+        mail,
+        "Hesti"
       );
 
       expect(result.ID).toBe(id);
@@ -75,7 +77,7 @@ describe("uarPicService", () => {
       const mail = "nobody@toyota.co.id";
 
       const act = () =>
-        uarPicService.editUarPic(mockApp, id, picName, divisionId, mail);
+        uarPicService.editUarPic(mockApp, id, picName, divisionId, mail, "Hesti");
 
       await expect(act()).rejects.toThrow(ApplicationError);
       await expect(act()).rejects.toHaveProperty(
@@ -92,7 +94,7 @@ describe("uarPicService", () => {
       const mail = "budi@gmail.com";
 
       const act = () =>
-        uarPicService.editUarPic(mockApp, id, picName, divisionId, mail);
+        uarPicService.editUarPic(mockApp, id, picName, divisionId, mail, "Hesti");
 
       await expect(act()).rejects.toThrow(ApplicationError);
       await expect(act()).rejects.toHaveProperty(
@@ -113,7 +115,8 @@ describe("uarPicService", () => {
         mockApp,
         picName,
         divisionId,
-        mail
+        mail,
+        "Hesti"
       );
 
       expect(result.DIVISION_ID).toBe("10"); // It's a string, not a number
@@ -126,7 +129,7 @@ describe("uarPicService", () => {
       const mail = 12345 as any;
 
       const act = () =>
-        uarPicService.createUarPic(mockApp, picName, divisionId, mail);
+        uarPicService.createUarPic(mockApp, picName, divisionId, mail, "Hesti");
 
       await expect(act()).rejects.toThrow(TypeError);
       await expect(act()).rejects.toThrow("MAIL.endsWith is not a function");

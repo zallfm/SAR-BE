@@ -21,6 +21,12 @@ export const uarDivisionService = {
             limit: number;
             period?: string;
             uarId?: string;
+            status?: 'InProgress' | 'Finished';
+            createdDateStart?: string;
+            createdDateEnd?: string;
+            completedDateStart?: string;
+            completedDateEnd?: string;
+            reviewStatus?: 'pending';
         },
         userDivisionId: number
     ) {

@@ -150,6 +150,7 @@ export const uarSystemOwnerService = {
     },
 
     async getUarSo(uarId: string, applicationId: string, userNoreg: string) {
+        console.log("userNoreg", userNoreg)
         const ownedApplicationIds = await getOwnedApplicationIds(userNoreg);
 
         // Security check

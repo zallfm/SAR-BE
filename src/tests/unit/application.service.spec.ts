@@ -37,8 +37,8 @@ describe("Application Service (simple unit)", () => {
       NOREG_SYSTEM_OWNER: "00123456", // canBeOwner: true
       NOREG_SYSTEM_CUST: "00345678",  // canBeCustodian: true
       SECURITY_CENTER: "LDAP",
-      APPLICATION_STATUS: "Aktif",
-    });
+      APPLICATION_STATUS: "Active",
+    }, "test-user");
 
     // expect(created.APPLICATION_ID).toMatch(/^SARAPPLICATION20251025\d{4}$/);
 
@@ -92,8 +92,8 @@ describe("Application Service (simple unit)", () => {
         NOREG_SYSTEM_OWNER: "00123456",
         NOREG_SYSTEM_CUST: "00345678",
         SECURITY_CENTER: "SC",
-        APPLICATION_STATUS: "Aktif",
-      })
+        APPLICATION_STATUS: "Active",
+      }, "test-user")
     ).rejects.toMatchObject({ code: "VAL-ERR-304" }); // VAL_DUPLICATE_ENTRY
   });
 
@@ -106,8 +106,8 @@ describe("Application Service (simple unit)", () => {
         NOREG_SYSTEM_OWNER: "00345679", // Suzuki -> canBeOwner: false
         NOREG_SYSTEM_CUST: "00345679",
         SECURITY_CENTER: "SC",
-        APPLICATION_STATUS: "Aktif",
-      })
+        APPLICATION_STATUS: "Active",
+      }, "test-user")
     ).rejects.toMatchObject({ code: "VAL-ERR-302" }); // VAL_INVALID_FORMAT
   });
 
@@ -120,8 +120,8 @@ describe("Application Service (simple unit)", () => {
         NOREG_SYSTEM_OWNER: "00123456",
         NOREG_SYSTEM_CUST: "00123457", // Yoshida -> canBeCustodian: false
         SECURITY_CENTER: "SC",
-        APPLICATION_STATUS: "Aktif",
-      })
+        APPLICATION_STATUS: "Active",
+      }, "test-user")
     ).rejects.toMatchObject({ code: "VAL-ERR-302" }); // VAL_INVALID_FORMAT
   });
 
@@ -134,8 +134,8 @@ describe("Application Service (simple unit)", () => {
         NOREG_SYSTEM_OWNER: "00123456", // same
         NOREG_SYSTEM_CUST: "00123456", // same
         SECURITY_CENTER: "SC",
-        APPLICATION_STATUS: "Aktif",
-      })
+        APPLICATION_STATUS: "Active",
+      }, "test-user")
     ).rejects.toMatchObject({ code: "VAL-ERR-302" }); // VAL_INVALID_FORMAT
   });
 
@@ -148,8 +148,8 @@ describe("Application Service (simple unit)", () => {
         NOREG_SYSTEM_OWNER: "00123456",
         NOREG_SYSTEM_CUST: "00345678",
         SECURITY_CENTER: "NOT_VALID",
-        APPLICATION_STATUS: "Aktif",
-      })
+        APPLICATION_STATUS: "Active",
+      }, "test-user")
     ).rejects.toMatchObject({ code: "APP-ERR-103" }); // APP_INVALID_DATA
   });
 
@@ -162,7 +162,7 @@ describe("Application Service (simple unit)", () => {
       APPLICATION_NAME: "Updated Name",
       SECURITY_CENTER: "LDAP",
       APPLICATION_STATUS: "Inactive",
-    });
+    }, "test-user");
 
     expect(updated.APPLICATION_NAME).toBe("Updated Name");
     expect(updated.SECURITY_CENTER).toBe("LDAP");
@@ -176,17 +176,17 @@ describe("Application Service (simple unit)", () => {
 
     // owner salah
     await expect(
-      svc.update(target.APPLICATION_ID, { NOREG_SYSTEM_OWNER: "00345679" }) // canBeOwner: false
+      svc.update(target.APPLICATION_ID, { NOREG_SYSTEM_OWNER: "00345679" }, "test-user") // canBeOwner: false
     ).rejects.toMatchObject({ code: "VAL-ERR-302" });
 
     // custodian salah
     await expect(
-      svc.update(target.APPLICATION_ID, { NOREG_SYSTEM_CUST: "00123457" }) // canBeCustodian: false
+      svc.update(target.APPLICATION_ID, { NOREG_SYSTEM_CUST: "00123457" }, "test-user") // canBeCustodian: false
     ).rejects.toMatchObject({ code: "VAL-ERR-302" });
 
     // security center salah
     await expect(
-      svc.update(target.APPLICATION_ID, { SECURITY_CENTER: "SalahSC" as any })
+      svc.update(target.APPLICATION_ID, { SECURITY_CENTER: "SalahSC" as any }, "test-user")
     ).rejects.toMatchObject({ code: "APP-ERR-103" });
   });
 });

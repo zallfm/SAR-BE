@@ -24,12 +24,18 @@ export const uarDivisionController = {
                     limit?: number;
                     period?: string;
                     uarId?: string;
+                    status?: 'InProgress' | 'Finished';
+                    createdDateStart?: string;
+                    createdDateEnd?: string;
+                    completedDateStart?: string;
+                    completedDateEnd?: string;
+                    reviewStatus?: 'pending';
                 };
             }>,
             reply: FastifyReply
         ) => {
             const { divisionId } = getAuthInfo(req);
-            const { page = 1, limit = 10, period, uarId } = req.query ?? {};
+            const { page = 1, limit = 10, period, uarId, status, reviewStatus, completedDateEnd, completedDateStart, createdDateEnd, createdDateStart } = req.query ?? {};
 
             const result = await svc.list(
                 {
@@ -37,6 +43,12 @@ export const uarDivisionController = {
                     limit: Number(limit),
                     period,
                     uarId,
+                    status,
+                    reviewStatus,
+                    createdDateStart,
+                    createdDateEnd,
+                    completedDateStart,
+                    completedDateEnd,
                 },
                 Number(divisionId)
             );

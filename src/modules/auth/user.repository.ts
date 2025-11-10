@@ -51,7 +51,12 @@ export const userRepository = {
           }
         }
       },
-      // select: { ID: true, USERNAME: true, PASSWORD: true },
+      select: { 
+        ID: true, 
+        USERNAME: true, 
+        PASSWORD: true,
+        IN_ACTIVE_DIRECTORY: true
+      },
     });
 
     if (!dbUser) {
@@ -96,7 +101,7 @@ export const userRepository = {
       password: dbUser.PASSWORD,
       name: dbUser.USERNAME,
       divisionId: 2,
-      noreg: "100000",
+      noreg: "200000",
       role: dynamicRole as User["role"],
     };
   },
