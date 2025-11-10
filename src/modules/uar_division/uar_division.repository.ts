@@ -38,7 +38,6 @@ export const uarDivisionRepository = {
             DEPARTMENT_ID: departmentId,
         };
 
-        console.log("WW", whereWorkflow)
         const hasWorkflowFilter = createdDate || completedDate;
 
         if (createdDate) {
@@ -104,7 +103,6 @@ export const uarDivisionRepository = {
             uarIdFilter.in = workflowFilteredUarIds;
         }
 
-        console.log(whereUar)
 
         if (status && inProgressUarIds) {
             if (status === 'InProgress') {
@@ -231,7 +229,6 @@ export const uarDivisionRepository = {
                 orderBy: { NAME: "asc" },
             }),
         ]);
-        // console.log("header", header)
 
         if (!header && (!details || details.length === 0)) {
             throw new ApplicationError(
@@ -338,7 +335,6 @@ export const uarDivisionRepository = {
             },
             details: detailsWithSectionName,
         };
-        // console.log("results", result)
         return result;
     },
 
