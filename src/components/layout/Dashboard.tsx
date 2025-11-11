@@ -60,6 +60,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const { data: menuTree, isLoading, error } = useMenu();
   const { currentUser } = useAuthStore();
   const { activeView, setActiveView, resetActiveView } = useUIStore();
+  const { setSystemOwnerFilters } = useUarStore();
   const { setDivisionUserFilters } = useUarStore();
   const {
     selectedLog,
@@ -71,10 +72,18 @@ const Dashboard: React.FC<DashboardProps> = () => {
   } = useUarStore();
 
   const handleStartUarFromDashboard = (uarId: string) => {
-    // set filter UAR ID (sekaligus reset page ke 1 karena implementasi setDivisionUserFilters kamu sudah begitu)
-    setDivisionUserFilters({ uarId });
-    // pindah view
-    setActiveView("uar_division_user");
+    const role = (currentUser?.role ?? "").trim().toUpperCase();
+
+    if (role === "SO" || role === "ADMINISTRATOR") {
+      setSystemOwnerFilters({ uarId });
+      setActiveView("uar_system_owner");
+      return;
+    }
+    if (role === "DPH") {
+      setDivisionUserFilters({ uarId });
+      setActiveView("uar_division_user");
+      return
+    }
   };
 
   const user = currentUser!;
@@ -169,8 +178,8 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const renderContent = () => {
     switch (activeView) {
       case "dashboard":
-        return <DashboardContent onStart={handleStartUarFromDashboard}/>;
-        // default: return <DashboardContent onStart={handleStartUarFromDashboard}/>
+        return <DashboardContent onStart={handleStartUarFromDashboard} />;
+      // default: return <DashboardContent onStart={handleStartUarFromDashboard}/>
       case "application":
         return <ApplicationPage />;
       case "logging_monitoring":
@@ -219,7 +228,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
           <UarDivisionUserPage onReview={handleReviewUarDivisionRecord} />
         );
       default:
-        return <DashboardContent onStart={handleStartUarFromDashboard}/>;
+        return <DashboardContent onStart={handleStartUarFromDashboard} />;
     }
   };
 

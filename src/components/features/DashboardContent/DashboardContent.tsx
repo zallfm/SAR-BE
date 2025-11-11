@@ -115,7 +115,12 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ onStart }) => {
         if (isAdmin || isSO) {
           callsPending.push(
             getUarSoListApi(
-              { reviewStatus: "pending", page: 1, limit: 5 },
+              {
+                status: "InProgress",
+                reviewStatus: "pending",
+                page: 1,
+                limit: 5,
+              },
               ac.signal
             )
           );
