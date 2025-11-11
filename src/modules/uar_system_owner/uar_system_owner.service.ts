@@ -41,15 +41,19 @@ export const uarSystemOwnerService = {
             period?: string;
             uarId?: string;
             applicationId?: string;
+            status?: 'InProgress' | 'Finished';
+            createdDate?: string;
+            completedDate?: string;
+            reviewStatus?: 'pending';
         },
-        userNoreg: string
+        divisionId: number,
+        noreg: string
     ) {
-        const ownedApplicationIds = await getOwnedApplicationIds(userNoreg);
 
         // --- FIX 1: Destructure dateStats ---
         const { data, total, completionStats, dateStats, divisionStats } = await repo.listUars({
             ...params,
-            ownedApplicationIds,
+            noreg, divisionId
         });
 
         // Map completion stats by UAR_ID + APP_ID
@@ -74,7 +78,7 @@ export const uarSystemOwnerService = {
         for (const stat of divisionStats) {
             const key = `${stat.UAR_ID}_${stat.APPLICATION_ID}`;
             const count = stat._count._all;
-            const status = stat.DIV_APPROVAL_STATUS; // Use the division status field
+            const status = stat.SO_APPROVAL_STATUS; // Use the division status field
 
             if (!percentMap.has(key)) {
                 percentMap.set(key, { completed: 0, total: 0 });

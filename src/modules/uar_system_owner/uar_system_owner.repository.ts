@@ -7,6 +7,14 @@ async function getDbNow(): Promise<Date> {
     return rows[0]?.now ?? new Date();
 }
 
+function createFullDayFilter(dateString: string) {
+    const date = new Date(dateString);
+    const gte = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const lt = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+    return { gte, lt };
+}
+
+
 export const uarSystemOwnerRepository = {
 
 
@@ -27,29 +35,165 @@ export const uarSystemOwnerRepository = {
     async listUars(params: {
         page: number;
         limit: number;
-        ownedApplicationIds: string[];
         period?: string;
         uarId?: string;
         applicationId?: string;
+        status?: 'InProgress' | 'Finished';
+        createdDate?: string;
+        completedDate?: string;
+        divisionId?: number;
+        reviewStatus?: 'pending';
+        noreg?: string;
     }) {
-        const { page, limit, ownedApplicationIds, period, uarId, applicationId } = params;
+        const {
+            page, limit, period, uarId,
+            status, createdDate, completedDate, divisionId, reviewStatus, noreg
+        } = params;
 
+
+        let workflowFilteredUarIds: string[] | undefined = undefined;
+        const whereWorkflow: any = {
+            DIVISION_ID: divisionId, // <-- Using divisionId
+        };
+        const hasWorkflowFilter = createdDate || completedDate;
+
+        if (createdDate) {
+            whereWorkflow.CREATED_DT = createFullDayFilter(createdDate);
+        }
+        if (completedDate) {
+            whereWorkflow.APPROVED_DT = createFullDayFilter(completedDate);
+        }
+
+        if (hasWorkflowFilter) {
+            const workflowUars = await prisma.tB_R_WORKFLOW.findMany({
+                where: whereWorkflow,
+                select: { UAR_ID: true },
+                distinct: ['UAR_ID']
+            });
+            workflowFilteredUarIds = workflowUars.map(w => w.UAR_ID);
+
+            if (workflowFilteredUarIds.length === 0) {
+                // Early exit if date filters match nothing
+                return { data: [], total: 0, completionStats: [], dateStats: [], divisionStats: [] };
+            }
+        }
+
+        let inProgressUarIds: string[] | undefined;
+        if (status) {
+            const whereStatus: any = {
+                DIVISION_ID: divisionId,
+                SO_APPROVAL_STATUS: '0' // '0' means Pending
+            };
+
+            if (workflowFilteredUarIds) {
+                whereStatus.UAR_ID = { in: workflowFilteredUarIds };
+            }
+
+            // 1. Find pending UARs in the DIVISION_USER table
+            const inProgressDuPromise = prisma.tB_R_UAR_DIVISION_USER.findMany({
+                where: whereStatus,
+                select: { UAR_ID: true },
+                distinct: ['UAR_ID']
+            });
+
+            // 2. Find pending UARs in the SYSTEM_OWNER table
+            // (Note: Schema shows SO_APPROVAL_STATUS is nullable here)
+            const whereStatusSo: any = {
+                DIVISION_ID: divisionId,
+                OR: [
+                    { SO_APPROVAL_STATUS: '0' },
+                    { SO_APPROVAL_STATUS: null } // Also treat null as pending
+                ]
+            };
+
+            if (workflowFilteredUarIds) {
+                whereStatusSo.UAR_ID = { in: workflowFilteredUarIds };
+            }
+
+            const inProgressSoPromise = prisma.tB_R_UAR_SYSTEM_OWNER.findMany({
+                where: whereStatusSo,
+                select: { UAR_ID: true },
+                distinct: ['UAR_ID']
+            });
+
+            // 3. Combine the lists
+            const [inProgressDu, inProgressSo] = await Promise.all([
+                inProgressDuPromise,
+                inProgressSoPromise
+            ]);
+
+            // Use a Set to get unique UAR IDs from both queries
+            const inProgressSet = new Set([
+                ...inProgressDu.map(u => u.UAR_ID),
+                ...inProgressSo.map(u => u.UAR_ID)
+            ]);
+
+            inProgressUarIds = Array.from(inProgressSet);
+            if (status === 'InProgress' && inProgressUarIds.length === 0) {
+                return { data: [], total: 0, completionStats: [], dateStats: [], divisionStats: [] };
+            }
+        }
+
+        // This object will hold the UAR_ID list filters derived from the logic above
+        const uarIdFilter: { in?: string[], notIn?: string[] } = {};
+
+        if (workflowFilteredUarIds) {
+            uarIdFilter.in = workflowFilteredUarIds;
+        }
+
+        if (status && inProgressUarIds) {
+            if (status === 'InProgress') {
+                if (uarIdFilter.in) {
+                    // Intersect: UARs must match dates AND be in progress
+                    const inProgressSet = new Set(inProgressUarIds);
+                    uarIdFilter.in = uarIdFilter.in.filter((id: string) => inProgressSet.has(id));
+                } else {
+                    // No date filter, just use in progress list
+                    uarIdFilter.in = inProgressUarIds;
+                }
+            } else { // 'Finished'
+                const inProgressSet = new Set(inProgressUarIds);
+                if (uarIdFilter.in) {
+                    // Difference: UARs must match dates AND NOT be in progress
+                    uarIdFilter.in = uarIdFilter.in.filter((id: string) => !inProgressSet.has(id));
+                } else {
+                    // No date filter, just use notIn
+                    uarIdFilter.notIn = inProgressUarIds;
+                }
+            }
+        }
+
+        // If the filters combined to produce an empty 'in' list, exit.
+        if (uarIdFilter.in && uarIdFilter.in.length === 0) {
+            return { data: [], total: 0, completionStats: [], dateStats: [], divisionStats: [] };
+        }
         // 2. BUILD SQL 'WHERE' FOR SYSTEM_OWNER (SO)
         // This clause INCLUDES the application ID filters
         const conditionsSO: Prisma.Sql[] = [];
 
-        if (applicationId) {
-            conditionsSO.push(Prisma.sql`APPLICATION_ID = ${applicationId}`);
-        } else {
-            // Assumes ownedApplicationIds is never empty
-            conditionsSO.push(Prisma.sql`APPLICATION_ID IN (${Prisma.join(ownedApplicationIds)})`);
-        }
+
         if (period) {
             conditionsSO.push(Prisma.sql`UAR_PERIOD = ${period}`);
         }
 
         if (uarId) {
             conditionsSO.push(Prisma.sql`UAR_ID LIKE ${'%' + uarId + '%'}`);
+        }
+
+        if (uarIdFilter.in) {
+            conditionsSO.push(Prisma.sql`UAR_ID IN (${Prisma.join(uarIdFilter.in)})`);
+        } else if (uarIdFilter.notIn && uarIdFilter.notIn.length > 0) {
+            conditionsSO.push(Prisma.sql`UAR_ID NOT IN (${Prisma.join(uarIdFilter.notIn)})`);
+        }
+
+        if (divisionId) {
+            conditionsSO.push(Prisma.sql`DIVISION_ID = ${divisionId}`);
+        }
+        if (reviewStatus === 'pending') {
+            conditionsSO.push(Prisma.sql`REVIEW_STATUS IS NULL`);
+        }
+        if (noreg) {
+            conditionsSO.push(Prisma.sql`REVIEWER_NOREG = ${noreg}`);
         }
         const whereSql_SO = conditionsSO.length > 0
             ? Prisma.sql`WHERE ${Prisma.join(conditionsSO, ' AND ')}`
@@ -64,9 +208,23 @@ export const uarSystemOwnerRepository = {
         if (uarId) {
             conditionsDU.push(Prisma.sql`UAR_ID LIKE ${'%' + uarId + '%'}`);
         }
-        if (applicationId) {
-            conditionsDU.push(Prisma.sql`APPLICATION_ID = ${applicationId}`);
+
+        if (uarIdFilter.in) {
+            conditionsDU.push(Prisma.sql`UAR_ID IN (${Prisma.join(uarIdFilter.in)})`);
+        } else if (uarIdFilter.notIn && uarIdFilter.notIn.length > 0) {
+            conditionsDU.push(Prisma.sql`UAR_ID NOT IN (${Prisma.join(uarIdFilter.notIn)})`);
         }
+
+        if (divisionId) {
+            conditionsDU.push(Prisma.sql`DIVISION_ID = ${divisionId}`);
+        }
+        if (reviewStatus === 'pending') {
+            conditionsDU.push(Prisma.sql`REVIEW_STATUS IS NULL`);
+        }
+        if (noreg) {
+            conditionsDU.push(Prisma.sql`REVIEWER_NOREG = ${noreg}`);
+        }
+
         const whereSql_DU = conditionsDU.length > 0
             ? Prisma.sql`WHERE ${Prisma.join(conditionsDU, ' AND ')}`
             : Prisma.empty;
@@ -176,7 +334,7 @@ export const uarSystemOwnerRepository = {
             }),
 
             prisma.tB_R_UAR_DIVISION_USER.groupBy({
-                by: ['UAR_ID', 'APPLICATION_ID', 'DIV_APPROVAL_STATUS'],
+                by: ['UAR_ID', 'APPLICATION_ID', 'SO_APPROVAL_STATUS'],
                 where: {
                     UAR_ID: { in: uarIds },
                     APPLICATION_ID: { in: appIds },

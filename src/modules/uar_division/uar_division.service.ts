@@ -23,10 +23,8 @@ export const uarDivisionService = {
             period?: string;
             uarId?: string;
             status?: 'InProgress' | 'Finished';
-            createdDateStart?: string;
-            createdDateEnd?: string;
-            completedDateStart?: string;
-            completedDateEnd?: string;
+            createdDate?: string;
+            completedDate?: string;
             reviewStatus?: 'pending';
         },
         departmentId: number,
