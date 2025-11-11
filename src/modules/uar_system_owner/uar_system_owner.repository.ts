@@ -226,6 +226,8 @@ export const uarSystemOwnerRepository = {
         }
         if (reviewStatus === 'pending') {
             conditionsDU.push(Prisma.sql`REVIEW_STATUS IS NULL`);
+        }else if (reviewStatus === 'reviewed') {
+            conditionsDU.push(Prisma.sql`REVIEW_STATUS IS NOT NULL`);
         }
         if (noreg) {
             conditionsDU.push(Prisma.sql`REVIEWER_NOREG = ${noreg}`);
