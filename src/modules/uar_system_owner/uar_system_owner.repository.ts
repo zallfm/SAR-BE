@@ -82,7 +82,7 @@ export const uarSystemOwnerRepository = {
         if (status) {
             const whereStatus: any = {
                 DIVISION_ID: divisionId,
-                SO_APPROVAL_STATUS: '0' // '0' means Pending
+                SO_APPROVAL_STATUS: '0',
             };
 
             if (workflowFilteredUarIds) {
@@ -94,6 +94,7 @@ export const uarSystemOwnerRepository = {
                 where: whereStatus,
                 select: { UAR_ID: true },
                 distinct: ['UAR_ID']
+                
             });
 
             // 2. Find pending UARs in the SYSTEM_OWNER table
@@ -102,7 +103,7 @@ export const uarSystemOwnerRepository = {
                 DIVISION_ID: divisionId,
                 OR: [
                     { SO_APPROVAL_STATUS: '0' },
-                    { SO_APPROVAL_STATUS: null } // Also treat null as pending
+                    { SO_APPROVAL_STATUS: null } 
                 ]
             };
 
@@ -202,6 +203,7 @@ export const uarSystemOwnerRepository = {
         // 3. BUILD SQL 'WHERE' FOR DIVISION_USER (DU)
         // This clause EXCLUDES the application ID filters
         const conditionsDU: Prisma.Sql[] = [];
+        conditionsDU.push(Prisma.sql`(DIV_APPROVAL_STATUS != '0' OR DIV_APPROVAL_STATUS IS NULL)`);
         if (period) {
             conditionsDU.push(Prisma.sql`UAR_PERIOD = ${period}`);
         }
