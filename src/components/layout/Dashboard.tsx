@@ -53,13 +53,14 @@ const UarDivisionUserDetailPage = lazy(
 );
 
 interface DashboardProps {
-  onLogout: () => void
+  onLogout: () => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = () => {
   const { data: menuTree, isLoading, error } = useMenu();
   const { currentUser } = useAuthStore();
   const { activeView, setActiveView, resetActiveView } = useUIStore();
+  const { setDivisionUserFilters } = useUarStore();
   const {
     selectedLog,
     setSelectedLog,
@@ -68,6 +69,13 @@ const Dashboard: React.FC<DashboardProps> = () => {
     selectedDivisionUser,
     selectDivisionUser,
   } = useUarStore();
+
+  const handleStartUarFromDashboard = (uarId: string) => {
+    // set filter UAR ID (sekaligus reset page ke 1 karena implementasi setDivisionUserFilters kamu sudah begitu)
+    setDivisionUserFilters({ uarId });
+    // pindah view
+    setActiveView("uar_division_user");
+  };
 
   const user = currentUser!;
 
@@ -91,7 +99,6 @@ const Dashboard: React.FC<DashboardProps> = () => {
       //   location: "Dashboard.handleLogout",
       //   timestamp: new Date().toISOString(),
       // });
-
 
       await doLogout();
       const { token, currentUser, tokenExpiryMs } = useAuthStore.getState();
@@ -162,7 +169,8 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const renderContent = () => {
     switch (activeView) {
       case "dashboard":
-        return <DashboardContent />;
+        return <DashboardContent onStart={handleStartUarFromDashboard}/>;
+        // default: return <DashboardContent onStart={handleStartUarFromDashboard}/>
       case "application":
         return <ApplicationPage />;
       case "logging_monitoring":
@@ -211,7 +219,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
           <UarDivisionUserPage onReview={handleReviewUarDivisionRecord} />
         );
       default:
-        return <DashboardContent />;
+        return <DashboardContent onStart={handleStartUarFromDashboard}/>;
     }
   };
 

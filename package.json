@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc -b && vite build",
     "build:analyze": "npm run build && node scripts/analyze-bundle.js",
     "build:stats": "npm run build -- --mode analyze",
     "analyze": "node scripts/analyze-bundle.js",

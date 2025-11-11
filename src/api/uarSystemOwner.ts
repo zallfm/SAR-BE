@@ -22,6 +22,7 @@ export type SystemOwnerUarListFilters = {
     createdDate?: string;
     completedDate?: string;
     status?: string;
+    reviewStatus?: 'pending' | 'reviewed';
 };
 
 /**

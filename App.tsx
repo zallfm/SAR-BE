@@ -12,6 +12,7 @@ import { useAuthStore } from "./src/store/authStore";
 import { initializeSecurity } from "./src/config/security";
 import { AuditLogger } from "./src/services/auditLogger";
 import { serviceWorkerManager } from "./src/utils/serviceWorker";
+import { postLogMonitoringApi } from "./src/api/log_monitoring";
 import { AuditAction } from "./src/constants/auditActions";
 
 const LoginPage = lazy(
@@ -59,7 +60,17 @@ const App: React.FC = () => {
 
   const handleLogout = async() => {
     try {
-     
+      // await postLogMonitoringApi({
+      //   userId: currentUser?.username ?? "anonymous",
+      //   module: "Authentication",
+      //   action: AuditAction.LOGOUT,
+      //   status: "Success",
+      //   description: `User ${
+      //     currentUser?.username ?? "unknown"
+      //   } logged out via App.tsx`,
+      //   location: "App.handleLogout",
+      //   timestamp: new Date().toISOString(),
+      // });
     } catch (err) {
       console.warn("Failed to log logout:", err);
     }

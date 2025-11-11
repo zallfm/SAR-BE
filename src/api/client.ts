@@ -1,8 +1,8 @@
 export const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-
+ 
 const genReqId = () =>
   (crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)) + Date.now();
-
+ 
 export type HttpError = {
   status: number;
   code?: string;
@@ -10,11 +10,11 @@ export type HttpError = {
   requestId?: string;
   details?: Record<string, any>;
 };
-
+ 
 const emit = (name: 'http:unauthorized' | 'http:forbidden', detail?: any) => {
   try { window.dispatchEvent(new CustomEvent(name, { detail })); } catch { }
 };
-
+ 
 type HttpOptions = {
   path: string;
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -25,7 +25,7 @@ type HttpOptions = {
   signal?: AbortSignal;
   responseType?: 'json' | 'blob';
 };
-
+ 
 function buildUrl(path: string) {
   try {
     return new URL(path).toString();
@@ -35,11 +35,11 @@ function buildUrl(path: string) {
     return `${base}${p}`;
   }
 }
-
+ 
 function buildQuery(params?: Record<string, any>): string {
   if (!params) return '';
   const query = new URLSearchParams();
-
+ 
   Object.entries(params).forEach(([key, value]) => {
     if (value === undefined || value === null || value === '') return;
     if (Array.isArray(value)) {
@@ -50,11 +50,11 @@ function buildQuery(params?: Record<string, any>): string {
       query.append(key, String(value));
     }
   });
-
+ 
   const q = query.toString();
   return q ? `?${q}` : '';
 }
-
+ 
 function getTokenFallback(): string | null {
   try {
     const raw = localStorage.getItem('auth-store');
@@ -65,36 +65,36 @@ function getTokenFallback(): string | null {
     return null;
   }
 }
-
-
+ 
+ 
 export async function http<T>(opts: HttpOptions): Promise<T> {
   const url = buildUrl(opts.path) + buildQuery(opts.params);
-
+ 
   const headers: Record<string, string> = {
     ...(opts.headers ?? {}),
     'x-request-id': genReqId(),
     ...(opts.token ? { Authorization: `Bearer ${opts.token}` } : {}),
   };
-
+ 
   if (opts.body) {
     headers['Content-Type'] = 'application/json';
   }
-
+ 
   if (opts.responseType === 'blob') {
     headers['Accept'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
   }
-
+ 
   const res = await fetch(url, {
     method: opts.method ?? 'GET',
     headers,
     body: opts.body ? JSON.stringify(opts.body) : undefined,
     signal: opts.signal,
   });
-
+ 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     const json = (() => { try { return JSON.parse(text); } catch { return null; } })();
-
+ 
     const err: HttpError = {
       status: res.status,
       code: json?.code,
@@ -106,16 +106,16 @@ export async function http<T>(opts: HttpOptions): Promise<T> {
     if (res.status === 403) emit('http:forbidden', err);
     throw err;
   }
-
+ 
   if (opts.responseType === 'blob') {
     const blob = await res.blob();
     const cd = res.headers.get('Content-Disposition') || '';
     const m = /filename\*?=(?:UTF-8''|")?([^\";]+)/i.exec(cd);
     const filename = m ? decodeURIComponent(m[1].replace(/"/g, '')) : undefined;
-
+ 
     return { blob, filename } as T;
   }
-
+ 
   const json = await res.json().catch(() => ({}));
   return json as T;
 }

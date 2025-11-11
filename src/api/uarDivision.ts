@@ -15,6 +15,8 @@ export type UarListFilters = {
     limit?: number;
     period?: string;
     uarId?: string;
+    status?: string;
+    reviewStatus?: 'pending' | 'reviewed';
 };
 
 /**

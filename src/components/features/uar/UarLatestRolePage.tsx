@@ -7,6 +7,7 @@ import { DownloadButton } from "../../common/Button/DownloadButton";
 import SearchableDropdown from "../../common/SearchableDropdown";
 
 import * as XLSX from "xlsx";
+import { postLogMonitoringApi } from "@/src/api/log_monitoring";
 import { useAuthStore } from "@/src/store/authStore";
 import { AuditAction } from "@/src/constants/auditActions";
 
@@ -99,19 +100,41 @@ const UarLatestRolePage: React.FC = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Latest Roles");
     XLSX.writeFile(workbook, fileName);
 
-    try {
-  
-    } catch (err) {
-      console.warn("Failed to log download:", err);
-    }
+    // try {
+    //   await postLogMonitoringApi({
+    //     userId: currentUser?.username ?? "anonymous",
+    //     module: "UAR Latest Role",
+    //     action: AuditAction.DATA_DOWNLOAD,
+    //     status: "Success",
+    //     description: `User ${
+    //       currentUser?.username ?? "unknown"
+    //     } downloaded Excel (${fileName}) for filters: Application=${
+    //       appIdFilter || "-"
+    //     }, System=${systemIdFilter || "-"}`,
+    //     location: "UarLatestRolePage.handleDownload",
+    //     timestamp: new Date().toISOString(),
+    //   });
+    // } catch (err) {
+    //   console.warn("Failed to log download:", err);
+    // }
   };
 
   const logFilterChange = async (key: string, value: string) => {
-    try {
-    
-    } catch (err) {
-      console.warn("Failed to log filter:", err);
-    }
+    // try {
+    //   await postLogMonitoringApi({
+    //     userId: currentUser?.username ?? "anonymous",
+    //     module: "UAR Latest Role",
+    //     action: AuditAction.DATA_FILTER,
+    //     status: "Success",
+    //     description: `User ${
+    //       currentUser?.username ?? "unknown"
+    //     } filtered by ${key}: ${value}`,
+    //     location: "UarLatestRolePage.filter",
+    //     timestamp: new Date().toISOString(),
+    //   });
+    // } catch (err) {
+    //   console.warn("Failed to log filter:", err);
+    // }
   };
 
   return (

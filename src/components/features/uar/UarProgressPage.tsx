@@ -269,16 +269,16 @@ const UarProgressPage: React.FC = React.memo(() => {
         location: string;
         extra?: Record<string, unknown>;
     }) => {
-        postLogMonitoringApi({
-            userId: username,
-            module: MODULE,
-            action: p.action,
-            status: p.status ?? "Success",
-            description: p.description,
-            location: p.location,
-            timestamp: new Date().toISOString(),
-            ...(p.extra ? { extra: p.extra } : {}),
-        }).catch(() => { });
+        // postLogMonitoringApi({
+        //     userId: username,
+        //     module: MODULE,
+        //     action: p.action,
+        //     status: p.status ?? "Success",
+        //     description: p.description,
+        //     location: p.location,
+        //     timestamp: new Date().toISOString(),
+        //     ...(p.extra ? { extra: p.extra } : {}),
+        // }).catch(() => { });
     };
     const { setProgressData, setFilteredData } = useUarProgressActions();
     const {

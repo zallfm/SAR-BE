@@ -5,11 +5,13 @@ import StatusPill from "../StatusPill/StatusPill";
 import { ActionReview } from "../../common/Button/ActionReview";
 import { ActionDownload } from "../../common/Button/ActionDownload";
 import SearchableDropdown from "../../common/SearchableDropdown";
+import { postLogMonitoringApi } from "@/src/api/log_monitoring";
 import { AuditAction } from "@/src/constants/auditActions";
 import { useAuthStore } from "@/src/store/authStore";
 import { useUarStore } from "@/src/store/uarStore";
 import type { SystemOwnerUarHeader } from "@/src/types/uarSystemOwner";
 import { formatDateTime } from "@/utils/dateFormatter";
+import { exportExcel } from "@/src/api/excel";
 
 interface UarSystemOwnerPageProps {
   onReview: (record: SystemOwnerUarHeader) => void; // <-- Gunakan tipe UarHeader
@@ -41,6 +43,8 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
   const [completedDateFilter, setCompletedDateFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
+  // excel
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   useEffect(() => {
     const abortController = new AbortController();
 
@@ -60,7 +64,7 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
   }, [
     getSystemOwnerList,
     systemOwnerFilters, // Filter dari store
-    ownerFilter,        // Filter lokal
+    ownerFilter, // Filter lokal
     createDateFilter,
     completedDateFilter,
     statusFilter,
@@ -77,32 +81,70 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
     onReview(record);
 
     // 3. Kirim log monitoring
-    try {
-   
-    } catch (err) {
-      console.warn("Gagal mencatat log review:", err);
-    }
+    // try {
+    //   await postLogMonitoringApi({
+    //     userId: currentUser?.username ?? "anonymous",
+    //     module: "UAR System Owner",
+    //     action: AuditAction.DATA_REVIEW,
+    //     status: "Success",
+    //     description: `User ${currentUser?.username ?? "unknown"} reviewed UAR ${
+    //       record.uarId
+    //     }`,
+    //     location: "UarSystemOwnerPage.handleReviewClick",
+    //     timestamp: new Date().toISOString(),
+    //   });
+    // } catch (err) {
+    //   console.warn("Gagal mencatat log review:", err);
+    // }
   };
 
   const handleDownloadClick = async (record: SystemOwnerUarHeader) => {
     try {
-    
-    } catch (err) {
-      console.warn("Gagal mencatat log download:", err);
+      console.log("recordss",record)
+      setDownloadingId(record.uarId);
+      const { blob, filename } = await exportExcel({
+        uar_id: record.uarId,
+        type: "so_user",
+        applicationId: record.applicationId
+      });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename || `${record.uarId}_FROM_SO.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.log("failed download excel");
+    } finally {
+      setDownloadingId(null);
     }
   };
-
   const logFilterChange = async (key: string, value: string) => {
     // ... (logika log filter tetap sama)
-    try {
-   
-    } catch (err) {
-      console.warn("Failed to log filter:", err);
-    }
+    // try {
+    //   await postLogMonitoringApi({
+    //     userId: currentUser?.username ?? "anonymous",
+    //     module: "UAR System Owner",
+    //     action: AuditAction.DATA_FILTER,
+    //     status: "Success",
+    //     description: `User ${
+    //       currentUser?.username ?? "unknown"
+    //     } filtered by ${key}: ${value}`,
+    //     location: "UarSystemOwnerPage.filter",
+    //     timestamp: new Date().toISOString(),
+    //   });
+    // } catch (err) {
+    //   console.warn("Failed to log filter:", err);
+    // }
   };
 
   const overallProgress = useMemo(() => {
-    const finishedCount = systemOwnerHeaders.filter((head) => head.status === "1").length;
+    const finishedCount = systemOwnerHeaders.filter(
+      (head) => head.status === "1"
+    ).length;
     const totalCount = systemOwnerMeta?.total ?? 0;
     return { finishedCount, totalCount };
   }, [systemOwnerMeta, systemOwnerHeaders]);
@@ -120,7 +162,6 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
     if (totalItems === 0 || !systemOwnerMeta) return 0;
     return Math.min(systemOwnerMeta.page * systemOwnerMeta.limit, totalItems);
   }, [systemOwnerMeta, totalItems]);
-
 
   return (
     <div>
@@ -145,7 +186,9 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
                 }}
                 onFocus={(e) => {
                   e.target.type = "month";
-                  try { e.currentTarget.showPicker(); } catch { }
+                  try {
+                    e.currentTarget.showPicker();
+                  } catch {}
                 }}
                 onBlur={(e) => {
                   if (!systemOwnerFilters.period) e.target.type = "text";
@@ -189,7 +232,9 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
                 setSystemOwnerCurrentPage(1); // <-- Reset paginasi manual
                 if (v) await logFilterChange("divisionOwner", v);
               }}
-              options={[...new Set(systemOwnerHeaders.map((r) => r.applicationName))]} // <-- Ganti ke applicationName
+              options={[
+                ...new Set(systemOwnerHeaders.map((r) => r.applicationName)),
+              ]} // <-- Ganti ke applicationName
               placeholder="Application Name" // <-- Ganti ke applicationName
             />
             {/* Filter Tanggal (state lokal) */}
@@ -204,8 +249,12 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
                   setSystemOwnerCurrentPage(1); // <-- Reset paginasi manual
                   if (v) await logFilterChange("createdDate", v);
                 }}
-                onFocus={(e) => { e.target.type = "date"; }}
-                onBlur={(e) => { if (!e.target.value) e.target.type = "text"; }}
+                onFocus={(e) => {
+                  e.target.type = "date";
+                }}
+                onBlur={(e) => {
+                  if (!e.target.value) e.target.type = "text";
+                }}
                 className="w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />
             </div>
@@ -220,8 +269,12 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
                   setSystemOwnerCurrentPage(1); // <-- Reset paginasi manual
                   if (v) await logFilterChange("completedDate", v);
                 }}
-                onFocus={(e) => { e.target.type = "date"; }}
-                onBlur={(e) => { if (!e.target.value) e.target.type = "text"; }}
+                onFocus={(e) => {
+                  e.target.type = "date";
+                }}
+                onBlur={(e) => {
+                  if (!e.target.value) e.target.type = "text";
+                }}
                 className="w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-lg appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               />
             </div>
@@ -296,13 +349,19 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
                       {record.percentComplete} {/* <-- Sesuai UarHeader */}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      {formatDateTime(record.createdDate)} {/* <-- Format tanggal */}
+                      {formatDateTime(record.createdDate)}{" "}
+                      {/* <-- Format tanggal */}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      {formatDateTime(record.completedDate)} {/* <-- Format tanggal */}
+                      {formatDateTime(record.completedDate)}{" "}
+                      {/* <-- Format tanggal */}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      <StatusPill status={record.status === "1" ? "Finished" : "InProgress"} />
+                      <StatusPill
+                        status={
+                          record.status === "1" ? "Finished" : "InProgress"
+                        }
+                      />
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
                       <div className="flex items-center gap-3">
@@ -357,7 +416,8 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
             <div className="flex gap-2">
               <button
                 onClick={() =>
-                  setSystemOwnerCurrentPage( // <-- Gunakan store action
+                  setSystemOwnerCurrentPage(
+                    // <-- Gunakan store action
                     Math.max(1, systemOwnerCurrentPage - 1)
                   )
                 }
@@ -369,7 +429,8 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
               </button>
               <button
                 onClick={() =>
-                  setSystemOwnerCurrentPage( // <-- Gunakan store action
+                  setSystemOwnerCurrentPage(
+                    // <-- Gunakan store action
                     Math.min(totalPages, systemOwnerCurrentPage + 1)
                   )
                 }

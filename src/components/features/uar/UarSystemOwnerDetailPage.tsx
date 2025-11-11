@@ -7,6 +7,7 @@ import RoleInfoModal from '../../common/Modal/RoleInfoModal';
 import CommentModal from '../../common/Modal/CommentModal';
 import { AuditAction } from '@/src/constants/auditActions';
 import { useAuthStore } from '@/src/store/authStore';
+import { postLogMonitoringApi } from '@/src/api/log_monitoring';
 import { useUarStore } from '@/src/store/uarStore'; // <-- Import store
 import type {
   SystemOwnerUarHeader, // <-- Use new store type for prop
@@ -251,11 +252,19 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
     location: string
   ) => {
     // (This function is unchanged)
-    try {
-
-    } catch (err) {
-      console.warn('Gagal mencatat log:', err);
-    }
+    // try {
+    //   await postLogMonitoringApi({
+    //     userId: currentUser?.username ?? 'anonymous',
+    //     module: 'UAR System Owner Detail',
+    //     action,
+    //     status: 'Success',
+    //     description,
+    //     location,
+    //     timestamp: new Date().toISOString(),
+    //   });
+    // } catch (err) {
+    //   console.warn('Gagal mencatat log:', err);
+    // }
   };
 
   // --- Pagination (Derived from local state) ---
