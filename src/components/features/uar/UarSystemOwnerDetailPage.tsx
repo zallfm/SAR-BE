@@ -252,19 +252,19 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
     location: string
   ) => {
     // (This function is unchanged)
-    try {
-      await postLogMonitoringApi({
-        userId: currentUser?.username ?? 'anonymous',
-        module: 'UAR System Owner Detail',
-        action,
-        status: 'Success',
-        description,
-        location,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (err) {
-      console.warn('Gagal mencatat log:', err);
-    }
+    // try {
+    //   await postLogMonitoringApi({
+    //     userId: currentUser?.username ?? 'anonymous',
+    //     module: 'UAR System Owner Detail',
+    //     action,
+    //     status: 'Success',
+    //     description,
+    //     location,
+    //     timestamp: new Date().toISOString(),
+    //   });
+    // } catch (err) {
+    //   console.warn('Gagal mencatat log:', err);
+    // }
   };
 
   // --- Pagination (Derived from local state) ---

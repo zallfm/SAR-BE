@@ -81,21 +81,21 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
     onReview(record);
 
     // 3. Kirim log monitoring
-    try {
-      await postLogMonitoringApi({
-        userId: currentUser?.username ?? "anonymous",
-        module: "UAR System Owner",
-        action: AuditAction.DATA_REVIEW,
-        status: "Success",
-        description: `User ${currentUser?.username ?? "unknown"} reviewed UAR ${
-          record.uarId
-        }`,
-        location: "UarSystemOwnerPage.handleReviewClick",
-        timestamp: new Date().toISOString(),
-      });
-    } catch (err) {
-      console.warn("Gagal mencatat log review:", err);
-    }
+    // try {
+    //   await postLogMonitoringApi({
+    //     userId: currentUser?.username ?? "anonymous",
+    //     module: "UAR System Owner",
+    //     action: AuditAction.DATA_REVIEW,
+    //     status: "Success",
+    //     description: `User ${currentUser?.username ?? "unknown"} reviewed UAR ${
+    //       record.uarId
+    //     }`,
+    //     location: "UarSystemOwnerPage.handleReviewClick",
+    //     timestamp: new Date().toISOString(),
+    //   });
+    // } catch (err) {
+    //   console.warn("Gagal mencatat log review:", err);
+    // }
   };
 
   const handleDownloadClick = async (record: SystemOwnerUarHeader) => {
@@ -124,21 +124,21 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
   };
   const logFilterChange = async (key: string, value: string) => {
     // ... (logika log filter tetap sama)
-    try {
-      await postLogMonitoringApi({
-        userId: currentUser?.username ?? "anonymous",
-        module: "UAR System Owner",
-        action: AuditAction.DATA_FILTER,
-        status: "Success",
-        description: `User ${
-          currentUser?.username ?? "unknown"
-        } filtered by ${key}: ${value}`,
-        location: "UarSystemOwnerPage.filter",
-        timestamp: new Date().toISOString(),
-      });
-    } catch (err) {
-      console.warn("Failed to log filter:", err);
-    }
+    // try {
+    //   await postLogMonitoringApi({
+    //     userId: currentUser?.username ?? "anonymous",
+    //     module: "UAR System Owner",
+    //     action: AuditAction.DATA_FILTER,
+    //     status: "Success",
+    //     description: `User ${
+    //       currentUser?.username ?? "unknown"
+    //     } filtered by ${key}: ${value}`,
+    //     location: "UarSystemOwnerPage.filter",
+    //     timestamp: new Date().toISOString(),
+    //   });
+    // } catch (err) {
+    //   console.warn("Failed to log filter:", err);
+    // }
   };
 
   const overallProgress = useMemo(() => {

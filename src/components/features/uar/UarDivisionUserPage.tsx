@@ -99,21 +99,21 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
     }
   };
   const logFilterChange = async (key: string, value: string) => {
-    try {
-      await postLogMonitoringApi({
-        userId: currentUser?.username ?? "anonymous",
-        module: "UAR Division User",
-        action: AuditAction.DATA_FILTER,
-        status: "Success",
-        description: `User ${
-          currentUser?.username ?? "unknown"
-        } filtered by ${key}: ${value}`,
-        location: "UarDivisionUserPage.filter",
-        timestamp: new Date().toISOString(),
-      });
-    } catch (err) {
-      console.warn("Failed to log filter:", err);
-    }
+    // try {
+    //   await postLogMonitoringApi({
+    //     userId: currentUser?.username ?? "anonymous",
+    //     module: "UAR Division User",
+    //     action: AuditAction.DATA_FILTER,
+    //     status: "Success",
+    //     description: `User ${
+    //       currentUser?.username ?? "unknown"
+    //     } filtered by ${key}: ${value}`,
+    //     location: "UarDivisionUserPage.filter",
+    //     timestamp: new Date().toISOString(),
+    //   });
+    // } catch (err) {
+    //   console.warn("Failed to log filter:", err);
+    // }
   };
 
   const overallProgress = useMemo(() => {

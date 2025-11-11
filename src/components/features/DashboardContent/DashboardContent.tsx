@@ -4,10 +4,9 @@ import { RevokedIcon } from "../../../components/icons/RevokedIcon";
 import { AccessReviewCompleteIcon } from "../../../components/icons/AccessReviewCompleteIcon";
 import { UpTrendIcon } from "../../../components/icons/UpTrendIcon";
 import { DownTrendIcon } from "../../../components/icons/DownTrendIcon";
-import { getUarListApi } from "@/src/api/uarDivision";
+import { getUarListApi as getUarDivListApi } from "@/src/api/uarDivision";
+import { getUarListApi as getUarSoListApi } from "@/src/api/uarSystemOwner";
 import { useAuthStore } from "@/src/store/authStore";
-// import { useNavigate } from "react-router-dom";
-// import { useUarStore } from "@/src/store/uarStore";
 
 interface StatCardProps {
   title: string;
@@ -28,7 +27,6 @@ const StatCard: React.FC<StatCardProps> = ({
 }) => {
   const isUp = trendDirection === "up";
   const trendColor = isUp ? "text-green-500" : "text-red-500";
-
   return (
     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex-1">
       <div className="flex justify-between items-start">
@@ -54,6 +52,7 @@ const StatCard: React.FC<StatCardProps> = ({
 interface DashboardContentProps {
   onStart: (uarId: string) => void;
 }
+
 interface TaskListProps {
   title: string;
   items: string[];
@@ -64,13 +63,16 @@ const TaskList: React.FC<TaskListProps> = ({ title, items, onStart }) => (
   <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex-1">
     <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
     <div className="space-y-2">
-      {items.map((item, index) => (
+      {items.map((item) => (
         <div
-          key={index}
+          key={item}
           className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0"
         >
           <p className="text-sm text-gray-600">{item}</p>
-          <button className="text-xs font-semibold bg-teal-100 text-teal-600 px-4 py-1.5 rounded-md hover:bg-teal-200 transition-colors" onClick={() => onStart(item)}>
+          <button
+            className="text-xs font-semibold bg-teal-100 text-teal-600 px-4 py-1.5 rounded-md hover:bg-teal-200 transition-colors"
+            onClick={() => onStart(item)}
+          >
             START
           </button>
         </div>
@@ -84,27 +86,12 @@ const TaskList: React.FC<TaskListProps> = ({ title, items, onStart }) => (
   </div>
 );
 
-const DashboardContent: React.FC<DashboardContentProps> = ({onStart}) => {
-  //navigate
-  // const navigate = useNavigate()
-  // const {setDivisionUserFilters } = useUarStore();
-  // const reviewItems = ['UAR_072025_IPPCS', 'UAR_072025_IPPCS', 'UAR_072025_PAS'];
-  // const approveItems = ['UAR_072025_IPPCS', 'UAR_072025_IPPCS', 'UAR_072025_PAS'];
-  //jwt
+const DashboardContent: React.FC<DashboardContentProps> = ({ onStart }) => {
   const { currentUser } = useAuthStore();
-  console.log("currentUser", currentUser);
   const [reviewItems, setReviewItems] = useState<string[]>([]);
   const [approveItems, setApproveItems] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-  // console.log("reviewItems", reviewItems);
-  // console.log("approveItems", approveItems);
-
-  // handle navigate
-  // const handleStart = (uarId: string) => {
-  //   setDivisionUserFilters({uarId})
-  //   navigate(`/uar/division-user?uarId=${encodeURIComponent(uarId)}`)
-  // }
 
   useEffect(() => {
     const ac = new AbortController();
@@ -114,45 +101,91 @@ const DashboardContent: React.FC<DashboardContentProps> = ({onStart}) => {
         setLoading(true);
         setErr(null);
 
-        // ✅ Ambil role user saat ini
-        const role = currentUser?.role?.toUpperCase();
+        // ✅ Normalisasi role
+        const role = (currentUser?.role ?? "").trim().toUpperCase();
+        const isAdmin = role === "ADMINISTRATOR";
+        const isDPH = role === "DPH";
+        const isSO = role === "SO";
 
-        // 🚫 Jika bukan ADMINISTRATOR atau DPH, hentikan proses
-        if (role !== "ADMINISTRATOR" && role !== "DPH") {
-          console.log("User tidak memiliki akses untuk melihat dashboard ini");
+        // Kumpulkan promise sesuai role
+        const callsPending: Promise<any>[] = [];
+        const callsReviewed: Promise<any>[] = [];
+
+        // System Owner
+        if (isAdmin || isSO) {
+          callsPending.push(
+            getUarSoListApi(
+              { reviewStatus: "pending", page: 1, limit: 5 },
+              ac.signal
+            )
+          );
+          callsReviewed.push(
+            getUarSoListApi(
+              {
+                status: "InProgress",
+                reviewStatus: "reviewed",
+                page: 1,
+                limit: 5,
+              },
+              ac.signal
+            )
+          );
+        }
+
+        // Division User
+        if (isDPH) {
+          callsPending.push(
+            getUarDivListApi(
+              { reviewStatus: "pending", page: 1, limit: 5 },
+              ac.signal
+            )
+          );
+          callsReviewed.push(
+            getUarDivListApi(
+              {
+                status: "InProgress",
+                reviewStatus: "reviewed",
+                page: 1,
+                limit: 5,
+              },
+              ac.signal
+            )
+          );
+        }
+
+        // Kalau tidak punya role yang diizinkan, kosongkan & keluar
+        if (!isAdmin && !isDPH && !isSO) {
           setReviewItems([]);
           setApproveItems([]);
           setLoading(false);
           return;
         }
 
-        // ✅ Ambil data: reviewStatus=pending & reviewed
-        const [pendingResp, inProgressResp] = await Promise.all([
-          getUarListApi(
-            { reviewStatus: "Pending", page: 1, limit: 5 },
-            ac.signal
-          ),
-          getUarListApi(
-            {
-              status: "InProgress",
-              reviewStatus: "Reviewed",
-              page: 1,
-              limit: 5,
-            },
-            ac.signal
-          ),
+        const [pendingResps, reviewedResps] = await Promise.all([
+          Promise.all(callsPending),
+          Promise.all(callsReviewed),
         ]);
 
-        // 🔹 Mapping hasil API ke daftar UAR ID
-        const pendingIds = (pendingResp.data ?? []).map((h) => h.uarId);
-        const inProgressIds = (inProgressResp.data ?? []).map((h) => h.uarId);
+        const pendingIds = Array.from(
+          new Set(
+            pendingResps.flatMap((r) =>
+              (r?.data ?? []).map((h: any) => h.uarId)
+            )
+          )
+        );
+        const inProgressIds = Array.from(
+          new Set(
+            reviewedResps.flatMap((r) =>
+              (r?.data ?? []).map((h: any) => h.uarId)
+            )
+          )
+        );
 
         setReviewItems(pendingIds);
         setApproveItems(inProgressIds);
       } catch (e: any) {
-        if (e?.name !== "AbortError") {
+        if (e?.name !== "AbortError")
           setErr(e?.message ?? "Failed to load dashboard data");
-        }
       } finally {
         setLoading(false);
       }
@@ -161,13 +194,9 @@ const DashboardContent: React.FC<DashboardContentProps> = ({onStart}) => {
     return () => ac.abort();
   }, [currentUser]);
 
-  // Optional: skeleton / error state sederhana
-  if (loading) {
+  if (loading)
     return <div className="text-sm text-gray-500">Loading dashboard…</div>;
-  }
-  if (err) {
-    return <div className="text-sm text-red-600">Error: {err}</div>;
-  }
+  if (err) return <div className="text-sm text-red-600">Error: {err}</div>;
 
   return (
     <div>
@@ -201,8 +230,12 @@ const DashboardContent: React.FC<DashboardContentProps> = ({onStart}) => {
       </div>
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TaskList title="To Do Review" items={reviewItems} onStart={onStart}/>
-        <TaskList title="To Do Approve" items={approveItems} onStart={onStart}/>
+        <TaskList title="To Do Review" items={reviewItems} onStart={onStart} />
+        <TaskList
+          title="To Do Approve"
+          items={approveItems}
+          onStart={onStart}
+        />
       </div>
     </div>
   );

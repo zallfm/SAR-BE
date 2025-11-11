@@ -16,7 +16,7 @@ export type UarListFilters = {
     period?: string;
     uarId?: string;
     status?: string;
-    reviewStatus?: 'Pending' | 'Reviewed';
+    reviewStatus?: 'pending' | 'reviewed';
 };
 
 /**
