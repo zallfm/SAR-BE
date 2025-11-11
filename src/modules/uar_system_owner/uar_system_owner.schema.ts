@@ -46,7 +46,7 @@ export const listUarSchema: FastifySchema = {
             },
             reviewStatus: {
                 type: "string",
-                enum: ['pending'],
+                enum: ['pending', 'reviewed'],
                 description: "Filter by review status"
             },
             noreg: {

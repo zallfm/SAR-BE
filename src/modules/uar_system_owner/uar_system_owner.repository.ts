@@ -191,7 +191,11 @@ export const uarSystemOwnerRepository = {
             conditionsSO.push(Prisma.sql`DIVISION_ID = ${divisionId}`);
         }
         if (reviewStatus === 'pending') {
+            // Data yang belum direview → kolom REVIEW_STATUS masih kosong
             conditionsSO.push(Prisma.sql`REVIEW_STATUS IS NULL`);
+        } else if (reviewStatus === 'reviewed') {
+            // Data yang sudah direview → kolom REVIEW_STATUS sudah terisi
+            conditionsSO.push(Prisma.sql`REVIEW_STATUS IS NOT NULL`);
         }
         if (noreg) {
             conditionsSO.push(Prisma.sql`REVIEWER_NOREG = ${noreg}`);
@@ -370,7 +374,7 @@ export const uarSystemOwnerRepository = {
             ...mappedDateStatsDU
         ];
 
-        console.log("DATESTATS", combinedDateStats)
+        // console.log("DATESTATS", combinedDateStats)
         return {
             data: dataRaw,
             total: totalRows,

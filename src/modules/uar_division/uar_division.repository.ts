@@ -35,6 +35,7 @@ export const uarDivisionRepository = {
         } = params;
 
         let workflowFilteredUarIds: string[] | undefined = undefined;
+        // console.log("departmentId", departmentId)
         const whereWorkflow: any = {
             DEPARTMENT_ID: departmentId,
         };
@@ -126,7 +127,11 @@ export const uarDivisionRepository = {
         }
 
         if (reviewStatus === 'pending') {
-            whereUar.REVIEW_STATUS = null
+            // REVIEW_STATUS = NULL
+            whereUar.REVIEW_STATUS = { equals: null };
+        } else if (reviewStatus === 'reviewed') {
+            // REVIEW_STATUS IS NOT NULL
+            whereUar.REVIEW_STATUS = { not: null };
         }
 
         if (Object.keys(uarIdFilter).length > 0) {

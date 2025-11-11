@@ -102,7 +102,7 @@ export const userRepository = {
       name: dbUser.USERNAME,
       divisionId: 2,
       noreg: "100000",
-      departmentId: 200,
+      departmentId: 500,
       role: dynamicRole as User["role"],
     };
   },
