@@ -10,19 +10,39 @@ import { useUarStore } from "../../store/uarStore";
 import { useLogout, useMenu } from "../../hooks/useAuth";
 import { UarHeader } from "@/src/types/uarDivision";
 
-const DashboardContent = lazy(() => import("../features/DashboardContent/DashboardContent"));
-const ApplicationPage = lazy(() => import("../features/application/ApplicationPage"));
-const LoggingMonitoringPage = lazy(() => import("../features/LogingMonitoring/LoggingMonitoringPage"));
-const LoggingMonitoringDetailPage = lazy(() => import("../features/LogingMonitoring/LoggingMonitoringDetailPage"));
+const DashboardContent = lazy(
+  () => import("../features/DashboardContent/DashboardContent")
+);
+const ApplicationPage = lazy(
+  () => import("../features/application/ApplicationPage")
+);
+const LoggingMonitoringPage = lazy(
+  () => import("../features/LogingMonitoring/LoggingMonitoringPage")
+);
+const LoggingMonitoringDetailPage = lazy(
+  () => import("../features/LogingMonitoring/LoggingMonitoringDetailPage")
+);
 const UarPicPage = lazy(() => import("../features/UarPic/UarPicPage"));
-const SystemMasterPage = lazy(() => import("../features/system-master/SystemMasterPage"));
-const UarLatestRolePage = lazy(() => import("../features/uar/UarLatestRolePage"));
+const SystemMasterPage = lazy(
+  () => import("../features/system-master/SystemMasterPage")
+);
+const UarLatestRolePage = lazy(
+  () => import("../features/uar/UarLatestRolePage")
+);
 const SchedulePage = lazy(() => import("../features/schedule/SchedulePage"));
-const UarSystemOwnerPage = lazy(() => import("../features/uar/UarSystemOwnerPage"));
+const UarSystemOwnerPage = lazy(
+  () => import("../features/uar/UarSystemOwnerPage")
+);
 const UarProgressPage = lazy(() => import("../features/uar/UarProgressPage"));
-const UarSystemOwnerDetailPage = lazy(() => import("../features/uar/UarSystemOwnerDetailPage"));
-const UarDivisionUserPage = lazy(() => import("../features/uar/UarDivisionUserPage"));
-const UarDivisionUserDetailPage = lazy(() => import("../features/uar/UarDivisionUserDetailPage"));
+const UarSystemOwnerDetailPage = lazy(
+  () => import("../features/uar/UarSystemOwnerDetailPage")
+);
+const UarDivisionUserPage = lazy(
+  () => import("../features/uar/UarDivisionUserPage")
+);
+const UarDivisionUserDetailPage = lazy(
+  () => import("../features/uar/UarDivisionUserDetailPage")
+);
 
 interface DashboardProps {
   onLogout: () => void;
@@ -50,6 +70,31 @@ const Dashboard: React.FC<DashboardProps> = () => {
       return;
     }
     setDivisionUserFilters({ uarId });
+    setActiveView("uar_division_user");
+  };
+  const handleSeeMore = (
+    kind: "so" | "div",
+    listType: "pending" | "reviewed"
+  ) => {
+    if (kind === "so") {
+      setSystemOwnerFilters({
+        status: "InProgress",
+        reviewStatus: listType,
+        uarId: "",
+        page: 1,
+        limit: 10,
+      });
+      setActiveView("uar_system_owner");
+      return;
+    }
+
+    setDivisionUserFilters({
+      status: "InProgress",
+      reviewStatus: listType,
+      uarId: "",
+      page: 1,
+      limit: 10,
+    });
     setActiveView("uar_division_user");
   };
 
@@ -110,14 +155,17 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const renderContent = () => {
     switch (activeView) {
       case "dashboard":
-        return <DashboardContent onStart={handleStartUarFromDashboard} />;
+        return <DashboardContent onStart={handleStartUarFromDashboard} onSeeMore={handleSeeMore}/>;
       case "application":
         return <ApplicationPage />;
       case "logging_monitoring":
         return <LoggingMonitoringPage onViewDetail={handleViewDetail} />;
       case "logging_monitoring_detail":
         return selectedLog ? (
-          <LoggingMonitoringDetailPage logEntry={selectedLog} onBack={handleBackToLogs} />
+          <LoggingMonitoringDetailPage
+            logEntry={selectedLog}
+            onBack={handleBackToLogs}
+          />
         ) : (
           <LoggingMonitoringPage onViewDetail={handleViewDetail} />
         );
@@ -133,7 +181,11 @@ const Dashboard: React.FC<DashboardProps> = () => {
         return <UarSystemOwnerPage onReview={handleReviewUarRecord} />;
       case "uar_system_owner_detail":
         return selectedSystemOwner ? (
-          <UarSystemOwnerDetailPage record={selectedSystemOwner} onBack={handleBackToUarSystemOwner} user={user} />
+          <UarSystemOwnerDetailPage
+            record={selectedSystemOwner}
+            onBack={handleBackToUarSystemOwner}
+            user={user}
+          />
         ) : (
           <UarSystemOwnerPage onReview={handleReviewUarRecord} />
         );
@@ -143,12 +195,16 @@ const Dashboard: React.FC<DashboardProps> = () => {
         return <UarDivisionUserPage onReview={handleReviewUarDivisionRecord} />;
       case "uar_division_user_detail":
         return selectedDivisionUser ? (
-          <UarDivisionUserDetailPage uarHeader={selectedDivisionUser} onBack={handleBackToUarDivisionUser} user={user} />
+          <UarDivisionUserDetailPage
+            uarHeader={selectedDivisionUser}
+            onBack={handleBackToUarDivisionUser}
+            user={user}
+          />
         ) : (
           <UarDivisionUserPage onReview={handleReviewUarDivisionRecord} />
         );
       default:
-        return <DashboardContent onStart={handleStartUarFromDashboard} />;
+        return <DashboardContent onStart={handleStartUarFromDashboard} onSeeMore={handleSeeMore}/>;
     }
   };
 
@@ -158,7 +214,10 @@ const Dashboard: React.FC<DashboardProps> = () => {
         <Sidebar
           activeView={activeView}
           setActiveView={(view) => {
-            logNavigation(activeView, view, { userId: user.username, timestamp: new Date().toISOString() });
+            logNavigation(activeView, view, {
+              userId: user.username,
+              timestamp: new Date().toISOString(),
+            });
             setActiveView(view);
           }}
           items={menuTree ?? []}

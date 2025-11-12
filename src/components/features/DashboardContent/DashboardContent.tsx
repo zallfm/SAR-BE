@@ -8,6 +8,10 @@ import { getUarListApi as getUarDivListApi } from "@/src/api/uarDivision";
 import { getUarListApi as getUarSoListApi } from "@/src/api/uarSystemOwner";
 import { useAuthStore } from "@/src/store/authStore";
 
+export const ROLE_ADMINISTRATOR = import.meta.env.VITE_ADMINISTRATOR
+export const ROLE_SYSTEM_OWNER = import.meta.env.VITE_SYSTEM_OWNER
+export const ROLE_DPH = import.meta.env.VITE_DPH
+
 interface StatCardProps {
   title: string;
   value: string;
@@ -52,16 +56,20 @@ const StatCard: React.FC<StatCardProps> = ({
 // onStart now carries the 'kind' so parent can route correctly
 interface DashboardContentProps {
   onStart: (uarId: string, kind: "so" | "div") => void;
+  onSeeMore: (kind: "so" | "div", listType: "pending" | "reviewed") => void
 }
+type ListType = "pending" | "reviewed";
 
 interface TaskListProps {
   title: string;
   items: string[];
   onStart: (uarId: string, kind: "so" | "div") => void;
+  onSeeMore: (kind: "so" | "div", listType: ListType) => void;
   kind: "so" | "div";
+  listType: ListType
 }
 
-const TaskList: React.FC<TaskListProps> = ({ title, items, onStart, kind }) => (
+const TaskList: React.FC<TaskListProps> = ({ title, items, onStart, onSeeMore, kind, listType }) => (
   <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex-1">
     <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
     <div className="space-y-2">
@@ -88,10 +96,15 @@ const TaskList: React.FC<TaskListProps> = ({ title, items, onStart, kind }) => (
         </div>
       )}
     </div>
+     <div className="mt-6 text-center">
+      <button className="text-sm font-semibold bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors" onClick={() => onSeeMore(kind, listType)}>
+        See More
+      </button>
+    </div>
   </div>
 );
 
-const DashboardContent: React.FC<DashboardContentProps> = ({ onStart }) => {
+const DashboardContent: React.FC<DashboardContentProps> = ({ onStart, onSeeMore }) => {
   const { currentUser } = useAuthStore();
   const [reviewItems, setReviewItems] = useState<string[]>([]);
   const [approveItems, setApproveItems] = useState<string[]>([]);
@@ -100,9 +113,9 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ onStart }) => {
 
   // Role normalization
   const role = (currentUser?.role ?? "").trim().toUpperCase();
-  const isAdmin = role === "ADMINISTRATOR";
-  const isSO = role === "SO";
-  const isDPH = role === "DPH";
+  const isAdmin = role === ROLE_ADMINISTRATOR;
+  const isSO = role === ROLE_SYSTEM_OWNER;
+  const isDPH = role === ROLE_DPH;
 
   // Admin gets a toggle; non-admins get fixed source (SO for SO, DIV for DPH)
   const initialSource: "so" | "div" = isSO ? "so" : isDPH ? "div" : "so";
@@ -243,13 +256,17 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ onStart }) => {
           title="To Do Review"
           items={reviewItems}
           onStart={onStart}
+          onSeeMore={onSeeMore}
           kind={source}
+          listType="pending"
         />
         <TaskList
           title="To Do Approve"
           items={approveItems}
           onStart={onStart}
+          onSeeMore={onSeeMore}
           kind={source}
+          listType="reviewed"
         />
       </div>
     </div>
