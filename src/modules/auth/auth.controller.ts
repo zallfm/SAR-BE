@@ -32,7 +32,7 @@ export const authController = {
           requestId,
           data: {
             token: result.token,          // langsung dari service
-            jti: result.jti,              // optional untuk FE
+            jti: result.jti,         // optional untuk FE
             expiresIn: result.expiresIn,  // detik
             expireAt: result.expiresAt,   // epoch ms
             user: userOut,

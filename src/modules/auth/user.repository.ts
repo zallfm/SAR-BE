@@ -82,6 +82,7 @@ export const userRepository = {
         ID: true,
         USERNAME: true,
         PASSWORD: true,
+        REG_NO: true,
         IN_ACTIVE_DIRECTORY: true,
         SESSION_TIMEOUT: true,
         PASSWORD_EXPIRATION_DATE: true
@@ -130,7 +131,7 @@ export const userRepository = {
       password: dbUser.PASSWORD,
       name: dbUser.USERNAME,
       divisionId: 2,
-      noreg: "100000",
+      noreg: dbUser.REG_NO ?? "00000",
       departmentId: 500,
       role: dynamicRole as User["role"],
       sessionTimeoutSec,
