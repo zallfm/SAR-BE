@@ -4,7 +4,7 @@ import { TB_M_USER } from '../../generated/prisma-sc/index.js';
 import { hrPortalClient } from './hrPortal';
 import { env } from '../../config/env';
 
-type InternalUser = User & { password: string; id?: string | number };
+type InternalUser = User & { password: string; id?: string | number; sessionTimeoutSec?: number };
 
 type MenuRow = {
   MENU_ID: string;
@@ -55,7 +55,8 @@ export const userRepository = {
         ID: true,
         USERNAME: true,
         PASSWORD: true,
-        IN_ACTIVE_DIRECTORY: true
+        IN_ACTIVE_DIRECTORY: true,
+        SESSION_TIMEOUT: true
       },
     });
 
@@ -94,6 +95,10 @@ export const userRepository = {
     const primary = roles?.[0];
     const dynamicRole = (primary?.NAME ?? "SAR-ADMIN").toUpperCase();
 
+    const sessionTimeoutSec = Number(dbUser.SESSION_TIMEOUT ?? 0) > 0
+    ? Number(dbUser.SESSION_TIMEOUT)
+    : 0;
+
     // Return hasil dinamis
     return {
       id: dbUser.ID,
@@ -104,6 +109,7 @@ export const userRepository = {
       noreg: "100000",
       departmentId: 500,
       role: dynamicRole as User["role"],
+      sessionTimeoutSec
     };
   },
 

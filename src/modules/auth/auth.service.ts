@@ -87,7 +87,16 @@ function getLockInfo(username: string) {
     remainingMs,
   };
 }
-
+function toSeconds(v: string | number | undefined): number {
+  if (!v) return 3600;
+  if (typeof v === 'number') return v;
+  const m = String(v).trim().toLowerCase().match(/^(\d+)\s*([smhd])?$/);
+  if (!m) return Number(v) || 3600;
+  const n = Number(m[1]);
+  const unit = m[2] || 's';
+  const mult = unit === 's' ? 1 : unit === 'm' ? 60 : unit === 'h' ? 3600 : 86400;
+  return n * mult;
+}
 
 export const authService = {
   async login(app: FastifyInstance, username: string, password: string, requestId?: string) {
@@ -215,13 +224,17 @@ export const authService = {
     // 3) success → reset siklus
     resetAttempts(username);
 
+    const sessionTimeoutSec = Number((user as any)?.sessionTimeoutSec ?? 0);
+    const perUserExpiresIn =
+      sessionTimeoutSec > 0 ? sessionTimeoutSec : toSeconds(env.TOKEN_EXPIRES_IN);
+
     const payload: TokenPayload = {
       sub: user!.username,
       role: user!.role,
       name: user!.name
     };
 
-    const token = app.jwt.sign(payload, { expiresIn: env.TOKEN_EXPIRES_IN });
+    const token = app.jwt.sign(payload, { expiresIn:  perUserExpiresIn});
 
     const publicUser: User = {
       username: user!.username,
@@ -231,6 +244,8 @@ export const authService = {
       noreg: "100000",
       departmentId: 500,
     };
+    const nowMs = Date.now();
+    const expiresAtMs = nowMs + perUserExpiresIn * 1000;
 
     AuditLogger.logSuccess(AuditAction.LOGIN_SUCCESS, {
       userId: user!.username,
@@ -248,7 +263,7 @@ export const authService = {
       description: "User logged in successfully",
       location: "/login"
     });
-    return { token, expiresIn: env.TOKEN_EXPIRES_IN, user: publicUser };
+    return { token, expiresIn: perUserExpiresIn, expiresAt: expiresAtMs ,user: publicUser };
   },
   async getMenu(username: string) {
     try {

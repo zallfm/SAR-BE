@@ -29,7 +29,7 @@ export const authController = {
         }
 
         let finalToken = result.token;
-        let finalExpires = env.TOKEN_EXPIRES_IN;
+        let finalExpires = result.expiresIn;
 
         try {
           if (result.token) {
@@ -66,7 +66,9 @@ export const authController = {
           data: {
             token: finalToken,
             expiresIn: finalExpires,
+            expireAt: result.expiresAt,
             user: userOut,
+
           }
         });
       },
