@@ -14,8 +14,102 @@ function createFullDayFilter(dateString: string) {
     return { gte, lt };
 }
 
+export interface UarChartParams {
+    period?: string;
+    divisionId?: number;
+    departmentId?: number;
+    applicationId?: string;
+}
 
-export const uarSystemOwnerRepository = {
+interface UarOverallStats {
+    total: number;
+    reviewed: {
+        count: number;
+        percentage: number;
+    };
+    divApproved: {
+        count: number;
+        percentage: number;
+    };
+    soApproved: {
+        count: number;
+        percentage: number;
+    };
+    completed: {
+        count: number;
+        percentage: number;
+    };
+}
+
+interface UarStatsByDivision {
+    divisionId: number;
+    divisionName: string;
+    total: number;
+    reviewedCount: number;
+    divApprovedCount: number;
+    soApprovedCount: number;
+    completedCount: number;
+}
+
+
+interface UarStatsByApplication {
+    applicationId: string;
+    applicationName: string;
+    total: number;
+    reviewedCount: number;
+    divApprovedCount: number;
+    soApprovedCount: number;
+    completedCount: number;
+}
+
+
+function calculatePercentage(count: number, total: number): number {
+    if (total === 0) {
+        return 0;
+    }
+    return (count / total) * 100;
+}
+
+
+function buildUarWhereClauses(params: UarChartParams) {
+    const { period, divisionId, departmentId, applicationId } = params;
+
+    const conditionsDU: Prisma.Sql[] = [];
+    const conditionsSO: Prisma.Sql[] = [];
+
+    if (period) {
+        conditionsDU.push(Prisma.sql`UAR_PERIOD = ${period}`);
+        conditionsSO.push(Prisma.sql`UAR_PERIOD = ${period}`);
+    }
+    if (divisionId) {
+        conditionsDU.push(Prisma.sql`DIVISION_ID = ${divisionId}`);
+        conditionsSO.push(Prisma.sql`DIVISION_ID = ${divisionId}`);
+    }
+    if (departmentId) {
+        conditionsDU.push(Prisma.sql`DEPARTMENT_ID = ${departmentId}`);
+        conditionsSO.push(Prisma.sql`DEPARTMENT_ID = ${departmentId}`);
+    }
+    if (applicationId) {
+        conditionsDU.push(Prisma.sql`APPLICATION_ID = ${applicationId}`);
+        conditionsSO.push(Prisma.sql`APPLICATION_ID = ${applicationId}`);
+    }
+
+    const whereDU =
+        conditionsDU.length > 0
+            ? Prisma.sql`WHERE ${Prisma.join(conditionsDU, ' AND ')}`
+            : Prisma.empty;
+
+    const whereSO =
+        conditionsSO.length > 0
+            ? Prisma.sql`WHERE ${Prisma.join(conditionsSO, ' AND ')}`
+            : Prisma.empty;
+
+    return { whereDU, whereSO };
+}
+
+
+export const uarSystemOwnerRepository =
+{
 
 
     async findAppsByOwner(noreg: string) {
@@ -94,7 +188,7 @@ export const uarSystemOwnerRepository = {
                 where: whereStatus,
                 select: { UAR_ID: true },
                 distinct: ['UAR_ID']
-                
+
             });
 
             // 2. Find pending UARs in the SYSTEM_OWNER table
@@ -103,7 +197,7 @@ export const uarSystemOwnerRepository = {
                 DIVISION_ID: divisionId,
                 OR: [
                     { SO_APPROVAL_STATUS: '0' },
-                    { SO_APPROVAL_STATUS: null } 
+                    { SO_APPROVAL_STATUS: null }
                 ]
             };
 
@@ -226,7 +320,7 @@ export const uarSystemOwnerRepository = {
         }
         if (reviewStatus === 'pending') {
             conditionsDU.push(Prisma.sql`REVIEW_STATUS IS NULL`);
-        }else if (reviewStatus === 'reviewed') {
+        } else if (reviewStatus === 'reviewed') {
             conditionsDU.push(Prisma.sql`REVIEW_STATUS IS NOT NULL`);
         }
         if (noreg) {

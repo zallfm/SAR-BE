@@ -1,10 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { uarSystemOwnerService as svc } from "./uar_system_owner.service";
 import type { UarSystemOwnerAddCommentDTO, UarSystemOwnerBatchUpdateDTO } from "../../types/uar_system_owner";
-/**
- * Extracts authenticated user's noreg.
- * Assumes the auth plugin attaches { noreg: string } to req.auth.
- */
+
 function getAuthInfo(req: FastifyRequest) {
     const auth = req.auth as { noreg: string, divisionId: number };
     if (!auth?.noreg) {
@@ -63,7 +60,6 @@ export const uarSystemOwnerController = {
                 }
             });
         },
-
 
     getDetails: (_app: FastifyInstance) =>
         async (

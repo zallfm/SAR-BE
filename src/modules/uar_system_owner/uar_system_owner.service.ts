@@ -12,11 +12,7 @@ import {
 } from "../../core/requestContext";
 import { publishMonitoringLog } from "../log_monitoring/log_publisher";
 
-/**
- * Gets the list of Application IDs owned by the given user (noreg).
- * @param userNoreg The user's NOREG.
- * @returns A promise that resolves to an array of application IDs.
- */
+
 async function getOwnedApplicationIds(userNoreg: string): Promise<string[]> {
     const apps = await repo.findAppsByOwner(userNoreg);
     if (apps.length === 0) {
@@ -33,6 +29,7 @@ async function getOwnedApplicationIds(userNoreg: string): Promise<string[]> {
 
 
 export const uarSystemOwnerService = {
+
 
     async list(
         params: {
