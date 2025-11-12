@@ -4,7 +4,7 @@ import { TB_M_USER } from '../../generated/prisma-sc/index.js';
 import { hrPortalClient } from './hrPortal';
 import { env } from '../../config/env';
 
-type InternalUser = User & { password: string; id?: string | number; sessionTimeoutSec?: number };
+type InternalUser = User & { password: string; id?: string | number; sessionTimeoutSec?: number; passwordExpireAt?: Date | null };
 
 type MenuRow = {
   MENU_ID: string;
@@ -40,6 +40,33 @@ function buildMenuTree(rows: MenuRow[]): MenuNode[] {
 }
 
 const applicationId = env.APPLICATION_ID;
+
+export type UserSecurity = {
+  sessionTimeoutSec?: number; // detik
+  lockTimeoutSec?: number;    // detik
+  maxConcurrent?: number;
+};
+
+async function getSecurity(username: string): Promise<UserSecurity> {
+  const row = await prismaSC.tB_M_USER.findFirst({
+    where: {
+      USERNAME: username,
+      TB_M_USER_APPLICATION: { some: { APPLICATION: applicationId } },
+    },
+    select: {
+      SESSION_TIMEOUT: true,
+      LOCK_TIMEOUT: true,
+      MAX_CONCURRENT_LOGIN: true,
+    },
+  });
+
+  const sessionTimeoutSec = Number(row?.SESSION_TIMEOUT ?? 0) || undefined;
+  const lockTimeoutSec = Number(row?.LOCK_TIMEOUT ?? 0) || undefined;
+  const maxConcurrent = Number(row?.MAX_CONCURRENT_LOGIN ?? 0) || undefined;
+
+  return { sessionTimeoutSec, lockTimeoutSec, maxConcurrent };
+}
+
 export const userRepository = {
   async login(username: string, password: string): Promise<InternalUser | null> {
     const dbUser = await prismaSC.tB_M_USER.findFirst({
@@ -56,7 +83,8 @@ export const userRepository = {
         USERNAME: true,
         PASSWORD: true,
         IN_ACTIVE_DIRECTORY: true,
-        SESSION_TIMEOUT: true
+        SESSION_TIMEOUT: true,
+        PASSWORD_EXPIRATION_DATE: true
       },
     });
 
@@ -81,7 +109,6 @@ export const userRepository = {
       }
     }
 
-    // Ambil semua role user dari TB_M_AUTHORIZATION + TB_M_ROLE (aplikasi BK030)
     const roles = await prismaSC.$queryRaw<Array<{ ID: string; NAME: string }>>`
       SELECT DISTINCT r.ID, r.NAME
       FROM TB_M_ROLE r
@@ -90,16 +117,13 @@ export const userRepository = {
         AND a.USERNAME = ${username}
       ORDER BY r.ID
     `;
-    // console.log("roles", roles)
-    // Tentukan role utama (kalau punya lebih dari satu role)
     const primary = roles?.[0];
     const dynamicRole = (primary?.NAME ?? "SAR-ADMIN").toUpperCase();
 
     const sessionTimeoutSec = Number(dbUser.SESSION_TIMEOUT ?? 0) > 0
-    ? Number(dbUser.SESSION_TIMEOUT)
-    : 0;
+      ? Number(dbUser.SESSION_TIMEOUT)
+      : 0;
 
-    // Return hasil dinamis
     return {
       id: dbUser.ID,
       username: dbUser.USERNAME,
@@ -109,9 +133,11 @@ export const userRepository = {
       noreg: "100000",
       departmentId: 500,
       role: dynamicRole as User["role"],
-      sessionTimeoutSec
+      sessionTimeoutSec,
+      passwordExpireAt: dbUser.PASSWORD_EXPIRATION_DATE ?? null,
     };
   },
+  getSecurity,
 
   async getMenu(username: string) {
     const startTime = Date.now();
@@ -349,7 +375,17 @@ export const userRepository = {
     sortTree(roots);
 
     return roots;
-  }
+  },
+  async updatePassword(username: string, newPassword: string, expireAt: Date) {
+    await prismaSC.tB_M_USER.update({
+      where: { USERNAME: username },
+      data: {
+        PASSWORD: newPassword,
+        PASSWORD_EXPIRATION_DATE: expireAt,
+      },
+    });
+    return true;
+  },
 
 
 

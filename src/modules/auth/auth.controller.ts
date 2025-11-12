@@ -20,55 +20,23 @@ export const authController = {
         const { username, password } = req.body;
 
         const result = await authService.login(app, username, password, requestId);
-        // console.log("result",result)
 
-        const normalizedRole = toUpperRole(result?.user?.role) ?? 'ADMIN'
-        const userOut = {
-          ...result.user,
-          role: normalizedRole,
-        }
+        // normalisasi role untuk output user (TIDAK mempengaruhi token)
+        const normalizedRole = toUpperRole(result?.user?.role) ?? 'ADMIN';
+        const userOut = { ...result.user, role: normalizedRole };
 
-        let finalToken = result.token;
-        let finalExpires = result.expiresIn;
-
-        try {
-          if (result.token) {
-            const decoded: any = app.jwt.decode(result.token) || {};
-            const payload = {
-              sub: decoded.sub ?? username,
-              name: decoded.name ?? result.user?.username ?? username,
-              role: normalizedRole,
-            };
-            finalToken = app.jwt.sign(payload, { expiresIn: finalExpires })
-          } else {
-            const payload = {
-              sub: result.user?.username ?? username,
-              name: result.user?.name,
-              username: result.user?.username ?? username,
-              role: normalizedRole,
-            }
-            finalToken = app.jwt.sign(payload, { expiresIn: finalExpires })
-          }
-        } catch {
-          const payload = {
-            sub: result.user?.username ?? username,
-            name: result.user?.name,
-            username: result.user?.username ?? username,
-            role: normalizedRole,
-          }
-          finalToken = app.jwt.sign(payload, { expiresIn: finalExpires })
-        }
-
+        // ⚠️ PENTING: JANGAN re-sign token di controller, agar JTI tidak hilang
         return reply.status(200).send({
           code: 'OK',
           message: AuditAction.LOGIN_SUCCESS,
           requestId,
           data: {
-            token: finalToken,
-            expiresIn: finalExpires,
-            expireAt: result.expiresAt,
+            token: result.token,          // langsung dari service
+            jti: result.jti,              // optional untuk FE
+            expiresIn: result.expiresIn,  // detik
+            expireAt: result.expiresAt,   // epoch ms
             user: userOut,
-
+            passwordWarning:result.passwordWarning ?? null
           }
         });
       },
