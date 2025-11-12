@@ -85,17 +85,17 @@ const App: React.FC = () => {
     window.location.reload();
   };
 
-  useEffect(() => {
-    const checkSession = () => {
-      if (currentUser && !sessionManager.isSessionValid()) {
-        logout();
-      }
-    };
+  // useEffect(() => {
+  //   const checkSession = () => {
+  //     if (currentUser && !sessionManager.isSessionValid()) {
+  //       logout();
+  //     }
+  //   };
 
-    const interval = setInterval(checkSession, 60000);
+  //   const interval = setInterval(checkSession, 60000);
 
-    return () => clearInterval(interval);
-  }, [currentUser, logout]);
+  //   return () => clearInterval(interval);
+  // }, [currentUser, logout]);
 
   return (
     <Suspense
