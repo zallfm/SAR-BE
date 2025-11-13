@@ -9,6 +9,7 @@ import { useUIStore } from "../../store/uiStore";
 import { useUarStore } from "../../store/uarStore";
 import { useLogout, useMenu } from "../../hooks/useAuth";
 import { UarHeader } from "@/src/types/uarDivision";
+import { SystemOwnerUarHeader } from "@/src/types/uarSystemOwner";
 
 const DashboardContent = lazy(
   () => import("../features/DashboardContent/DashboardContent")
@@ -132,7 +133,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
     setActiveView("logging_monitoring");
   };
 
-  const handleReviewUarRecord = (record: UarSystemOwnerRecord) => {
+  const handleReviewUarRecord = (record: SystemOwnerUarHeader) => {
     selectSystemOwner(record);
     setActiveView("uar_system_owner_detail");
   };
@@ -155,7 +156,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const renderContent = () => {
     switch (activeView) {
       case "dashboard":
-        return <DashboardContent onStart={handleStartUarFromDashboard} onSeeMore={handleSeeMore}/>;
+        return <DashboardContent onStart={handleStartUarFromDashboard} onSeeMore={handleSeeMore} />;
       case "application":
         return <ApplicationPage />;
       case "logging_monitoring":
@@ -204,7 +205,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
           <UarDivisionUserPage onReview={handleReviewUarDivisionRecord} />
         );
       default:
-        return <DashboardContent onStart={handleStartUarFromDashboard} onSeeMore={handleSeeMore}/>;
+        return <DashboardContent onStart={handleStartUarFromDashboard} onSeeMore={handleSeeMore} />;
     }
   };
 

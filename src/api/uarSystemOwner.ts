@@ -47,7 +47,7 @@ export const getUarListApi = (
  */
 export const getUarDetailApi = (
     uarId: string,
-    applicationId: string,
+    applicationId: string | undefined,
     signal?: AbortSignal
 ) =>
     withToken((token) =>
@@ -65,7 +65,7 @@ export const getUarDetailApi = (
 export const batchUpdateApi = (data: SystemOwnerBatchUpdatePayload) => // <-- Tipe payload baru
     withToken((token) =>
         http<BackendSystemOwnerBatchUpdateResponse>({ // <-- Tipe respons baru
-            path: "/sar/uar_syste_-owner/batch-update",
+            path: "/sar/uar_system_owner/batch-update",
             method: "POST",
             token,
             body: data,

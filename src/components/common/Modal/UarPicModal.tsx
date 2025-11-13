@@ -64,24 +64,24 @@ const UarPicModal: React.FC<UarPicModalProps> = ({
   };
 
   const emailError = useMemo(() => {
-    // Check if the email is properly formatted with the @toyota.co.id domain
-    if (email.length > 0) {
-      if (email.includes("@")) {
-        // Full email address provided
-        if (!/^[^\s@]+@toyota\.co\.id$/.test(email)) {
-          return "You must input email name @toyota.co.id";
-        }
-      } else {
-        if (!/^[^\s@]+$/.test(email)) {
-          return "Invalid email format.";
-        }
-        if (email.length > 30) {
-          return "Email can only contains 30 characters"
-        }
+    const username = email.includes("@") ? email.split('@')[0] : email;
+
+    if (email.length === 0) {
+      return null;
+    }
+
+    if (!/^[^\s@]+$/.test(username)) {
+      return "Invalid email format (check for spaces).";
+    }
+
+    if (email.includes("@")) {
+      if (!/^[^\s@]+@toyota\.co\E.id$/.test(email)) {
+        return "You must use an @toyota.co.id email";
       }
-      if (email.length > 20) {
-        return "Email can only contains 30 characters"
-      }
+    }
+
+    if (username.length > 30) {
+      return "Email username can only contain 30 characters";
     }
 
     return null;

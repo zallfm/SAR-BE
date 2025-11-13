@@ -12,9 +12,10 @@ import { useUarStore } from "@/src/store/uarStore";
 import type { SystemOwnerUarHeader } from "@/src/types/uarSystemOwner";
 import { formatDateTime } from "@/utils/dateFormatter";
 import { exportExcel } from "@/src/api/excel";
+import { UarHeader } from "@/src/types/uarDivision";
 
 interface UarSystemOwnerPageProps {
-  onReview: (record: SystemOwnerUarHeader) => void; // <-- Gunakan tipe UarHeader
+  onReview: (record: SystemOwnerUarHeader) => void;
 }
 
 const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
@@ -72,35 +73,17 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
     systemOwnerItemsPerPage,
   ]);
 
-  // --- Event Handlers ---
-  const handleReviewClick = async (record: SystemOwnerUarHeader) => {
-    // 1. Set record yang dipilih di store
+  const handleReviewClick = (record: SystemOwnerUarHeader) => {
+    console.log(record)
     selectSystemOwner(record);
 
-    // 2. Jalankan fungsi navigasi dari parent
-    onReview(record);
+    onReview(record)
 
-    // 3. Kirim log monitoring
-    // try {
-    //   await postLogMonitoringApi({
-    //     userId: currentUser?.username ?? "anonymous",
-    //     module: "UAR System Owner",
-    //     action: AuditAction.DATA_REVIEW,
-    //     status: "Success",
-    //     description: `User ${currentUser?.username ?? "unknown"} reviewed UAR ${
-    //       record.uarId
-    //     }`,
-    //     location: "UarSystemOwnerPage.handleReviewClick",
-    //     timestamp: new Date().toISOString(),
-    //   });
-    // } catch (err) {
-    //   console.warn("Gagal mencatat log review:", err);
-    // }
   };
 
   const handleDownloadClick = async (record: SystemOwnerUarHeader) => {
     try {
-      console.log("recordss",record)
+      console.log("recordss", record)
       setDownloadingId(record.uarId);
       const { blob, filename } = await exportExcel({
         uar_id: record.uarId,
@@ -188,7 +171,7 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
                   e.target.type = "month";
                   try {
                     e.currentTarget.showPicker();
-                  } catch {}
+                  } catch { }
                 }}
                 onBlur={(e) => {
                   if (!systemOwnerFilters.period) e.target.type = "text";
@@ -233,7 +216,7 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
                 if (v) await logFilterChange("divisionOwner", v);
               }}
               options={[
-                ...new Set(systemOwnerHeaders.map((r) => r.applicationName)),
+                ...new Set(systemOwnerHeaders.map((r) => r.divisionOwner)),
               ]} // <-- Ganti ke applicationName
               placeholder="Application Name" // <-- Ganti ke applicationName
             />
@@ -343,7 +326,7 @@ const UarSystemOwnerPage: React.FC<UarSystemOwnerPageProps> = ({
                       {record.uarId}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      {record.applicationName} {/* <-- Sesuai UarHeader */}
+                      {record.divisionOwner} {/* <-- Sesuai UarHeader */}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
                       {record.percentComplete} {/* <-- Sesuai UarHeader */}

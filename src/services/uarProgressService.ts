@@ -6,7 +6,8 @@ import type {
   DivisionOption,
   DepartmentOption,
   ApplicationOption,
-  PeriodOption
+  PeriodOption,
+  KpiDashboardStats
 } from '../types/progress';
 import type { UarProgressFilters } from "../store/uarProgressStore";
 
@@ -18,6 +19,35 @@ export const getProgressApi = (filters: UarProgressFilters, signal?: AbortSignal
       method: "GET",
       token,
       params: filters,
+      signal: signal
+    })
+  );
+
+export const getAdminDashboard = (signal?: AbortSignal) =>
+  withToken((token) =>
+    http<KpiDashboardStats>({
+      path: "/sar/dashboard/admin",
+      method: "GET",
+      token,
+      signal: signal
+    })
+  );
+
+export const getSoDashboard = (signal?: AbortSignal) =>
+  withToken((token) =>
+    http<KpiDashboardStats>({
+      path: "/sar/dashboard/so",
+      method: "GET",
+      token,
+      signal: signal
+    })
+  );
+export const getDphDashboard = (signal?: AbortSignal) =>
+  withToken((token) =>
+    http<KpiDashboardStats>({
+      path: "/sar/dashboard/dph",
+      method: "GET",
+      token,
       signal: signal
     })
   );

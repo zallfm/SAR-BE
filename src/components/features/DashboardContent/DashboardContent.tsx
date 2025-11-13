@@ -7,6 +7,8 @@ import { DownTrendIcon } from "../../../components/icons/DownTrendIcon";
 import { getUarListApi as getUarDivListApi } from "@/src/api/uarDivision";
 import { getUarListApi as getUarSoListApi } from "@/src/api/uarSystemOwner";
 import { useAuthStore } from "@/src/store/authStore";
+import { getAdminDashboard, getSoDashboard, getDphDashboard } from "@/src/services/uarProgressService";
+import type { KpiDashboardStats } from '@/src/types/progress';
 
 export const ROLE_ADMINISTRATOR = import.meta.env.VITE_ADMINISTRATOR
 export const ROLE_SYSTEM_OWNER = import.meta.env.VITE_SYSTEM_OWNER
@@ -96,7 +98,7 @@ const TaskList: React.FC<TaskListProps> = ({ title, items, onStart, onSeeMore, k
         </div>
       )}
     </div>
-     <div className="mt-6 text-center">
+    <div className="mt-6 text-center">
       <button className="text-sm font-semibold bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors" onClick={() => onSeeMore(kind, listType)}>
         See More
       </button>
@@ -110,6 +112,10 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ onStart, onSeeMore 
   const [approveItems, setApproveItems] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+
+  const [kpiStats, setKpiStats] = useState<KpiDashboardStats | null>(null);
+  const [loadingKpi, setLoadingKpi] = useState(true);
+  const [errorKpi, setErrorKpi] = useState<string | null>(null);
 
   // Role normalization
   const role = (currentUser?.role ?? "").trim().toUpperCase();
@@ -129,6 +135,42 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ onStart, onSeeMore 
 
   useEffect(() => {
     const ac = new AbortController();
+    const fetchKpiData = async () => {
+      try {
+        setLoadingKpi(true);
+        setErrorKpi(null);
+
+        let apiCall;
+        if (isAdmin) {
+          apiCall = getAdminDashboard;
+        } else if (isSO) {
+          apiCall = getSoDashboard;
+        } else if (isDPH) {
+          apiCall = getDphDashboard;
+        } else {
+          return; // No recognized role
+        }
+
+        const response = await apiCall(ac.signal);
+
+        setKpiStats(response);
+        console.log(response)
+
+      } catch (e: any) {
+        if (e?.name !== "AbortError") {
+          setErrorKpi(e?.message ?? "Failed to load KPI data");
+        }
+      } finally {
+        setLoadingKpi(false);
+      }
+    };
+
+    fetchKpiData();
+    return () => ac.abort();
+  }, [isAdmin, isSO, isDPH]);
+
+  useEffect(() => {
+    const ac = new AbortController();
     (async () => {
       try {
         setLoading(true);
@@ -144,42 +186,42 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ onStart, onSeeMore 
         const [pendingResp, reviewedResp] = await Promise.all([
           isSoMode
             ? getUarSoListApi(
-                {
-                  status: "InProgress",
-                  reviewStatus: "pending",
-                  page: 1,
-                  limit: 5,
-                },
-                ac.signal
-              )
+              {
+                status: "InProgress",
+                reviewStatus: "pending",
+                page: 1,
+                limit: 5,
+              },
+              ac.signal
+            )
             : getUarDivListApi(
-                {
-                  status: "InProgress",
-                  reviewStatus: "pending",
-                  page: 1,
-                  limit: 5,
-                },
-                ac.signal
-              ),
+              {
+                status: "InProgress",
+                reviewStatus: "pending",
+                page: 1,
+                limit: 5,
+              },
+              ac.signal
+            ),
           isSoMode
             ? getUarSoListApi(
-                {
-                  status: "InProgress",
-                  reviewStatus: "reviewed",
-                  page: 1,
-                  limit: 5,
-                },
-                ac.signal
-              )
+              {
+                status: "InProgress",
+                reviewStatus: "reviewed",
+                page: 1,
+                limit: 5,
+              },
+              ac.signal
+            )
             : getUarDivListApi(
-                {
-                  status: "InProgress",
-                  reviewStatus: "reviewed",
-                  page: 1,
-                  limit: 5,
-                },
-                ac.signal
-              ),
+              {
+                status: "InProgress",
+                reviewStatus: "reviewed",
+                page: 1,
+                limit: 5,
+              },
+              ac.signal
+            ),
         ]);
 
         const pendingIds = (pendingResp?.data ?? []).map((h: any) => h.uarId);
@@ -199,9 +241,35 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ onStart, onSeeMore 
     return () => ac.abort();
   }, [currentUser, source, isAdmin, isSO, isDPH]);
 
-  if (loading)
+  useEffect(() => {
+    // This will run only after the component has successfully re-rendered 
+    // with the new kpiStats value
+    if (kpiStats !== null) {
+      console.log("kpiStats is updated:", kpiStats);
+    }
+  }, [kpiStats]);
+
+  if (loading || loadingKpi)
     return <div className="text-sm text-gray-500">Loading dashboard…</div>;
-  if (err) return <div className="text-sm text-red-600">Error: {err}</div>;
+  if (err || errorKpi)
+    return <div className="text-sm text-red-600">Error: {err || errorKpi}</div>;
+
+  const formatTrendProps = (item: { percentage: number; trend: number; }) => {
+    const trendValue = Math.abs(item.trend);
+
+    const trendDirection: "up" | "down" = item.trend >= 0 ? "up" : "down";
+
+    const trendText = "from yesterday";
+
+    return {
+      value: `${item.percentage.toFixed(0)}%`,
+      trend: `${trendValue.toFixed(1)}%`,
+      trendDirection,
+      trendText
+    };
+  };
+
+
 
   return (
     <div>
@@ -210,30 +278,25 @@ const DashboardContent: React.FC<DashboardContentProps> = ({ onStart, onSeeMore 
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatCard
-          title="Approved"
-          value="10%"
-          trend="1.3%"
-          trendDirection="up"
-          trendText="Up from past week"
-          icon={<ApprovedIcon />}
-        />
-        <StatCard
-          title="Revoked"
-          value="5%"
-          trend="4.3%"
-          trendDirection="down"
-          trendText="Down from yesterday"
-          icon={<RevokedIcon />}
-        />
-        <StatCard
-          title="Access Review Complete"
-          value="20%"
-          trend="1.8%"
-          trendDirection="up"
-          trendText="Up from yesterday"
-          icon={<AccessReviewCompleteIcon />}
-        />
+        {kpiStats && (
+          <>
+            <StatCard
+              title="Approved"
+              {...formatTrendProps(kpiStats.approved)}
+              icon={<ApprovedIcon />}
+            />
+            <StatCard
+              title="Revoked"
+              {...formatTrendProps(kpiStats.revoked)}
+              icon={<RevokedIcon />}
+            />
+            <StatCard
+              title="Access Review Complete"
+              {...formatTrendProps(kpiStats.accessReviewComplete)}
+              icon={<AccessReviewCompleteIcon />}
+            />
+          </>
+        )}
       </div>
       {/* Admin-only dropdown to switch source */}
       <div className="mt-4">

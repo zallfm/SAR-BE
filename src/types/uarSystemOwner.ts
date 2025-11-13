@@ -21,12 +21,14 @@ export type Comment = {
 export type SystemOwnerUarHeader = {
     uarId: string;
     uarPeriod: string;
-    applicationId: string;
-    applicationName: string;
+    divisionId: number;
+    divisionOwner: string;
+    applicationId: string | undefined;
     percentComplete: string;
     createdDate: string; // ISO string
     completedDate: string | null; // ISO string
     status: "1" | "0" | null; // "1" = Finished, "0" = InProgress
+    source: string;
 };
 
 // Tipe untuk data Detail (Halaman Detail)
@@ -63,8 +65,9 @@ export type SystemOwnerBatchUpdateItem = {
 };
 
 export type SystemOwnerBatchUpdatePayload = {
+    source: 'SYSTEM_OWNER' | 'DIVISION_USER'
     uarId: string;
-    applicationId: string;
+    applicationId: string | undefined;
     comments?: string;
     items: SystemOwnerBatchUpdateItem[];
 };

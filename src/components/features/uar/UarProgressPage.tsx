@@ -307,16 +307,14 @@ const UarProgressPage: React.FC = React.memo(() => {
             completed: kpiStats?.completed.percentage.toFixed(1) ?? '0',
         };
 
-        // 2. Transform Division Chart Data
         const divisionChartData = rawDivisionData.map((d: DivisionChartItem) => ({
             label: d.divisionName,
             review: (d.reviewedCount / d.total * 100) || 0,
             approved: (d.divApprovedCount / d.total * 100) || 0,
             soApproved: (d.soApprovedCount / d.total * 100) || 0,
-            total: (d.completedCount / d.total * 100) || 0, // Using 'completed' for 'total' bar
+            total: (d.completedCount / d.total * 100) || 0,
         }));
 
-        // 3. Transform Application Chart Data
         const applicationChartData = rawAppData.map((d: ApplicationChartItem) => ({
             label: d.applicationName,
             review: (d.reviewedCount / d.total * 100) || 0,
@@ -329,13 +327,11 @@ const UarProgressPage: React.FC = React.memo(() => {
     }, [kpiStats, rawDivisionData, rawAppData]);
 
 
-    // --- FIX: Filter Dropdown Options (Simple Mappers to string[]) ---
     const periodOptions = useMemo(() => filterOptions.periods, [filterOptions.periods]);
     const divisionOptions = useMemo(() => filterOptions.divisions.map(d => d.name), [filterOptions.divisions]);
     const departmentOptions = useMemo(() => filterOptions.departments.map(d => d.name), [filterOptions.departments]);
     const applicationOptions = useMemo(() => filterOptions.applications.map(a => a.name), [filterOptions.applications]);
-
-    // --- FIX: Create specific handlers for each filter ---
+    console.log(filterOptions, departmentOptions, periodOptions, applicationOptions)
     const handlePeriodFilterChange = (label: string | null) => {
         const value = label || undefined;
         setFilters({ period: value });

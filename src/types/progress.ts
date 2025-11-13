@@ -1,3 +1,22 @@
+export type KpiDashboardStatItem = {
+    count: number;
+    percentage: number;
+    trend: number; 
+};
+
+export type KpiTotalStat = {
+    count: number;
+    trend: number; 
+};
+
+export type KpiDashboardStats = {
+    total: KpiTotalStat;
+    approved: KpiDashboardStatItem;
+    revoked: KpiDashboardStatItem;
+    accessReviewComplete: KpiDashboardStatItem;
+};
+
+
 
 export type KpiStatItem = {
     count: number;
