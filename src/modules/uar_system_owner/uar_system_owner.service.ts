@@ -125,8 +125,9 @@ export const uarSystemOwnerService = {
             return {
                 uarId: r.UAR_ID,
                 uarPeriod: r.UAR_PERIOD,
-                applicationId: r.APPLICATION_ID ?? 'N/A', // <-- FIX: Handled potential null
-                applicationName: r.TB_M_APPLICATION?.APPLICATION_NAME ?? 'N/A',
+                applicationId: r.APPLICATION_ID,
+                divisionId: r.DIVISION_ID ?? 'N/A',
+                divisionOwner: r.TB_M_DIVISION?.DIVISION_NAME ?? 'N/A',
                 percentComplete: percentCompleteString,
                 createdDate: createdDate?.toISOString() ?? "",
                 completedDate: completedDate?.toISOString() ?? null,
@@ -140,18 +141,8 @@ export const uarSystemOwnerService = {
 
 
     async getDetails(uarId: string, applicationId: string, userNoreg: string) {
-        const ownedApplicationIds = await getOwnedApplicationIds(userNoreg);
 
-        // Security check
-        if (!ownedApplicationIds.includes(applicationId)) {
-            throw new ApplicationError(
-                ERROR_CODES.API_UNAUTHORIZED,
-                "You are not authorized to view this application.",
-                { uarId, applicationId, userNoreg },
-                undefined,
-                403
-            );
-        }
+
 
         const { systemOwnerUsers, divisionUsers } = await repo.getUarDetails(uarId, applicationId);
 
@@ -201,7 +192,8 @@ export const uarSystemOwnerService = {
 
     async batchUpdate(
         dto: UarSystemOwnerBatchUpdateDTO,
-        userNoreg: string
+        userNoreg: string,
+        username: string | undefined,
     ) {
         if (!dto.items || dto.items.length === 0) {
             throw new ApplicationError(
@@ -213,22 +205,11 @@ export const uarSystemOwnerService = {
             );
         }
 
-        const ownedApplicationIds = await getOwnedApplicationIds(userNoreg);
 
-        // Security check
-        if (!ownedApplicationIds.includes(dto.applicationId)) {
-            throw new ApplicationError(
-                ERROR_CODES.API_UNAUTHORIZED,
-                "You are not authorized to update this application.",
-                dto,
-                undefined,
-                403
-            );
-        }
 
-        const result = await repo.batchUpdate(dto, userNoreg);
+        const result = await repo.batchUpdate(dto, userNoreg, username);
 
-        if (result.count === 0) {
+        if (result.userUpdateResult.count === 0) {
             throw new ApplicationError(
                 ERROR_CODES.APP_UPDATE_FAILED,
                 "Update failed. No matching UAR items found."

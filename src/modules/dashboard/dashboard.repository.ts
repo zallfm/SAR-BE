@@ -94,9 +94,417 @@ function buildUarWhereClauses(params: UarChartParams) {
     return { whereDU, whereSO };
 }
 
+export interface UarProgressFilters {
+    period?: string;
+    divisionId?: number;
+    departmentId?: number;
+    applicationId?: string;
+}
+
+
+interface RawKpiCounts {
+    total: number;
+    approvedCount: number;
+    revokedCount: number;
+    completedCount: number;
+}
+
+
+/**
+ * [REUSED] Represents a single KPI metric with its count, percentage, and trend.
+ */
+interface KpiStatItem {
+    count: number;
+    percentage: number;
+    trend: number;
+}
+
+
+export interface KpiStats {
+    total: {
+        count: number;
+        trend: number;
+    };
+    approved: KpiStatItem;
+    revoked: KpiStatItem;
+    accessReviewComplete: KpiStatItem;
+}
+
+export interface AdminDashboardStats {
+    total: {
+        count: number;
+        trend: number;
+    };
+    approved: KpiStatItem;
+    revoked: KpiStatItem;
+    accessReviewComplete: KpiStatItem;
+}
+
+
+
+export type DphKpiStats = KpiStats;
+
+
+
+
+
+function getPeriodString(date: Date): string {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    return `${year}${month}`;
+}
+
+
+function getYesterdayDateString(): string {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const year = yesterday.getFullYear();
+    const month = (yesterday.getMonth() + 1).toString().padStart(2, '0');
+    const day = yesterday.getDate().toString().padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
+
+function calculateTrend(current: number, previous: number): number {
+    if (previous === 0) {
+        return current > 0 ? 100 : 0;
+    }
+    const trend = ((current - previous) / previous) * 100;
+    return parseFloat(trend.toFixed(2));
+}
+
 
 export const dashboardRepository =
 {
+    async _getRawKpiCountsForYesterday(filters: Omit<UarProgressFilters, 'period'>): Promise<RawKpiCounts> {
+        const { divisionId, departmentId, applicationId } = filters;
+
+        const yesterdayDate = getYesterdayDateString();
+
+        const conditionsDU: Prisma.Sql[] = [Prisma.sql`CREATED_DT = ${yesterdayDate}`];
+        const conditionsSO: Prisma.Sql[] = [Prisma.sql`CREATED_DT = ${yesterdayDate}`];
+
+        if (divisionId) {
+            conditionsDU.push(Prisma.sql`DIVISION_ID = ${divisionId}`);
+            conditionsSO.push(Prisma.sql`DIVISION_ID = ${divisionId}`);
+        }
+        if (departmentId) {
+            conditionsDU.push(Prisma.sql`DEPARTMENT_ID = ${departmentId}`);
+            conditionsSO.push(Prisma.sql`DEPARTMENT_ID = ${departmentId}`);
+        }
+        if (applicationId) {
+            conditionsDU.push(Prisma.sql`APPLICATION_ID = ${applicationId}`);
+            conditionsSO.push(Prisma.sql`APPLICATION_ID = ${applicationId}`);
+        }
+
+        const whereDU = Prisma.sql`WHERE ${Prisma.join(conditionsDU, ' AND ')}`;
+        const whereSO = Prisma.sql`WHERE ${Prisma.join(conditionsSO, ' AND ')}`;
+
+        const query = Prisma.sql`
+            WITH AllUars AS (
+                SELECT
+                    'DU' AS source, REVIEW_STATUS, DIV_APPROVAL_STATUS, SO_APPROVAL_STATUS
+                FROM TB_R_UAR_DIVISION_USER ${whereDU}
+                UNION ALL
+                SELECT
+                    'SO' AS source, REVIEW_STATUS, NULL AS DIV_APPROVAL_STATUS, SO_APPROVAL_STATUS
+                FROM TB_R_UAR_SYSTEM_OWNER ${whereSO}
+            )
+            SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN SO_APPROVAL_STATUS = '1' THEN 1 ELSE 0 END) AS approvedCount,      -- [NEW] Approved
+                SUM(CASE WHEN SO_APPROVAL_STATUS = '2' THEN 1 ELSE 0 END) AS revokedCount,       -- [NEW] Revoked
+                SUM(
+                    CASE
+                        WHEN source = 'DU' AND DIV_APPROVAL_STATUS IS NOT NULL AND DIV_APPROVAL_STATUS != '0' AND SO_APPROVAL_STATUS IS NOT NULL AND SO_APPROVAL_STATUS != '0' THEN 1
+                        WHEN source = 'SO' AND SO_APPROVAL_STATUS IS NOT NULL AND SO_APPROVAL_STATUS != '0' THEN 1
+                        ELSE 0
+                    END
+                ) AS completedCount                                                            -- [REUSED] Access Review Complete
+            FROM AllUars
+        `;
+
+        const result = await prisma.$queryRaw<RawKpiCounts[]>(query);
+        const stats = result[0];
+
+        if (!stats || !stats.total) {
+            return { total: 0, approvedCount: 0, revokedCount: 0, completedCount: 0 };
+        }
+
+        return {
+            total: Number(stats.total) || 0,
+            approvedCount: Number(stats.approvedCount) || 0,
+            revokedCount: Number(stats.revokedCount) || 0,
+            completedCount: Number(stats.completedCount) || 0,
+        };
+    },
+
+    /**
+     * [UPDATED] Admin Dashboard Main Stats - Calculates Approved, Revoked, and Completed by UAR_PERIOD.
+     */
+    async getAdminDashboardStats(filters: UarProgressFilters): Promise<AdminDashboardStats> {
+        const currentPeriod = filters.period || getPeriodString(new Date());
+        const currentFilters = { ...filters, period: currentPeriod };
+        const { period, divisionId, departmentId, applicationId } = currentFilters;
+        const { period: _period, ...trendFilters } = filters;
+
+        const conditionsDU: Prisma.Sql[] = [];
+        const conditionsSO: Prisma.Sql[] = [];
+
+        if (period) {
+            conditionsDU.push(Prisma.sql`UAR_PERIOD = ${period}`);
+            conditionsSO.push(Prisma.sql`UAR_PERIOD = ${period}`);
+        }
+        if (divisionId) {
+            conditionsDU.push(Prisma.sql`DIVISION_ID = ${divisionId}`);
+            conditionsSO.push(Prisma.sql`DIVISION_ID = ${divisionId}`);
+        }
+        if (departmentId) {
+            conditionsDU.push(Prisma.sql`DEPARTMENT_ID = ${departmentId}`);
+            conditionsSO.push(Prisma.sql`DEPARTMENT_ID = ${departmentId}`);
+        }
+        if (applicationId) {
+            conditionsDU.push(Prisma.sql`APPLICATION_ID = ${applicationId}`);
+            conditionsSO.push(Prisma.sql`APPLICATION_ID = ${applicationId}`);
+        }
+
+        const whereDU = conditionsDU.length > 0 ? Prisma.sql`WHERE ${Prisma.join(conditionsDU, ' AND ')}` : Prisma.empty;
+        const whereSO = conditionsSO.length > 0 ? Prisma.sql`WHERE ${Prisma.join(conditionsSO, ' AND ')}` : Prisma.empty;
+
+        const query = Prisma.sql`
+            WITH AllUars AS (
+                SELECT
+                    'DU' AS source, DIVISION_ID, APPLICATION_ID,
+                    REVIEW_STATUS, DIV_APPROVAL_STATUS, SO_APPROVAL_STATUS
+                FROM TB_R_UAR_DIVISION_USER ${whereDU}
+                UNION ALL
+                SELECT
+                    'SO' AS source, DIVISION_ID, APPLICATION_ID,
+                    REVIEW_STATUS, NULL AS DIV_APPROVAL_STATUS, SO_APPROVAL_STATUS
+                FROM TB_R_UAR_SYSTEM_OWNER ${whereSO}
+            ),
+            Aggregated AS (
+                SELECT
+                    DIVISION_ID,
+                    APPLICATION_ID,
+                    
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN SO_APPROVAL_STATUS = '1' THEN 1 ELSE 0 END) AS approvedCount,       -- [UPDATED] Approved
+                    SUM(CASE WHEN SO_APPROVAL_STATUS = '2' THEN 1 ELSE 0 END) AS revokedCount,        -- [UPDATED] Revoked
+                    SUM(
+                        CASE
+                            WHEN source = 'DU' AND DIV_APPROVAL_STATUS IS NOT NULL AND DIV_APPROVAL_STATUS != '0' AND SO_APPROVAL_STATUS IS NOT NULL AND SO_APPROVAL_STATUS != '0' THEN 1
+                            WHEN source = 'SO' AND SO_APPROVAL_STATUS IS NOT NULL AND SO_APPROVAL_STATUS != '0' THEN 1
+                            ELSE 0
+                        END
+                    ) AS completedCount                                                             -- [UPDATED] Access Review Complete
+                FROM AllUars
+                GROUP BY GROUPING SETS (
+                    (), 
+                    (DIVISION_ID), 
+                    (APPLICATION_ID)
+                )
+            )
+            SELECT
+                A.*,
+                D.DIVISION_NAME,
+                APP.APPLICATION_NAME
+            FROM Aggregated A
+            LEFT JOIN TB_M_DIVISION D ON A.DIVISION_ID = D.DIVISION_ID
+            LEFT JOIN TB_M_APPLICATION APP ON A.APPLICATION_ID = APP.APPLICATION_ID
+        `;
+
+        const [results, yesterdayStats] = await Promise.all([
+            prisma.$queryRaw<any[]>(query),
+            this._getRawKpiCountsForYesterday(trendFilters)
+        ]);
+
+        let kpiStats: KpiStats = {
+            total: { count: 0, trend: 0 },
+            approved: { count: 0, percentage: 0, trend: 0 },
+            revoked: { count: 0, percentage: 0, trend: 0 },
+            accessReviewComplete: { count: 0, percentage: 0, trend: 0 }
+        };
+
+
+        for (const r of results) {
+            const total = Number(r.total) || 0;
+            const approvedCount = Number(r.approvedCount) || 0;
+            const revokedCount = Number(r.revokedCount) || 0;
+            const completedCount = Number(r.completedCount) || 0;
+
+            if (r.DIVISION_ID === null && r.APPLICATION_ID === null) {
+                kpiStats = {
+                    total: {
+                        count: total,
+                        trend: calculateTrend(total, yesterdayStats.total)
+                    },
+                    approved: {
+                        count: approvedCount,
+                        percentage: calculatePercentage(approvedCount, total),
+                        trend: calculateTrend(approvedCount, yesterdayStats.approvedCount)
+                    },
+                    revoked: {
+                        count: revokedCount,
+                        percentage: calculatePercentage(revokedCount, total),
+                        trend: calculateTrend(revokedCount, yesterdayStats.revokedCount)
+                    },
+                    accessReviewComplete: {
+                        count: completedCount,
+                        percentage: calculatePercentage(completedCount, total),
+                        trend: calculateTrend(completedCount, yesterdayStats.completedCount)
+                    }
+                };
+            }
+        }
+
+        return kpiStats;
+    },
+
+    async _getRawKpiCountsByPeriod(filters: UarProgressFilters): Promise<RawKpiCounts> {
+        const { period, divisionId, departmentId, applicationId } = filters;
+
+        if (!divisionId || !departmentId) {
+            throw new Error("DPH Stats query requires at least divisionId and departmentId.");
+        }
+
+        const conditions: Prisma.Sql[] = [
+            Prisma.sql`DIVISION_ID = ${divisionId}`,
+            Prisma.sql`DEPARTMENT_ID = ${departmentId}`
+        ];
+
+        if (period) conditions.push(Prisma.sql`UAR_PERIOD = ${period}`);
+        if (applicationId) conditions.push(Prisma.sql`APPLICATION_ID = ${applicationId}`);
+
+        const whereClause = Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`;
+
+        const query = Prisma.sql`
+            SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN SO_APPROVAL_STATUS = '1' THEN 1 ELSE 0 END) AS approvedCount,
+                SUM(CASE WHEN SO_APPROVAL_STATUS = '2' THEN 1 ELSE 0 END) AS revokedCount,
+                SUM(
+                    CASE
+                        WHEN REVIEW_STATUS IS NOT NULL AND DIV_APPROVAL_STATUS != '0' AND SO_APPROVAL_STATUS != '0'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) AS completedCount
+            FROM TB_R_UAR_DIVISION_USER
+            ${whereClause}
+        `;
+
+        const result = await prisma.$queryRaw<RawKpiCounts[]>(query);
+        const stats = result[0];
+
+        if (!stats || !stats.total) {
+            return { total: 0, approvedCount: 0, revokedCount: 0, completedCount: 0 };
+        }
+
+        return {
+            total: Number(stats.total) || 0,
+            approvedCount: Number(stats.approvedCount) || 0,
+            revokedCount: Number(stats.revokedCount) || 0,
+            completedCount: Number(stats.completedCount) || 0,
+        };
+    },
+
+    /**
+     * [UPDATED] DPH Trend Helper - Renamed to _getRawKpiCountsForYesterday and uses the new fields.
+     */
+    async _getRawDphKpiCountsForYesterday(filters: Omit<UarProgressFilters, 'period'>): Promise<RawKpiCounts> {
+        const { divisionId, departmentId, applicationId } = filters;
+
+        const yesterdayDate = getYesterdayDateString();
+
+        if (!divisionId || !departmentId) {
+            throw new Error("DPH Stats query requires at least divisionId and departmentId.");
+        }
+
+        const conditions: Prisma.Sql[] = [
+            Prisma.sql`CREATED_DT = ${yesterdayDate}`,
+            Prisma.sql`DIVISION_ID = ${divisionId}`,
+            Prisma.sql`DEPARTMENT_ID = ${departmentId}`
+        ];
+
+        if (applicationId) conditions.push(Prisma.sql`APPLICATION_ID = ${applicationId}`);
+
+        const whereClause = Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`;
+
+        const query = Prisma.sql`
+            SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN SO_APPROVAL_STATUS = '1' THEN 1 ELSE 0 END) AS approvedCount,
+                SUM(CASE WHEN SO_APPROVAL_STATUS = '2' THEN 1 ELSE 0 END) AS revokedCount,
+                SUM(
+                    CASE
+                        WHEN REVIEW_STATUS IS NOT NULL AND DIV_APPROVAL_STATUS != '0' AND SO_APPROVAL_STATUS != '0'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) AS completedCount
+            FROM TB_R_UAR_DIVISION_USER
+            ${whereClause}
+        `;
+
+        const result = await prisma.$queryRaw<RawKpiCounts[]>(query);
+        const stats = result[0];
+
+        if (!stats || !stats.total) {
+            return { total: 0, approvedCount: 0, revokedCount: 0, completedCount: 0 };
+        }
+
+        return {
+            total: Number(stats.total) || 0,
+            approvedCount: Number(stats.approvedCount) || 0,
+            revokedCount: Number(stats.revokedCount) || 0,
+            completedCount: Number(stats.completedCount) || 0,
+        };
+    },
+
+
+    async getDphKpiStats(filters: UarProgressFilters): Promise<DphKpiStats> {
+        if (!filters.divisionId || !filters.departmentId) {
+            throw new Error("DPH Stats query requires at least divisionId and departmentId.");
+        }
+
+        const currentPeriod = filters.period || getPeriodString(new Date());
+        const currentFilters = { ...filters, period: currentPeriod };
+        const { period: _period, ...trendFilters } = filters;
+
+        const [currentStats, yesterdayStats] = await Promise.all([
+            this._getRawKpiCountsByPeriod(currentFilters),
+            this._getRawDphKpiCountsForYesterday(trendFilters)
+        ]);
+
+        const total = currentStats.total;
+        const approvedCount = currentStats.approvedCount;
+        const revokedCount = currentStats.revokedCount;
+        const completedCount = currentStats.completedCount;
+
+        return {
+            total: {
+                count: total,
+                trend: calculateTrend(total, yesterdayStats.total)
+            },
+            approved: {
+                count: approvedCount,
+                percentage: calculatePercentage(approvedCount, total),
+                trend: calculateTrend(approvedCount, yesterdayStats.approvedCount)
+            },
+            revoked: {
+                count: revokedCount,
+                percentage: calculatePercentage(revokedCount, total),
+                trend: calculateTrend(revokedCount, yesterdayStats.revokedCount)
+            },
+            accessReviewComplete: {
+                count: completedCount,
+                percentage: calculatePercentage(completedCount, total),
+                trend: calculateTrend(completedCount, yesterdayStats.completedCount)
+            },
+        };
+    },
 
 
     async findAppsByOwner(noreg: string) {
@@ -119,7 +527,6 @@ export const dashboardRepository =
 
         const query = Prisma.sql`
         WITH AllUars AS (
-          -- Get Division Users
           SELECT
             'DU' AS source,
             REVIEW_STATUS,
@@ -130,7 +537,6 @@ export const dashboardRepository =
 
           UNION ALL
 
-          -- Get System Owners
           SELECT
             'SO' AS source,
             REVIEW_STATUS,
@@ -139,21 +545,17 @@ export const dashboardRepository =
           FROM TB_R_UAR_SYSTEM_OWNER
           ${whereSO}
         )
-        -- 3. Aggregate the results
         SELECT
           COUNT(*) AS total,
           SUM(CASE WHEN REVIEW_STATUS IS NOT NULL THEN 1 ELSE 0 END) AS reviewedCount,
           SUM(CASE WHEN DIV_APPROVAL_STATUS = '1' THEN 1 ELSE 0 END) AS divApprovedCount,
           SUM(CASE WHEN SO_APPROVAL_STATUS = '1' THEN 1 ELSE 0 END) AS soApprovedCount,
 
-          -- "Completed" logic
           SUM(
             CASE
-              -- DU record logic
               WHEN source = 'DU' AND DIV_APPROVAL_STATUS != '0' AND SO_APPROVAL_STATUS != '0' AND REVIEW_STATUS IS NOT NULL
               THEN 1
               
-              -- SO record logic
               WHEN source = 'SO' AND SO_APPROVAL_STATUS != '0' AND REVIEW_STATUS IS NOT NULL
               THEN 1
               
@@ -178,7 +580,6 @@ export const dashboardRepository =
             throw new Error('Failed to retrieve UAR stats.');
         }
 
-        // 5. Format the Final Response
         const total = Number(stats.total) || 0;
         const reviewedCount = Number(stats.reviewedCount) || 0;
         const divApprovedCount = Number(stats.divApprovedCount) || 0;
@@ -242,7 +643,6 @@ export const dashboardRepository =
             SUM(CASE WHEN DIV_APPROVAL_STATUS = '1' THEN 1 ELSE 0 END) AS divApprovedCount,
             SUM(CASE WHEN SO_APPROVAL_STATUS = '1' THEN 1 ELSE 0 END) AS soApprovedCount,
 
-            -- "Completed" logic
             SUM(
               CASE
                 WHEN source = 'DU' AND DIV_APPROVAL_STATUS != '0' AND SO_APPROVAL_STATUS != '0' AND REVIEW_STATUS IS NOT NULL
@@ -329,7 +729,6 @@ export const dashboardRepository =
             SUM(CASE WHEN DIV_APPROVAL_STATUS = '1' THEN 1 ELSE 0 END) AS divApprovedCount,
             SUM(CASE WHEN SO_APPROVAL_STATUS = '1' THEN 1 ELSE 0 END) AS soApprovedCount,
             
-            -- "Completed" logic
             SUM(
               CASE
                 WHEN source = 'DU' AND DIV_APPROVAL_STATUS != '0' AND SO_APPROVAL_STATUS != '0' AND REVIEW_STATUS IS NOT NULL
@@ -357,7 +756,6 @@ export const dashboardRepository =
         ORDER BY a.APPLICATION_NAME;
       `;
 
-        // 3. Execute the Query
         const results = await prisma.$queryRaw<
             Array<{
                 APPLICATION_ID: string;
@@ -370,7 +768,6 @@ export const dashboardRepository =
             }>
         >(query);
 
-        // 4. Format the Final Response
         return results.map((r) => ({
             applicationId: r.APPLICATION_ID,
             applicationName: r.APPLICATION_NAME,

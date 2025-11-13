@@ -1,6 +1,10 @@
 import type { FastifySchema } from "fastify";
 
 
+
+
+
+
 const KpiStatItemSchema = {
     type: "object",
     properties: {
@@ -76,8 +80,8 @@ const DivisionOptionsSchema = {
     items: {
         type: "object",
         properties: {
-            DIVISION_ID: { type: "number" },
-            DIVISION_NAME: { type: "string" }
+            id: { type: "number" },
+            name: { type: "string" }
         }
     }
 };
@@ -87,8 +91,8 @@ const DepartmentOptionsSchema = {
     items: {
         type: "object",
         properties: {
-            DEPARTMENT_ID: { type: "number" },
-            DEPARTMENT_NAME: { type: "string" }
+            id: { type: "number" },
+            name: { type: "string" }
         }
     }
 };
@@ -98,10 +102,91 @@ const ApplicationOptionsSchema = {
     items: {
         type: "object",
         properties: {
-            APPLICATION_ID: { type: "string" },
-            APPLICATION_NAME: { type: "string" }
+            id: { type: "string" },
+            name: { type: "string" }
         }
     }
+};
+const KpiDashboardStatItemSchema = {
+    type: "object",
+    properties: {
+        count: { type: "number" },
+        percentage: { type: "number" },
+        trend: { type: "number" },
+    },
+    required: ["count", "percentage", "trend"],
+};
+
+const KpiDashboardTotalStatSchema = {
+    type: "object",
+    properties: {
+        count: { type: "number" },
+        trend: { type: "number" },
+    },
+    required: ["count", "trend"],
+};
+
+
+
+const AdminSoDashboardResponseSchema = {
+    type: "object",
+    properties: {
+        total: KpiDashboardTotalStatSchema,
+        approved: KpiDashboardStatItemSchema,
+        revoked: KpiDashboardStatItemSchema,
+        accessReviewComplete: KpiDashboardStatItemSchema,
+    },
+
+    required: ["total", "approved", "revoked", "accessReviewComplete"],
+
+};
+
+const DphKpiStatsResponseSchema = {
+    type: "object",
+    properties: {
+        total: KpiDashboardTotalStatSchema,
+        approved: KpiDashboardStatItemSchema,
+        revoked: KpiDashboardStatItemSchema,
+        accessReviewComplete: KpiDashboardStatItemSchema
+    },
+    required: ["total", "approved", "revoked", "accessReviewComplete"],
+};
+
+
+
+export const getAdminDashboardStatsSchema: FastifySchema = {
+    querystring: {
+        type: "object",
+        properties: {
+            period: { type: "string" },
+            divisionId: { type: "number" },
+            departmentId: { type: "number" },
+            applicationId: { type: "string" },
+        },
+    },
+    response: { 200: AdminSoDashboardResponseSchema },
+};
+
+export const getSoDashboardStatsSchema: FastifySchema = {
+    querystring: {
+        type: "object",
+        properties: {
+            period: { type: "string" },
+            applicationId: { type: "string" },
+        },
+    },
+    response: { 200: AdminSoDashboardResponseSchema },
+};
+
+export const getDphDashboardStatsSchema: FastifySchema = {
+    querystring: {
+        type: "object",
+        properties: {
+            period: { type: "string" },
+            applicationId: { type: "string" },
+        },
+    },
+    response: { 200: DphKpiStatsResponseSchema },
 };
 
 

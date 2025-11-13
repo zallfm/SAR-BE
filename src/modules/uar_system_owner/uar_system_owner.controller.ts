@@ -3,7 +3,7 @@ import { uarSystemOwnerService as svc } from "./uar_system_owner.service";
 import type { UarSystemOwnerAddCommentDTO, UarSystemOwnerBatchUpdateDTO } from "../../types/uar_system_owner";
 
 function getAuthInfo(req: FastifyRequest) {
-    const auth = req.auth as { noreg: string, divisionId: number };
+    const auth = req.auth as { noreg: string, divisionId: number, username: string | undefined };
     if (!auth?.noreg) {
         throw new Error(
             "User authentication details (noreg) not found. Check auth plugin."
@@ -99,10 +99,11 @@ export const uarSystemOwnerController = {
             req: FastifyRequest<{ Body: UarSystemOwnerBatchUpdateDTO }>,
             reply: FastifyReply
         ) => {
-            const { noreg } = getAuthInfo(req);
+            const { noreg, username } = getAuthInfo(req);
             const result = await svc.batchUpdate(
                 req.body,
-                noreg
+                noreg,
+                username
             );
             return reply.send({
                 message: `Batch update successful.`,
