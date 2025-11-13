@@ -14,7 +14,8 @@ import prisma from "./plugins/prisma";
 import { indexRoutes } from "./api/index.routes";
 import { SECURITY_CONFIG } from "./config/security";
 import authorize from "./api/common/middleware/authorize";
-import requestContextPlugin from "./plugins/requestContext"
+import requestContextPlugin from "./plugins/requestContext";
+import swaggerPlugin from "./plugins/swagger";
 
 
 export async function buildApp() {
@@ -56,19 +57,25 @@ export async function buildApp() {
 
   await app.register(fastifyCookie);
 
-  // JWT
+  // JWT - Support both Bearer Token and Cookie
   await app.register(fastifyJWT, {
     secret: env.JWT_SECRET,
     cookie: {
       cookieName: "access",
-      signed: false,        // ← WAJIB ditambahkan
+      signed: false,
     },
+    // Support Bearer Token from Authorization header
+    // @fastify/jwt will check Authorization header first, then cookie
+    // This is the default behavior, but we make it explicit
   });
 
   // Plugin internal
   await app.register(requestIdPlugin);
   await app.register(securityPlugin);
   await app.register(requestContextPlugin);
+  
+  // Swagger Documentation
+  await app.register(swaggerPlugin);
 
   // Custom Error Handler (optional)
   // app.setErrorHandler(errorHandler);
@@ -95,6 +102,8 @@ export async function buildApp() {
       "/api/auth/refresh-token",
       "/tdd", // TDD documentation is public
       "/tdd/*", // All TDD routes are public
+      "/docs", // Swagger documentation is public
+      "/docs/*", // All Swagger UI routes are public
     ],
     prefixBase: "", // optional
   });

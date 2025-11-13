@@ -78,6 +78,7 @@ export default fp<AuthOpts>(async function authorizePlugin(app: FastifyInstance,
   // Hanya verifikasi token (req.user = JwtPayload)
   app.decorate('authenticate', async function (req: FastifyRequest, reply: FastifyReply) {
     try {
+      // Try to verify JWT - @fastify/jwt will handle both Bearer token and cookie
       await (req as any).jwtVerify(); // dari @fastify/jwt; mengisi req.user
     } catch (e: any) {
       const msg = /expired/i.test(String(e?.message))
