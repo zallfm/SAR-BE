@@ -1,7 +1,9 @@
 export interface User {
   username: string;
   name: string;
-  role: 'Admin' | 'DpH' | 'System Owner';
+  role: 'ADMINISTRATOR' | 'DPH' | 'SO';
+  divisionId: number;
+  noreg: string;
 }
 
 export interface TokenPayload {

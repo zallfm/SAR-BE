@@ -1,1 +1,14 @@
 node_modules
+
+/src/generated/prisma
+/src/generated/prisma-sc
+
+# Test coverage
+coverage
+*.lcov
+
+/dist
+generated
+build
+dist.zip
+.env
