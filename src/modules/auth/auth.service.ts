@@ -27,7 +27,7 @@ function isLocked(username: string): boolean {
   return false;
 }
 
-function recordFailure(username: string, lockDurationMs: number) {
+function recordFailure(username: string) {
   const now = Date.now();
   const current = loginAttempts.get(username);
 
@@ -36,21 +36,25 @@ function recordFailure(username: string, lockDurationMs: number) {
     return { count: 1, justLocked: false };
   }
 
+  // jika sebelumnya pernah lock dan sudah lewat waktunya → reset siklus
   if (current.lockedUntil && now >= current.lockedUntil) {
     loginAttempts.set(username, { count: 1 });
     return { count: 1, justLocked: false };
   }
 
+  // increment gagal
   const nextCount = (current.count ?? 0) + 1;
 
+  // capai batas → set lockedUntil
   if (nextCount >= SECURITY_CONFIG.MAX_LOGIN_ATTEMPTS) {
     loginAttempts.set(username, {
       count: nextCount,
-      lockedUntil: now + (lockDurationMs > 0 ? lockDurationMs : SECURITY_CONFIG.LOCKOUT_DURATION_MS),
+      lockedUntil: now + SECURITY_CONFIG.LOCKOUT_DURATION_MS
     });
     return { count: nextCount, justLocked: true };
   }
 
+  // update biasa (belum lock)
   current.count = nextCount;
   loginAttempts.set(username, current);
   return { count: nextCount, justLocked: false };
@@ -125,45 +129,82 @@ export const authService = {
     let user: any;
     try {
       user = await userRepository.login(username, password);
-    } catch (e) {
-      const { count, justLocked } = recordFailure(username, lockMs);
-      if (justLocked) {
-        const info = getLockInfo(username);
-        AuditLogger.logFailure(AuditAction.LOGIN_FAILED, ERROR_CODES.AUTH_ACCOUNT_LOCKED, {
-          userId: username, requestId,
-          description: 'Account locked due to too many failed attempts (threshold reached)'
+    } catch (err: any) {
+      // Catch generic Error from userRepository and convert to ApplicationError
+      // This handles cases where userRepository throws Error for invalid credentials
+      if (err?.message?.includes('incorrect') || err?.message?.includes('Username or password')) {
+        const { count, justLocked } = recordFailure(username);
+
+        if (justLocked) {
+          const info = getLockInfo(username);
+
+          AuditLogger.logFailure(AuditAction.LOGIN_FAILED, ERROR_CODES.AUTH_ACCOUNT_LOCKED, {
+            userId: username,
+            requestId,
+            description: 'Account locked due to too many failed attempts (threshold reached)'
+          });
+
+          publishMonitoringLog(app, {
+            userId: username,
+            module: "AUTH",
+            action: "LOGIN_FAILED",
+            status: "Error",
+            description: "Account locked (threshold reached)",
+            location: "/login"
+          });
+
+          throw new ApplicationError(
+            ERROR_CODES.AUTH_ACCOUNT_LOCKED,
+            ERROR_MESSAGES[ERROR_CODES.AUTH_ACCOUNT_LOCKED],
+            {
+              locked: true,
+              lockedUntil: info.lockedUntil,
+              remainingMs: info.remainingMs,
+              maxAttempts: SECURITY_CONFIG.MAX_LOGIN_ATTEMPTS,
+            },
+            requestId,
+            423
+          );
+        }
+
+        const remaining = Math.max(
+          SECURITY_CONFIG.MAX_LOGIN_ATTEMPTS - count,
+          0
+        );
+
+        AuditLogger.logFailure(AuditAction.LOGIN_FAILED, ERROR_CODES.AUTH_INVALID_CREDENTIALS, {
+          userId: username,
+          requestId,
+          description: `Invalid credentials (${remaining} attempt${remaining === 1 ? '' : 's'} left)`
         });
+
         publishMonitoringLog(app, {
-          userId: username, module: 'AUTH', action: 'LOGIN_FAILED', status: 'Error',
-          description: 'Account locked (threshold reached)', location: '/login'
+          userId: username,
+          module: "AUTH",
+          action: "LOGIN_FAILED",
+          status: "Error",
+          description: `Invalid credentials (${remaining} attempts left)`,
+          location: "/login"
         });
+
+        const message =
+          remaining > 0
+            ? `Invalid username or passwords. You have ${remaining} attempt${remaining === 1 ? '' : 's'} left.`
+            : ERROR_MESSAGES[ERROR_CODES.AUTH_ACCOUNT_LOCKED];
+
         throw new ApplicationError(
-          ERROR_CODES.AUTH_ACCOUNT_LOCKED,
-          ERROR_MESSAGES[ERROR_CODES.AUTH_ACCOUNT_LOCKED],
+          ERROR_CODES.AUTH_INVALID_CREDENTIALS,
+          message,
           {
-            locked: true, lockedUntil: info.lockedUntil, remainingMs: info.remainingMs,
-            maxAttempts: SECURITY_CONFIG.MAX_LOGIN_ATTEMPTS, lockTimeoutMs: lockMs || SECURITY_CONFIG.LOCKOUT_DURATION_MS,
+            locked: false,
+            attemptsLeft: remaining,
+            maxAttempts: SECURITY_CONFIG.MAX_LOGIN_ATTEMPTS,
           },
-          requestId, 423
+          requestId,
+          401
         );
       }
-      const remaining = Math.max(SECURITY_CONFIG.MAX_LOGIN_ATTEMPTS - count, 0);
-      AuditLogger.logFailure(AuditAction.LOGIN_FAILED, ERROR_CODES.AUTH_INVALID_CREDENTIALS, {
-        userId: username, requestId,
-        description: `Invalid credentials (${remaining} attempt${remaining === 1 ? '' : 's'} left)`
-      });
-      publishMonitoringLog(app, {
-        userId: username, module: 'AUTH', action: 'LOGIN_FAILED', status: 'Error',
-        description: `Invalid credentials (${remaining} attempts left)`, location: '/login'
-      });
-      throw new ApplicationError(
-        ERROR_CODES.AUTH_INVALID_CREDENTIALS,
-        remaining > 0
-          ? `Invalid username or passwords. You have ${remaining} attempt${remaining === 1 ? '' : 's'} left.`
-          : ERROR_MESSAGES[ERROR_CODES.AUTH_ACCOUNT_LOCKED],
-        { locked: false, attemptsLeft: remaining, maxAttempts: SECURITY_CONFIG.MAX_LOGIN_ATTEMPTS, nextLockDurationMs: lockMs || SECURITY_CONFIG.LOCKOUT_DURATION_MS },
-        requestId, 401
-      );
+      throw err;
     }
 
     const PASSWORD_EXPIRED = (ERROR_CODES as any).AUTH_PASSWORD_EXPIRED ?? ERROR_CODES.AUTH_INVALID_CREDENTIALS;
@@ -232,48 +273,48 @@ export const authService = {
     return { expireAt };
   },
 
-    async getMenu(username: string) {
-  try {
-    const menus = await userRepository.getMenu(username);
-    return ServiceResponse.success('Menu found', menus);
-  } catch {
-    return ServiceResponse.failure('An error occurred while retrieving menu.', null, 500);
-  }
-},
+  async getMenu(username: string) {
+    try {
+      const menus = await userRepository.getMenu(username);
+      return ServiceResponse.success('Menu found', menus);
+    } catch {
+      return ServiceResponse.failure('An error occurred while retrieving menu.', null, 500);
+    }
+  },
 
   async getProfile(username: string) {
-  try {
-    const profile = await userRepository.getProfile(username);
-    return ServiceResponse.success('Profile found', profile);
-  } catch {
-    return ServiceResponse.failure('An error occurred while retrieving profile.', null, 500);
-  }
-},
+    try {
+      const profile = await userRepository.getProfile(username);
+      return ServiceResponse.success('Profile found', profile);
+    } catch {
+      return ServiceResponse.failure('An error occurred while retrieving profile.', null, 500);
+    }
+  },
 
-  async logout(app: FastifyInstance, token: string, requestId ?: string) {
-  const decoded = app.jwt.decode(token) as any | null;
-  const username = decoded?.sub;
-  const jti = decoded?.jti;     // <— ambil JTI dari token
-  if (username && jti) removeSession(username, jti); // <— hapus sesi aktif
+  async logout(app: FastifyInstance, token: string, requestId?: string) {
+    const decoded = app.jwt.decode(token) as any | null;
+    const username = decoded?.sub;
+    const jti = decoded?.jti;     // <— ambil JTI dari token
+    if (username && jti) removeSession(username, jti); // <— hapus sesi aktif
 
-  AuditLogger.logSuccess(AuditAction.LOGOUT_SUCCESS, {
-    userId: username ?? 'unknown', userRole: decoded?.role ?? 'unknown',
-    requestId, description: 'User logged out',
-  });
-  publishMonitoringLog(app, {
-    userId: decoded?.name, module: 'AUTH', action: 'LOGOUT_SUCESS',
-    status: 'Success', description: 'User logout successfully', location: '/logout'
-  })
-    .catch(e => app.log.warn({ err: e }, 'monitoring log failed (success)'));
-  return true;
-},
+    AuditLogger.logSuccess(AuditAction.LOGOUT_SUCCESS, {
+      userId: username ?? 'unknown', userRole: decoded?.role ?? 'unknown',
+      requestId, description: 'User logged out',
+    });
+    publishMonitoringLog(app, {
+      userId: decoded?.name, module: 'AUTH', action: 'LOGOUT_SUCESS',
+      status: 'Success', description: 'User logout successfully', location: '/logout'
+    })
+      .catch(e => app.log.warn({ err: e }, 'monitoring log failed (success)'));
+    return true;
+  },
 
   async validate(username: string) {
-  try {
-    const user = await userRepository.getProfile(username);
-    return user;
-  } catch {
-    // swallow
+    try {
+      const user = await userRepository.getProfile(username);
+      return user;
+    } catch {
+      // swallow
+    }
   }
-}
 };

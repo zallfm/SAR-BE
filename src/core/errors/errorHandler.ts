@@ -35,6 +35,19 @@ export async function errorHandler(
 
     return reply.status(400).send({ code, message, requestId });
   }
+
+  if (err instanceof Error) {
+    const errorMessage = err.message?.toLowerCase() || '';
+    if (errorMessage.includes('incorrect') || errorMessage.includes('username or password') || errorMessage.includes('invalid credential')) {
+      logger.warn({ err, requestId }, "Credential error caught as generic Error");
+      return reply.status(401).send({
+        code: ERROR_CODES.AUTH_INVALID_CREDENTIALS,
+        message: ERROR_MESSAGES[ERROR_CODES.AUTH_INVALID_CREDENTIALS],
+        requestId
+      });
+    }
+  }
+
   logger.error({ err, requestId }, "Unhandled 500-level error");
 
   const code = ERROR_CODES.SYS_UNKNOWN_ERROR;
