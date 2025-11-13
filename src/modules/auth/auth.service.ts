@@ -194,7 +194,7 @@ export const authService = {
 
     const publicUser: User = {
       username: user!.username, name: user!.name, role: user!.role,
-      divisionId: 2, noreg: user!.noreg, departmentId: 500,
+      divisionId: user!.divisionId, noreg: user!.noreg, departmentId: user!.departmentId,
     };
 
     AuditLogger.logSuccess(AuditAction.LOGIN_SUCCESS, {

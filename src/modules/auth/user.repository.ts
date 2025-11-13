@@ -1,4 +1,4 @@
-import { prismaSC } from '../../db/prisma';
+import { prismaSC, prisma } from '../../db/prisma';
 import type { User } from '../../types/auth.js';
 import { TB_M_USER } from '../../generated/prisma-sc/index.js';
 import { hrPortalClient } from './hrPortal';
@@ -121,6 +121,23 @@ export const userRepository = {
     const primary = roles?.[0];
     const dynamicRole = (primary?.NAME ?? "SAR-ADMIN").toUpperCase();
 
+    let divisionId: number | null = null
+    let departmentId: number | null = null
+
+    if(dbUser.REG_NO) {
+      const emp = await prisma.tB_M_EMPLOYEE.findFirst({
+        where: {NOREG: dbUser.REG_NO},
+        select: {
+          DIVISION_ID: true,
+          DEPARTMENT_ID: true
+        }
+      })
+      if(emp) {
+        divisionId = emp.DIVISION_ID ?? null;
+        departmentId = emp.DEPARTMENT_ID ?? null;
+      }
+    }
+
     const sessionTimeoutSec = Number(dbUser.SESSION_TIMEOUT ?? 0) > 0
       ? Number(dbUser.SESSION_TIMEOUT)
       : 0;
@@ -130,9 +147,9 @@ export const userRepository = {
       username: dbUser.USERNAME,
       password: dbUser.PASSWORD,
       name: dbUser.USERNAME,
-      divisionId: 2,
+      divisionId: divisionId ?? 0,
       noreg: dbUser.REG_NO ?? "00000",
-      departmentId: 500,
+      departmentId: departmentId ?? 0,
       role: dynamicRole as User["role"],
       sessionTimeoutSec,
       passwordExpireAt: dbUser.PASSWORD_EXPIRATION_DATE ?? null,
