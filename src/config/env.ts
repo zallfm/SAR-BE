@@ -6,7 +6,7 @@ export const env = {
   DB_USER: process.env.DB_USER ?? "mssql",
   DB_NAME: process.env.DB_NAME ?? "",
   DB_PASSWORD: process.env.DB_PASSWORD ?? "",
-  FE_PROD: process.env.FE_PROD ?? "http://localhost:4173",
+  APP_URL: process.env.APP_URL ?? "http://localhost:5173",
 
   HRPORTAL_API: process.env.HRPORTAL_API ?? "unknown",
   HRPORTAL_USER: process.env.HRPORTAL_USER ?? "unknown",
