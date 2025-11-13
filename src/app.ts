@@ -41,7 +41,7 @@ export async function buildApp() {
 
   // ✅ 2️⃣ Aktifkan CORS untuk frontend kamu (Vite di port 5173)
   await app.register(cors, {
-    origin: [env.APP_URL],
+    origin: [env.APP_URL, "http://localhost:5173", "http://localhost:4173"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
