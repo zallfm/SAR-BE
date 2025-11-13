@@ -22,6 +22,7 @@ export const loginSchema = {
           properties: {
             token: { type: 'string' },
             expiresIn: { type: 'number' },
+            expireAt: { type: 'number' },
             user: {
               type: 'object',
               required: ['username', 'name', 'role'],

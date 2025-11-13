@@ -266,7 +266,7 @@ export const logRepository = {
     const startDt = parseDate(newLog.START_DATE);
     const endDt = newLog.END_DATE ? parseDate(newLog.END_DATE) : null;
 
-    console.log("newLog", newLog)
+    // console.log("newLog", newLog)
 
     try {
       await prisma.$transaction(async (tx) => {

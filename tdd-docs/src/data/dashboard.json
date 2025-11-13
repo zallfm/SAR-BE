@@ -1,0 +1,847 @@
+{
+  "name": "dashboard",
+  "displayName": "Dashboard",
+  "description": "Module for dashboard",
+  "functions": [
+    {
+      "name": "progress",
+      "description": "Handles GET request to /progress",
+      "signature": "GET /progress",
+      "method": "GET",
+      "endpoint": "/progress",
+      "testScenarios": [
+        {
+          "phase": "RED",
+          "description": "Test progress should fail initially",
+          "testCode": "it('should progress', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should fail"
+        },
+        {
+          "phase": "GREEN",
+          "description": "Test progress should pass after implementation",
+          "testCode": "it('should progress', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should pass"
+        },
+        {
+          "phase": "REFACTOR",
+          "description": "Refactor progress implementation",
+          "testCode": "// TODO: Refactor code\n// All tests should still pass",
+          "expectedResult": "Code refactored, tests still pass"
+        }
+      ],
+      "todos": [
+        {
+          "id": "1",
+          "task": "Implement progress function",
+          "status": "pending",
+          "priority": "high",
+          "description": "Create implementation for progress"
+        }
+      ],
+      "bddScenarios": [
+        {
+          "feature": "progress Feature",
+          "description": "As a developer, I want to progress so that I can handle the request",
+          "scenarios": [
+            {
+              "name": "progress Success Scenario",
+              "given": "Given I have valid request",
+              "when": "When I call progress",
+              "then": "Then I should receive successful response",
+              "testCode": "// TODO: Implement BDD test"
+            }
+          ]
+        }
+      ],
+      "dod": {
+        "criteria": [
+          {
+            "id": "dod-1",
+            "description": "All test scenarios implemented and passing",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-2",
+            "description": "Code coverage meets minimum threshold (70%)",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-3",
+            "description": "Error handling implemented for all error cases",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-4",
+            "description": "Code reviewed and approved",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-5",
+            "description": "Documentation updated",
+            "status": "PENDING",
+            "evidence": ""
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac-1",
+            "description": "Test progress should fail initially",
+            "testScenarioId": "progress-scenario-1",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-2",
+            "description": "Test progress should pass after implementation",
+            "testScenarioId": "progress-scenario-2",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-3",
+            "description": "Refactor progress implementation",
+            "testScenarioId": "progress-scenario-3",
+            "status": "PENDING"
+          }
+        ]
+      }
+    },
+    {
+      "name": "admin",
+      "description": "Handles GET request to /admin",
+      "signature": "GET /admin",
+      "method": "GET",
+      "endpoint": "/admin",
+      "testScenarios": [
+        {
+          "phase": "RED",
+          "description": "Test admin should fail initially",
+          "testCode": "it('should admin', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should fail"
+        },
+        {
+          "phase": "GREEN",
+          "description": "Test admin should pass after implementation",
+          "testCode": "it('should admin', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should pass"
+        },
+        {
+          "phase": "REFACTOR",
+          "description": "Refactor admin implementation",
+          "testCode": "// TODO: Refactor code\n// All tests should still pass",
+          "expectedResult": "Code refactored, tests still pass"
+        }
+      ],
+      "todos": [
+        {
+          "id": "1",
+          "task": "Implement admin function",
+          "status": "pending",
+          "priority": "high",
+          "description": "Create implementation for admin"
+        }
+      ],
+      "bddScenarios": [
+        {
+          "feature": "admin Feature",
+          "description": "As a developer, I want to admin so that I can handle the request",
+          "scenarios": [
+            {
+              "name": "admin Success Scenario",
+              "given": "Given I have valid request",
+              "when": "When I call admin",
+              "then": "Then I should receive successful response",
+              "testCode": "// TODO: Implement BDD test"
+            }
+          ]
+        }
+      ],
+      "dod": {
+        "criteria": [
+          {
+            "id": "dod-1",
+            "description": "All test scenarios implemented and passing",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-2",
+            "description": "Code coverage meets minimum threshold (70%)",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-3",
+            "description": "Error handling implemented for all error cases",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-4",
+            "description": "Code reviewed and approved",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-5",
+            "description": "Documentation updated",
+            "status": "PENDING",
+            "evidence": ""
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac-1",
+            "description": "Test admin should fail initially",
+            "testScenarioId": "admin-scenario-1",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-2",
+            "description": "Test admin should pass after implementation",
+            "testScenarioId": "admin-scenario-2",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-3",
+            "description": "Refactor admin implementation",
+            "testScenarioId": "admin-scenario-3",
+            "status": "PENDING"
+          }
+        ]
+      }
+    },
+    {
+      "name": "so",
+      "description": "Handles GET request to /so",
+      "signature": "GET /so",
+      "method": "GET",
+      "endpoint": "/so",
+      "testScenarios": [
+        {
+          "phase": "RED",
+          "description": "Test so should fail initially",
+          "testCode": "it('should so', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should fail"
+        },
+        {
+          "phase": "GREEN",
+          "description": "Test so should pass after implementation",
+          "testCode": "it('should so', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should pass"
+        },
+        {
+          "phase": "REFACTOR",
+          "description": "Refactor so implementation",
+          "testCode": "// TODO: Refactor code\n// All tests should still pass",
+          "expectedResult": "Code refactored, tests still pass"
+        }
+      ],
+      "todos": [
+        {
+          "id": "1",
+          "task": "Implement so function",
+          "status": "pending",
+          "priority": "high",
+          "description": "Create implementation for so"
+        }
+      ],
+      "bddScenarios": [
+        {
+          "feature": "so Feature",
+          "description": "As a developer, I want to so so that I can handle the request",
+          "scenarios": [
+            {
+              "name": "so Success Scenario",
+              "given": "Given I have valid request",
+              "when": "When I call so",
+              "then": "Then I should receive successful response",
+              "testCode": "// TODO: Implement BDD test"
+            }
+          ]
+        }
+      ],
+      "dod": {
+        "criteria": [
+          {
+            "id": "dod-1",
+            "description": "All test scenarios implemented and passing",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-2",
+            "description": "Code coverage meets minimum threshold (70%)",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-3",
+            "description": "Error handling implemented for all error cases",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-4",
+            "description": "Code reviewed and approved",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-5",
+            "description": "Documentation updated",
+            "status": "PENDING",
+            "evidence": ""
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac-1",
+            "description": "Test so should fail initially",
+            "testScenarioId": "so-scenario-1",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-2",
+            "description": "Test so should pass after implementation",
+            "testScenarioId": "so-scenario-2",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-3",
+            "description": "Refactor so implementation",
+            "testScenarioId": "so-scenario-3",
+            "status": "PENDING"
+          }
+        ]
+      }
+    },
+    {
+      "name": "dph",
+      "description": "Handles GET request to /dph",
+      "signature": "GET /dph",
+      "method": "GET",
+      "endpoint": "/dph",
+      "testScenarios": [
+        {
+          "phase": "RED",
+          "description": "Test dph should fail initially",
+          "testCode": "it('should dph', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should fail"
+        },
+        {
+          "phase": "GREEN",
+          "description": "Test dph should pass after implementation",
+          "testCode": "it('should dph', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should pass"
+        },
+        {
+          "phase": "REFACTOR",
+          "description": "Refactor dph implementation",
+          "testCode": "// TODO: Refactor code\n// All tests should still pass",
+          "expectedResult": "Code refactored, tests still pass"
+        }
+      ],
+      "todos": [
+        {
+          "id": "1",
+          "task": "Implement dph function",
+          "status": "pending",
+          "priority": "high",
+          "description": "Create implementation for dph"
+        }
+      ],
+      "bddScenarios": [
+        {
+          "feature": "dph Feature",
+          "description": "As a developer, I want to dph so that I can handle the request",
+          "scenarios": [
+            {
+              "name": "dph Success Scenario",
+              "given": "Given I have valid request",
+              "when": "When I call dph",
+              "then": "Then I should receive successful response",
+              "testCode": "// TODO: Implement BDD test"
+            }
+          ]
+        }
+      ],
+      "dod": {
+        "criteria": [
+          {
+            "id": "dod-1",
+            "description": "All test scenarios implemented and passing",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-2",
+            "description": "Code coverage meets minimum threshold (70%)",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-3",
+            "description": "Error handling implemented for all error cases",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-4",
+            "description": "Code reviewed and approved",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-5",
+            "description": "Documentation updated",
+            "status": "PENDING",
+            "evidence": ""
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac-1",
+            "description": "Test dph should fail initially",
+            "testScenarioId": "dph-scenario-1",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-2",
+            "description": "Test dph should pass after implementation",
+            "testScenarioId": "dph-scenario-2",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-3",
+            "description": "Refactor dph implementation",
+            "testScenarioId": "dph-scenario-3",
+            "status": "PENDING"
+          }
+        ]
+      }
+    },
+    {
+      "name": "filteroptionsperiods",
+      "description": "Handles GET request to /filter-options/periods",
+      "signature": "GET /filter-options/periods",
+      "method": "GET",
+      "endpoint": "/filter-options/periods",
+      "testScenarios": [
+        {
+          "phase": "RED",
+          "description": "Test filteroptionsperiods should fail initially",
+          "testCode": "it('should filteroptionsperiods', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should fail"
+        },
+        {
+          "phase": "GREEN",
+          "description": "Test filteroptionsperiods should pass after implementation",
+          "testCode": "it('should filteroptionsperiods', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should pass"
+        },
+        {
+          "phase": "REFACTOR",
+          "description": "Refactor filteroptionsperiods implementation",
+          "testCode": "// TODO: Refactor code\n// All tests should still pass",
+          "expectedResult": "Code refactored, tests still pass"
+        }
+      ],
+      "todos": [
+        {
+          "id": "1",
+          "task": "Implement filteroptionsperiods function",
+          "status": "pending",
+          "priority": "high",
+          "description": "Create implementation for filteroptionsperiods"
+        }
+      ],
+      "bddScenarios": [
+        {
+          "feature": "filteroptionsperiods Feature",
+          "description": "As a developer, I want to filteroptionsperiods so that I can handle the request",
+          "scenarios": [
+            {
+              "name": "filteroptionsperiods Success Scenario",
+              "given": "Given I have valid request",
+              "when": "When I call filteroptionsperiods",
+              "then": "Then I should receive successful response",
+              "testCode": "// TODO: Implement BDD test"
+            }
+          ]
+        }
+      ],
+      "dod": {
+        "criteria": [
+          {
+            "id": "dod-1",
+            "description": "All test scenarios implemented and passing",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-2",
+            "description": "Code coverage meets minimum threshold (70%)",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-3",
+            "description": "Error handling implemented for all error cases",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-4",
+            "description": "Code reviewed and approved",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-5",
+            "description": "Documentation updated",
+            "status": "PENDING",
+            "evidence": ""
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac-1",
+            "description": "Test filteroptionsperiods should fail initially",
+            "testScenarioId": "filteroptionsperiods-scenario-1",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-2",
+            "description": "Test filteroptionsperiods should pass after implementation",
+            "testScenarioId": "filteroptionsperiods-scenario-2",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-3",
+            "description": "Refactor filteroptionsperiods implementation",
+            "testScenarioId": "filteroptionsperiods-scenario-3",
+            "status": "PENDING"
+          }
+        ]
+      }
+    },
+    {
+      "name": "filteroptionsapplications",
+      "description": "Handles GET request to /filter-options/applications",
+      "signature": "GET /filter-options/applications",
+      "method": "GET",
+      "endpoint": "/filter-options/applications",
+      "testScenarios": [
+        {
+          "phase": "RED",
+          "description": "Test filteroptionsapplications should fail initially",
+          "testCode": "it('should filteroptionsapplications', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should fail"
+        },
+        {
+          "phase": "GREEN",
+          "description": "Test filteroptionsapplications should pass after implementation",
+          "testCode": "it('should filteroptionsapplications', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should pass"
+        },
+        {
+          "phase": "REFACTOR",
+          "description": "Refactor filteroptionsapplications implementation",
+          "testCode": "// TODO: Refactor code\n// All tests should still pass",
+          "expectedResult": "Code refactored, tests still pass"
+        }
+      ],
+      "todos": [
+        {
+          "id": "1",
+          "task": "Implement filteroptionsapplications function",
+          "status": "pending",
+          "priority": "high",
+          "description": "Create implementation for filteroptionsapplications"
+        }
+      ],
+      "bddScenarios": [
+        {
+          "feature": "filteroptionsapplications Feature",
+          "description": "As a developer, I want to filteroptionsapplications so that I can handle the request",
+          "scenarios": [
+            {
+              "name": "filteroptionsapplications Success Scenario",
+              "given": "Given I have valid request",
+              "when": "When I call filteroptionsapplications",
+              "then": "Then I should receive successful response",
+              "testCode": "// TODO: Implement BDD test"
+            }
+          ]
+        }
+      ],
+      "dod": {
+        "criteria": [
+          {
+            "id": "dod-1",
+            "description": "All test scenarios implemented and passing",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-2",
+            "description": "Code coverage meets minimum threshold (70%)",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-3",
+            "description": "Error handling implemented for all error cases",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-4",
+            "description": "Code reviewed and approved",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-5",
+            "description": "Documentation updated",
+            "status": "PENDING",
+            "evidence": ""
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac-1",
+            "description": "Test filteroptionsapplications should fail initially",
+            "testScenarioId": "filteroptionsapplications-scenario-1",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-2",
+            "description": "Test filteroptionsapplications should pass after implementation",
+            "testScenarioId": "filteroptionsapplications-scenario-2",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-3",
+            "description": "Refactor filteroptionsapplications implementation",
+            "testScenarioId": "filteroptionsapplications-scenario-3",
+            "status": "PENDING"
+          }
+        ]
+      }
+    },
+    {
+      "name": "filteroptionsdepartments",
+      "description": "Handles GET request to /filter-options/departments",
+      "signature": "GET /filter-options/departments",
+      "method": "GET",
+      "endpoint": "/filter-options/departments",
+      "testScenarios": [
+        {
+          "phase": "RED",
+          "description": "Test filteroptionsdepartments should fail initially",
+          "testCode": "it('should filteroptionsdepartments', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should fail"
+        },
+        {
+          "phase": "GREEN",
+          "description": "Test filteroptionsdepartments should pass after implementation",
+          "testCode": "it('should filteroptionsdepartments', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should pass"
+        },
+        {
+          "phase": "REFACTOR",
+          "description": "Refactor filteroptionsdepartments implementation",
+          "testCode": "// TODO: Refactor code\n// All tests should still pass",
+          "expectedResult": "Code refactored, tests still pass"
+        }
+      ],
+      "todos": [
+        {
+          "id": "1",
+          "task": "Implement filteroptionsdepartments function",
+          "status": "pending",
+          "priority": "high",
+          "description": "Create implementation for filteroptionsdepartments"
+        }
+      ],
+      "bddScenarios": [
+        {
+          "feature": "filteroptionsdepartments Feature",
+          "description": "As a developer, I want to filteroptionsdepartments so that I can handle the request",
+          "scenarios": [
+            {
+              "name": "filteroptionsdepartments Success Scenario",
+              "given": "Given I have valid request",
+              "when": "When I call filteroptionsdepartments",
+              "then": "Then I should receive successful response",
+              "testCode": "// TODO: Implement BDD test"
+            }
+          ]
+        }
+      ],
+      "dod": {
+        "criteria": [
+          {
+            "id": "dod-1",
+            "description": "All test scenarios implemented and passing",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-2",
+            "description": "Code coverage meets minimum threshold (70%)",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-3",
+            "description": "Error handling implemented for all error cases",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-4",
+            "description": "Code reviewed and approved",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-5",
+            "description": "Documentation updated",
+            "status": "PENDING",
+            "evidence": ""
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac-1",
+            "description": "Test filteroptionsdepartments should fail initially",
+            "testScenarioId": "filteroptionsdepartments-scenario-1",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-2",
+            "description": "Test filteroptionsdepartments should pass after implementation",
+            "testScenarioId": "filteroptionsdepartments-scenario-2",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-3",
+            "description": "Refactor filteroptionsdepartments implementation",
+            "testScenarioId": "filteroptionsdepartments-scenario-3",
+            "status": "PENDING"
+          }
+        ]
+      }
+    },
+    {
+      "name": "filteroptionsdivisions",
+      "description": "Handles GET request to /filter-options/divisions",
+      "signature": "GET /filter-options/divisions",
+      "method": "GET",
+      "endpoint": "/filter-options/divisions",
+      "testScenarios": [
+        {
+          "phase": "RED",
+          "description": "Test filteroptionsdivisions should fail initially",
+          "testCode": "it('should filteroptionsdivisions', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should fail"
+        },
+        {
+          "phase": "GREEN",
+          "description": "Test filteroptionsdivisions should pass after implementation",
+          "testCode": "it('should filteroptionsdivisions', async () => {\n  // TODO: Implement test\n});",
+          "expectedResult": "Test should pass"
+        },
+        {
+          "phase": "REFACTOR",
+          "description": "Refactor filteroptionsdivisions implementation",
+          "testCode": "// TODO: Refactor code\n// All tests should still pass",
+          "expectedResult": "Code refactored, tests still pass"
+        }
+      ],
+      "todos": [
+        {
+          "id": "1",
+          "task": "Implement filteroptionsdivisions function",
+          "status": "pending",
+          "priority": "high",
+          "description": "Create implementation for filteroptionsdivisions"
+        }
+      ],
+      "bddScenarios": [
+        {
+          "feature": "filteroptionsdivisions Feature",
+          "description": "As a developer, I want to filteroptionsdivisions so that I can handle the request",
+          "scenarios": [
+            {
+              "name": "filteroptionsdivisions Success Scenario",
+              "given": "Given I have valid request",
+              "when": "When I call filteroptionsdivisions",
+              "then": "Then I should receive successful response",
+              "testCode": "// TODO: Implement BDD test"
+            }
+          ]
+        }
+      ],
+      "dod": {
+        "criteria": [
+          {
+            "id": "dod-1",
+            "description": "All test scenarios implemented and passing",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-2",
+            "description": "Code coverage meets minimum threshold (70%)",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-3",
+            "description": "Error handling implemented for all error cases",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-4",
+            "description": "Code reviewed and approved",
+            "status": "PENDING",
+            "evidence": ""
+          },
+          {
+            "id": "dod-5",
+            "description": "Documentation updated",
+            "status": "PENDING",
+            "evidence": ""
+          }
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac-1",
+            "description": "Test filteroptionsdivisions should fail initially",
+            "testScenarioId": "filteroptionsdivisions-scenario-1",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-2",
+            "description": "Test filteroptionsdivisions should pass after implementation",
+            "testScenarioId": "filteroptionsdivisions-scenario-2",
+            "status": "PENDING"
+          },
+          {
+            "id": "ac-3",
+            "description": "Refactor filteroptionsdivisions implementation",
+            "testScenarioId": "filteroptionsdivisions-scenario-3",
+            "status": "PENDING"
+          }
+        ]
+      }
+    }
+  ]
+}

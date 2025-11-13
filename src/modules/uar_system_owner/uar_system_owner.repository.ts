@@ -14,8 +14,102 @@ function createFullDayFilter(dateString: string) {
     return { gte, lt };
 }
 
+export interface UarChartParams {
+    period?: string;
+    divisionId?: number;
+    departmentId?: number;
+    applicationId?: string;
+}
 
-export const uarSystemOwnerRepository = {
+interface UarOverallStats {
+    total: number;
+    reviewed: {
+        count: number;
+        percentage: number;
+    };
+    divApproved: {
+        count: number;
+        percentage: number;
+    };
+    soApproved: {
+        count: number;
+        percentage: number;
+    };
+    completed: {
+        count: number;
+        percentage: number;
+    };
+}
+
+interface UarStatsByDivision {
+    divisionId: number;
+    divisionName: string;
+    total: number;
+    reviewedCount: number;
+    divApprovedCount: number;
+    soApprovedCount: number;
+    completedCount: number;
+}
+
+
+interface UarStatsByApplication {
+    applicationId: string;
+    applicationName: string;
+    total: number;
+    reviewedCount: number;
+    divApprovedCount: number;
+    soApprovedCount: number;
+    completedCount: number;
+}
+
+
+function calculatePercentage(count: number, total: number): number {
+    if (total === 0) {
+        return 0;
+    }
+    return (count / total) * 100;
+}
+
+
+function buildUarWhereClauses(params: UarChartParams) {
+    const { period, divisionId, departmentId, applicationId } = params;
+
+    const conditionsDU: Prisma.Sql[] = [];
+    const conditionsSO: Prisma.Sql[] = [];
+
+    if (period) {
+        conditionsDU.push(Prisma.sql`UAR_PERIOD = ${period}`);
+        conditionsSO.push(Prisma.sql`UAR_PERIOD = ${period}`);
+    }
+    if (divisionId) {
+        conditionsDU.push(Prisma.sql`DIVISION_ID = ${divisionId}`);
+        conditionsSO.push(Prisma.sql`DIVISION_ID = ${divisionId}`);
+    }
+    if (departmentId) {
+        conditionsDU.push(Prisma.sql`DEPARTMENT_ID = ${departmentId}`);
+        conditionsSO.push(Prisma.sql`DEPARTMENT_ID = ${departmentId}`);
+    }
+    if (applicationId) {
+        conditionsDU.push(Prisma.sql`APPLICATION_ID = ${applicationId}`);
+        conditionsSO.push(Prisma.sql`APPLICATION_ID = ${applicationId}`);
+    }
+
+    const whereDU =
+        conditionsDU.length > 0
+            ? Prisma.sql`WHERE ${Prisma.join(conditionsDU, ' AND ')}`
+            : Prisma.empty;
+
+    const whereSO =
+        conditionsSO.length > 0
+            ? Prisma.sql`WHERE ${Prisma.join(conditionsSO, ' AND ')}`
+            : Prisma.empty;
+
+    return { whereDU, whereSO };
+}
+
+
+export const uarSystemOwnerRepository =
+{
 
 
     async findAppsByOwner(noreg: string) {
@@ -94,7 +188,7 @@ export const uarSystemOwnerRepository = {
                 where: whereStatus,
                 select: { UAR_ID: true },
                 distinct: ['UAR_ID']
-                
+
             });
 
             // 2. Find pending UARs in the SYSTEM_OWNER table
@@ -103,7 +197,7 @@ export const uarSystemOwnerRepository = {
                 DIVISION_ID: divisionId,
                 OR: [
                     { SO_APPROVAL_STATUS: '0' },
-                    { SO_APPROVAL_STATUS: null } 
+                    { SO_APPROVAL_STATUS: null }
                 ]
             };
 
@@ -226,6 +320,8 @@ export const uarSystemOwnerRepository = {
         }
         if (reviewStatus === 'pending') {
             conditionsDU.push(Prisma.sql`REVIEW_STATUS IS NULL`);
+        } else if (reviewStatus === 'reviewed') {
+            conditionsDU.push(Prisma.sql`REVIEW_STATUS IS NOT NULL`);
         }
         if (noreg) {
             conditionsDU.push(Prisma.sql`REVIEWER_NOREG = ${noreg}`);
@@ -237,13 +333,13 @@ export const uarSystemOwnerRepository = {
 
 
         const allUarsSql = Prisma.sql`
-            SELECT UAR_ID, UAR_PERIOD, APPLICATION_ID, 'SYSTEM_OWNER' as source_flag
+            SELECT UAR_ID, UAR_PERIOD, APPLICATION_ID, DIVISION_ID, 'SYSTEM_OWNER' as source_flag
             FROM TB_R_UAR_SYSTEM_OWNER
             ${whereSql_SO} 
             
             UNION ALL
             
-            SELECT UAR_ID, UAR_PERIOD, APPLICATION_ID, 'DIVISION_USER' as source_flag
+            SELECT UAR_ID, UAR_PERIOD, APPLICATION_ID, DIVISION_ID, 'DIVISION_USER' as source_flag
             FROM TB_R_UAR_DIVISION_USER
             ${whereSql_DU}
         `;
@@ -257,14 +353,14 @@ export const uarSystemOwnerRepository = {
             ),
             GroupedUARs AS (
                 SELECT
-                    UAR_ID, UAR_PERIOD, APPLICATION_ID,
+                    UAR_ID, UAR_PERIOD, APPLICATION_ID, DIVISION_ID,
                     STRING_AGG(source_flag, ',') WITHIN GROUP (ORDER BY source_flag) as source
                 FROM AllUARs
-                GROUP BY UAR_ID, UAR_PERIOD, APPLICATION_ID
+                GROUP BY UAR_ID, UAR_PERIOD, APPLICATION_ID, DIVISION_ID
             )
-            SELECT T.*, A.APPLICATION_NAME
+            SELECT T.*, D.DIVISION_NAME
             FROM GroupedUARs AS T
-            LEFT JOIN TB_M_APPLICATION AS A ON T.APPLICATION_ID = A.APPLICATION_ID
+            LEFT JOIN TB_M_DIVISION AS D ON T.DIVISION_ID = D.DIVISION_ID
             ORDER BY T.UAR_ID DESC
             OFFSET ${offset} ROWS
             FETCH NEXT ${limit} ROWS ONLY
@@ -276,10 +372,10 @@ export const uarSystemOwnerRepository = {
             )
             SELECT COUNT(*) as count
             FROM (
-                -- We only need to group to get the distinct UARs for the count
-                SELECT UAR_ID, UAR_PERIOD, APPLICATION_ID
+                -- Grouping must match the data query's grouping
+                SELECT UAR_ID, UAR_PERIOD, APPLICATION_ID, DIVISION_ID
                 FROM AllUARs
-                GROUP BY UAR_ID, UAR_PERIOD, APPLICATION_ID
+                GROUP BY UAR_ID, UAR_PERIOD, APPLICATION_ID, DIVISION_ID
             ) as SubQuery
         `;
         const [dataRawResults, totalGroups] = await Promise.all([
@@ -287,26 +383,32 @@ export const uarSystemOwnerRepository = {
                 UAR_ID: string;
                 UAR_PERIOD: string;
                 APPLICATION_ID: string;
-                APPLICATION_NAME: string;
-                source: string; // The new flag field
-            }>>(dataQuerySql), // Use the new query variable
+                DIVISION_ID: number;
+                DIVISION_NAME: string; // Changed to DIVISION_NAME
+                source: string;
+            }>>(dataQuerySql),
 
-            // Query for the total count
-            prisma.$queryRaw<Array<{ count: number }>>(countQuerySql) // Use the new query variable
+            prisma.$queryRaw<Array<{ count: number }>>(countQuerySql)
         ]);
 
         const totalRows = totalGroups[0]?.count ?? 0;
 
-        // 5. --- (Unchanged) Map the results ---
-        const dataRaw = dataRawResults.map(row => ({
-            UAR_ID: row.UAR_ID,
-            UAR_PERIOD: row.UAR_PERIOD,
-            APPLICATION_ID: row.APPLICATION_ID,
-            source: row.source, // Add the source field
-            TB_M_APPLICATION: {
-                APPLICATION_NAME: row.APPLICATION_NAME
-            }
-        }));
+        const dataRaw = dataRawResults.map(row => {
+            const sources = row.source ? row.source.split(',') : [];
+            const uniqueSources = new Set(sources);
+            const deduplicatedSource = Array.from(uniqueSources).join(',');
+
+            return {
+                UAR_ID: row.UAR_ID,
+                UAR_PERIOD: row.UAR_PERIOD,
+                APPLICATION_ID: row.APPLICATION_ID,
+                DIVISION_ID: row.DIVISION_ID,
+                source: deduplicatedSource,
+                TB_M_DIVISION: { // Changed to TB_M_DIVISION
+                    DIVISION_NAME: row.DIVISION_NAME // Changed to DIVISION_NAME
+                }
+            };
+        });
         const uarIds = dataRaw.map((d) => d.UAR_ID);
         const appIds = dataRaw.map((d) => d.APPLICATION_ID as string);
 
@@ -594,12 +696,15 @@ export const uarSystemOwnerRepository = {
 
 
 
+
     async batchUpdate(
         dto: UarSystemOwnerBatchUpdateDTO,
-        userNoreg: string
+        userNoreg: string,
+        username: string | undefined,
     ) {
-        const { uarId, applicationId, items, comments } = dto;
+        const { uarId, applicationId, items } = dto;
         const now = await getDbNow();
+
 
         const approvedItems = items
             .filter(item => item.decision === "Approved")
@@ -609,91 +714,126 @@ export const uarSystemOwnerRepository = {
             .filter(item => item.decision === "Revoked")
             .map(item => ({ USERNAME: item.username, ROLE_ID: item.roleId }));
 
-        const hasComment = comments && comments.trim().length > 0;
-
+        console.log("TEST", revokedItems, approvedItems)
         try {
             return await prisma.$transaction(async (tx) => {
 
-                const commenter = await tx.tB_M_EMPLOYEE.findFirst({
-                    where: {
-                        NOREG: userNoreg,
-                        VALID_TO: { gte: now }
-                    },
-                    select: { PERSONNEL_NAME: true }
-                });
-                const commenterName = commenter?.PERSONNEL_NAME ?? null;
+                let client: any;
+                let approveData: any;
+                let revokeData: any;
+                let statusField: 'SO_APPROVAL_STATUS' | 'DIV_APPROVAL_STATUS';
 
-                let uarPeriod: string | null = null;
-                if (hasComment && items.length > 0) {
-                    const firstItem = items[0];
-                    const uarRecord = await tx.tB_R_UAR_SYSTEM_OWNER.findFirst({
-                        where: {
-                            UAR_ID: uarId,
-                            APPLICATION_ID: applicationId,
-                            USERNAME: firstItem.username,
-                            ROLE_ID: firstItem.roleId
-                        },
-                        select: { UAR_PERIOD: true }
-                    });
-
-                    if (!uarRecord) {
-                        throw new Error(`Could not find UAR Period for UAR_ID ${uarId} to save comment.`);
-                    }
-                    uarPeriod = uarRecord.UAR_PERIOD;
+                if (dto.source === 'SYSTEM_OWNER') {
+                    client = tx.tB_R_UAR_SYSTEM_OWNER;
+                    statusField = 'SO_APPROVAL_STATUS';
+                    approveData = {
+                        SO_APPROVAL_STATUS: "1",
+                        SO_APPROVAL_BY: userNoreg,
+                        SO_APPROVAL_DT: now,
+                        CHANGED_BY: username,
+                        CHANGED_DT: now,
+                    };
+                    revokeData = {
+                        SO_APPROVAL_STATUS: "2",
+                        SO_APPROVAL_BY: userNoreg,
+                        SO_APPROVAL_DT: now,
+                        CHANGED_BY: username,
+                        CHANGED_DT: now,
+                    };
+                } else { 
+                    client = tx.tB_R_UAR_DIVISION_USER;
+                    statusField = 'SO_APPROVAL_STATUS'; 
+                    approveData = {
+                        SO_APPROVAL_STATUS: "1", 
+                        CHANGED_BY: username,
+                        CHANGED_DT: now,
+                    };
+                    revokeData = {
+                        SO_APPROVAL_STATUS: "2",
+                        CHANGED_BY: username,
+                        CHANGED_DT: now,
+                    };
                 }
-
                 const approveUpdateResult = (approvedItems.length > 0)
-                    ? await tx.tB_R_UAR_SYSTEM_OWNER.updateMany({
+                    ? await client.updateMany({
                         where: {
                             UAR_ID: uarId,
                             APPLICATION_ID: applicationId,
                             OR: approvedItems,
                         },
-                        data: {
-                            SO_APPROVAL_STATUS: "1",
-                            SO_APPROVAL_BY: userNoreg,
-                            SO_APPROVAL_DT: now,
-                        },
+                        data: approveData, 
                     })
                     : { count: 0 };
 
                 const revokeUpdateResult = (revokedItems.length > 0)
-                    ? await tx.tB_R_UAR_SYSTEM_OWNER.updateMany({
+                    ? await client.updateMany({
                         where: {
                             UAR_ID: uarId,
                             APPLICATION_ID: applicationId,
                             OR: revokedItems,
                         },
-                        data: {
-                            SO_APPROVAL_STATUS: "2",
-                            SO_APPROVAL_BY: userNoreg,
-                            SO_APPROVAL_DT: now,
-                        },
+                        data: revokeData,
                     })
                     : { count: 0 };
 
-                if (hasComment && uarPeriod) {
-                    const commentData = items.map(item => ({
-                        COMMENT_TEXT: comments,
-                        COMMENTER_ID: userNoreg,
-                        COMMENTER_NAME: commenterName,
-                        UAR_PERIOD: uarPeriod!,
+                const allItemsInUar = await client.findMany({
+                    where: {
                         UAR_ID: uarId,
-                        USERNAME: item.username,
-                        ROLE_ID: item.roleId,
-                    }));
+                        APPLICATION_ID: applicationId,
+                    },
+                    select: { [statusField]: true }, 
+                });
 
-                    await tx.tB_M_COMMENT_SYSTEM_OWNER.createMany({
-                        data: commentData,
-                    });
+                const totalItems = allItemsInUar.length;
+                let rejectedCount = 0;
+                let pendingCount = 0;
+
+                for (const item of allItemsInUar) {
+                    const status = item[statusField]; 
+                    if (status === '2') {
+                        rejectedCount++;
+                    } else if (status === '0' || status === null) { 
+                        pendingCount++;
+                    }
                 }
 
-                return {
+                let isApproved: 'Y' | 'N' = 'N';
+                let isRejected: 'Y' | 'N' = 'N';
+                let approvedDt: Date | null = null;
+
+                if (rejectedCount > 0) {
+                    isRejected = 'Y';
+                    approvedDt = now;
+                } else if (pendingCount > 0) {
+                    // Do nothing, still in progress
+                } else {
+                    // All items are approved ('1')
+                    isApproved = 'Y';
+                    approvedDt = now;
+                }
+
+                // 4. Update workflow (this logic remains the same)
+                const workflowUpdateResult = await tx.tB_R_WORKFLOW.updateMany({
+                    where: {
+                        UAR_ID: uarId,
+                        APPLICATION_ID: applicationId,
+                    },
+                    data: {
+                        IS_APPROVED: isApproved,
+                        IS_REJECTED: isRejected,
+                        APPROVED_BY: userNoreg,
+                        APPROVED_DT: approvedDt,
+                    },
+                });
+
+                const userUpdateResult = {
                     count: approveUpdateResult.count + revokeUpdateResult.count
                 };
+
+                return { userUpdateResult, workflowUpdateResult };
             });
         } catch (error) {
-            console.error("System Owner batch update transaction failed:", error);
+            console.error("Batch update transaction failed:", error);
             if (error instanceof Error) {
                 throw new Error(`Batch update failed: ${error.message}`);
             }
@@ -706,33 +846,28 @@ export const uarSystemOwnerRepository = {
             uarId: string,
             applicationId: string,
             comments: string,
-            // The items to attach the comment to
             items: Array<{ username: string, roleId: string }>
         },
         userNoreg: string
     ) {
         const { uarId, applicationId, items, comments } = dto;
 
-        // We must have at least one item to link the comment to
         if (!items || items.length === 0) {
             throw new Error("No items selected to add a comment.");
         }
 
         try {
             return await prisma.$transaction(async (tx) => {
-                // 1. Get Commenter Name
                 const now = await getDbNow();
                 const commenter = await tx.tB_M_EMPLOYEE.findFirst({
                     where: {
                         NOREG: userNoreg,
-                        VALID_TO: { gte: now } // Find active employee record
+                        VALID_TO: { gte: now }
                     },
                     select: { PERSONNEL_NAME: true }
                 });
                 const commenterName = commenter?.PERSONNEL_NAME ?? null;
 
-                // 2. Get UAR_PERIOD from the first item
-                // (We assume all items in the batch share the same period)
                 const firstItem = items[0];
                 const uarRecord = await tx.tB_R_UAR_SYSTEM_OWNER.findFirst({
                     where: {
@@ -749,7 +884,6 @@ export const uarSystemOwnerRepository = {
                 }
                 const uarPeriod = uarRecord.UAR_PERIOD;
 
-                // 3. Prepare comment data for all selected items
                 const commentData = items.map(item => ({
                     COMMENT_TEXT: comments,
                     COMMENTER_ID: userNoreg,

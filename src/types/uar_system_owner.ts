@@ -2,6 +2,7 @@ export interface UarSystemOwnerBatchUpdateDTO {
     uarId: string;
     applicationId: string;
     comments?: string;
+    source: 'SYSTEM_OWNER' | 'DIVISION_USER'
     items: {
         username: string;
         roleId: string;
@@ -22,8 +23,9 @@ export interface UarSystemOwnerAddCommentDTO {
 export interface UarHeader {
     uarId: string;
     uarPeriod: string;
-    applicationId: string;
-    applicationName: string;
+    applicationId: string,
+    divisionId: number;
+    divisionOwner: string;
     percentComplete: string;
     createdDate: string;
     completedDate: string | null;

@@ -7,7 +7,8 @@ const UarHeaderItemSchema = {
         uarId: { type: "string" },
         uarPeriod: { type: "string" },
         applicationId: { type: "string" },
-        applicationName: { type: "string" },
+        divisionId: { type: "number" },
+        divisionOwner: { type: "string" },
         percentComplete: { type: "string" },
         createdDate: { type: "string" },
         completedDate: { type: ["string", "null"] },
@@ -175,14 +176,13 @@ export const getUarExcelSchema: FastifySchema = {
     },
 };
 
-
 export const batchUpdateSchema: FastifySchema = {
     body: {
         type: "object",
         properties: {
             uarId: { type: "string" },
             applicationId: { type: "string" },
-            comments: { type: "string" },
+            source: { type: "string" },
             items: {
                 type: "array",
                 minItems: 1,
@@ -204,13 +204,23 @@ export const batchUpdateSchema: FastifySchema = {
             type: "object",
             properties: {
                 message: { type: "string" },
-                data: { type: "object", additionalProperties: true },
+                data: {
+                    type: "object",
+                    properties: {
+                        userUpdateResult: {
+                            type: "object",
+                            properties: { count: { type: "number" } }
+                        },
+                        workflowUpdateResult: {
+                            type: "object",
+                            properties: { count: { type: "number" } }
+                        }
+                    }
+                },
             },
         },
     },
 };
-
-// In uar_system_owner.schema.ts
 
 export const addCommentSchema: FastifySchema = {
     body: {

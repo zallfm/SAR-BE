@@ -13,26 +13,63 @@ type CreateScheduleBody = {
 };
 
 export const scheduleRoutes = async (app: FastifyInstance) => {
-  app.get("/", { errorHandler }, async (req, reply) => {
+  app.get("/", {
+    schema: {
+      tags: ['Schedule'],
+      description: 'Get all schedules',
+      summary: 'List Schedules',
+      security: [{ bearerAuth: [] }],
+    },
+    errorHandler,
+  }, async (req, reply) => {
     return scheduleController.getSchedules(app)(req, reply);
   });
+  
   app.post<{ Body: CreateScheduleBody }>(
     "/",
-    { schema: scheduleSchema, errorHandler },
+    {
+      schema: {
+        ...scheduleSchema,
+        tags: ['Schedule'],
+        description: 'Create a new schedule',
+        summary: 'Create Schedule',
+        security: [{ bearerAuth: [] }],
+      },
+      errorHandler,
+    },
     async (req, reply) => {
       return scheduleController.createSchedule(app)(req, reply);
     }
   );
+  
   app.put<{ Params: { id: string }; Body: CreateScheduleBody }>(
     "/:APPLICATION_ID/:SCHEDULE_SYNC_START_DT/:SCHEDULE_UAR_DT",
-    { schema: scheduleSchema, errorHandler },
+    {
+      schema: {
+        ...scheduleSchema,
+        tags: ['Schedule'],
+        description: 'Update an existing schedule',
+        summary: 'Update Schedule',
+        security: [{ bearerAuth: [] }],
+      },
+      errorHandler,
+    },
     async (req, reply) => {
       return scheduleController.editSchedule(app)(req, reply);
     }
   );
+  
   app.put<{ Params: { id: string }; Body: CreateScheduleBody }>(
     "/:APPLICATION_ID/:SCHEDULE_SYNC_START_DT/:SCHEDULE_UAR_DT/status",
-    { errorHandler },
+    {
+      schema: {
+        tags: ['Schedule'],
+        description: 'Update schedule status',
+        summary: 'Update Schedule Status',
+        security: [{ bearerAuth: [] }],
+      },
+      errorHandler,
+    },
     async (req, reply) => {
       return scheduleController.updateStatusSchedule(app)(req, reply);
     }

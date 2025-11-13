@@ -327,11 +327,7 @@ export const uarDivisionRepository = {
             PERSONNEL_NAME: d.NOREG != null ? EmployeeNameMap.get(d.NOREG) ?? null : null,
         }));
 
-        // (opsional) isi SECTION_NAME di header dari salah satu detail (kalau mau)
-        // const headerSectionName =
-        //     header?.DEPARTMENT_ID && detailsWithSectionName.length
-        //         ? detailsWithSectionName[0].SECTION_NAME ?? null
-        //         : null;
+    
         const result = {
             header: {
                 ...header,
