@@ -124,15 +124,15 @@ export const userRepository = {
     let divisionId: number | null = null
     let departmentId: number | null = null
 
-    if(dbUser.REG_NO) {
+    if (dbUser.REG_NO) {
       const emp = await prisma.tB_M_EMPLOYEE.findFirst({
-        where: {NOREG: dbUser.REG_NO},
+        where: { NOREG: dbUser.REG_NO },
         select: {
           DIVISION_ID: true,
           DEPARTMENT_ID: true
         }
       })
-      if(emp) {
+      if (emp) {
         divisionId = emp.DIVISION_ID ?? null;
         departmentId = emp.DEPARTMENT_ID ?? null;
       }
@@ -188,20 +188,20 @@ export const userRepository = {
           m.GLYPH,
           m.SEPARATOR,
           m.TARGET,
-
+ 
           -- nomor urut dari prefix angka (default 9999 jika tak ada angka)
           TRY_CONVERT(int, NULLIF(SUBSTRING(m.MENU_ID, 1,
               PATINDEX('%[^0-9]%', m.MENU_ID + 'X') - 1), ''))        AS ORDER_NO,
-
+ 
           -- nomor urut parent dari prefix angka
           TRY_CONVERT(int, NULLIF(SUBSTRING(m.MENU_PARENT, 1,
               PATINDEX('%[^0-9]%', m.MENU_PARENT + 'X') - 1), ''))    AS PARENT_ORDER,
-
+ 
           -- ID bersih (tanpa angka)
           SUBSTRING(m.MENU_ID,
               PATINDEX('%[^0-9]%', m.MENU_ID + 'X'),
               LEN(m.MENU_ID))                                         AS MENU_ID_CLEAN,
-
+ 
           -- Parent bersih (biarkan null/'menu' apa adanya)
           CASE
             WHEN m.MENU_PARENT IS NULL OR m.MENU_PARENT = 'menu' THEN m.MENU_PARENT
@@ -408,3 +408,4 @@ export const userRepository = {
 
 
 };
+

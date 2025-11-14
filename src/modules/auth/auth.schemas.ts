@@ -41,7 +41,7 @@ export const loginSchema = {
     }
   }
 } as const;
-
+ 
 export const getMenuSchema = {
   querystring: {
     type: 'object',
@@ -60,7 +60,7 @@ export const getMenuSchema = {
     }
   }
 } as const;
-
+ 
 export const getProfileSchema = {
   querystring: {
     type: 'object',
@@ -111,5 +111,4 @@ export const getProfileSchema = {
       }
     }
   }
-} as const;
-
+} as const;  

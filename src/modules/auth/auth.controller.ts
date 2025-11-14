@@ -24,6 +24,7 @@ export const authController = {
         // normalisasi role untuk output user (TIDAK mempengaruhi token)
         const normalizedRole = toUpperRole(result?.user?.role) ?? 'ADMIN';
         const userOut = { ...result.user, role: normalizedRole };
+        console.log(result)
 
         // ⚠️ PENTING: JANGAN re-sign token di controller, agar JTI tidak hilang
         return reply.status(200).send({
@@ -36,7 +37,7 @@ export const authController = {
             expiresIn: result.expiresIn,  // detik
             expireAt: result.expiresAt,   // epoch ms
             user: userOut,
-            passwordWarning:result.passwordWarning ?? null
+            passwordWarning: result.passwordWarning ?? null
           }
         });
       },

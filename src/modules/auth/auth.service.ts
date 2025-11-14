@@ -27,7 +27,7 @@ function isLocked(username: string): boolean {
   return false;
 }
 
-function recordFailure(username: string) {
+function recordFailure(username: string, lockDurationMs: number) {
   const now = Date.now();
   const current = loginAttempts.get(username);
 
@@ -36,25 +36,21 @@ function recordFailure(username: string) {
     return { count: 1, justLocked: false };
   }
 
-  // jika sebelumnya pernah lock dan sudah lewat waktunya → reset siklus
   if (current.lockedUntil && now >= current.lockedUntil) {
     loginAttempts.set(username, { count: 1 });
     return { count: 1, justLocked: false };
   }
 
-  // increment gagal
   const nextCount = (current.count ?? 0) + 1;
 
-  // capai batas → set lockedUntil
   if (nextCount >= SECURITY_CONFIG.MAX_LOGIN_ATTEMPTS) {
     loginAttempts.set(username, {
       count: nextCount,
-      lockedUntil: now + SECURITY_CONFIG.LOCKOUT_DURATION_MS
+      lockedUntil: now + (lockDurationMs > 0 ? lockDurationMs : SECURITY_CONFIG.LOCKOUT_DURATION_MS),
     });
     return { count: nextCount, justLocked: true };
   }
 
-  // update biasa (belum lock)
   current.count = nextCount;
   loginAttempts.set(username, current);
   return { count: nextCount, justLocked: false };
@@ -129,82 +125,45 @@ export const authService = {
     let user: any;
     try {
       user = await userRepository.login(username, password);
-    } catch (err: any) {
-      // Catch generic Error from userRepository and convert to ApplicationError
-      // This handles cases where userRepository throws Error for invalid credentials
-      if (err?.message?.includes('incorrect') || err?.message?.includes('Username or password')) {
-        const { count, justLocked } = recordFailure(username);
-
-        if (justLocked) {
-          const info = getLockInfo(username);
-
-          AuditLogger.logFailure(AuditAction.LOGIN_FAILED, ERROR_CODES.AUTH_ACCOUNT_LOCKED, {
-            userId: username,
-            requestId,
-            description: 'Account locked due to too many failed attempts (threshold reached)'
-          });
-
-          publishMonitoringLog(app, {
-            userId: username,
-            module: "AUTH",
-            action: "LOGIN_FAILED",
-            status: "Error",
-            description: "Account locked (threshold reached)",
-            location: "/login"
-          });
-
-          throw new ApplicationError(
-            ERROR_CODES.AUTH_ACCOUNT_LOCKED,
-            ERROR_MESSAGES[ERROR_CODES.AUTH_ACCOUNT_LOCKED],
-            {
-              locked: true,
-              lockedUntil: info.lockedUntil,
-              remainingMs: info.remainingMs,
-              maxAttempts: SECURITY_CONFIG.MAX_LOGIN_ATTEMPTS,
-            },
-            requestId,
-            423
-          );
-        }
-
-        const remaining = Math.max(
-          SECURITY_CONFIG.MAX_LOGIN_ATTEMPTS - count,
-          0
-        );
-
-        AuditLogger.logFailure(AuditAction.LOGIN_FAILED, ERROR_CODES.AUTH_INVALID_CREDENTIALS, {
-          userId: username,
-          requestId,
-          description: `Invalid credentials (${remaining} attempt${remaining === 1 ? '' : 's'} left)`
+    } catch (e) {
+      const { count, justLocked } = recordFailure(username, lockMs);
+      if (justLocked) {
+        const info = getLockInfo(username);
+        AuditLogger.logFailure(AuditAction.LOGIN_FAILED, ERROR_CODES.AUTH_ACCOUNT_LOCKED, {
+          userId: username, requestId,
+          description: 'Account locked due to too many failed attempts (threshold reached)'
         });
-
         publishMonitoringLog(app, {
-          userId: username,
-          module: "AUTH",
-          action: "LOGIN_FAILED",
-          status: "Error",
-          description: `Invalid credentials (${remaining} attempts left)`,
-          location: "/login"
+          userId: username, module: 'AUTH', action: 'LOGIN_FAILED', status: 'Error',
+          description: 'Account locked (threshold reached)', location: '/login'
         });
-
-        const message =
-          remaining > 0
-            ? `Invalid username or passwords. You have ${remaining} attempt${remaining === 1 ? '' : 's'} left.`
-            : ERROR_MESSAGES[ERROR_CODES.AUTH_ACCOUNT_LOCKED];
-
         throw new ApplicationError(
-          ERROR_CODES.AUTH_INVALID_CREDENTIALS,
-          message,
+          ERROR_CODES.AUTH_ACCOUNT_LOCKED,
+          ERROR_MESSAGES[ERROR_CODES.AUTH_ACCOUNT_LOCKED],
           {
-            locked: false,
-            attemptsLeft: remaining,
-            maxAttempts: SECURITY_CONFIG.MAX_LOGIN_ATTEMPTS,
+            locked: true, lockedUntil: info.lockedUntil, remainingMs: info.remainingMs,
+            maxAttempts: SECURITY_CONFIG.MAX_LOGIN_ATTEMPTS, lockTimeoutMs: lockMs || SECURITY_CONFIG.LOCKOUT_DURATION_MS,
           },
-          requestId,
-          401
+          requestId, 423
         );
       }
-      throw err;
+      const remaining = Math.max(SECURITY_CONFIG.MAX_LOGIN_ATTEMPTS - count, 0);
+      AuditLogger.logFailure(AuditAction.LOGIN_FAILED, ERROR_CODES.AUTH_INVALID_CREDENTIALS, {
+        userId: username, requestId,
+        description: `Invalid credentials (${remaining} attempt${remaining === 1 ? '' : 's'} left)`
+      });
+      publishMonitoringLog(app, {
+        userId: username, module: 'AUTH', action: 'LOGIN_FAILED', status: 'Error',
+        description: `Invalid credentials (${remaining} attempts left)`, location: '/login'
+      });
+      throw new ApplicationError(
+        ERROR_CODES.AUTH_INVALID_CREDENTIALS,
+        remaining > 0
+          ? `Invalid username or passwords. You have ${remaining} attempt${remaining === 1 ? '' : 's'} left.`
+          : ERROR_MESSAGES[ERROR_CODES.AUTH_ACCOUNT_LOCKED],
+        { locked: false, attemptsLeft: remaining, maxAttempts: SECURITY_CONFIG.MAX_LOGIN_ATTEMPTS, nextLockDurationMs: lockMs || SECURITY_CONFIG.LOCKOUT_DURATION_MS },
+        requestId, 401
+      );
     }
 
     const PASSWORD_EXPIRED = (ERROR_CODES as any).AUTH_PASSWORD_EXPIRED ?? ERROR_CODES.AUTH_INVALID_CREDENTIALS;
@@ -232,6 +191,7 @@ export const authService = {
 
     const expiresAtMs = Date.now() + perUserExpiresIn * 1000;
     addSession(user!.username, jti, expiresAtMs);
+    console.log(user)
 
     const publicUser: User = {
       username: user!.username, name: user!.name, role: user!.role,
