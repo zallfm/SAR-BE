@@ -1,4 +1,4 @@
-import { Page, expect } from '@playwright/test';
+import { Page, expect, Response } from '@playwright/test';
 
 /**
  * Test Helper Utilities
@@ -124,8 +124,8 @@ export class TestHelpers {
   /**
    * Get all API calls made
    */
-  static async getApiCalls(page: Page, url: string) {
-    const responses = [];
+  static async getApiCalls(page: Page, url: string): Promise<Response[]> {
+    const responses: Response[] = [];
     page.on('response', response => {
       if (response.url().includes(url)) {
         responses.push(response);

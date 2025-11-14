@@ -281,12 +281,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   }, [state.isLoading, state.isLocked, state.username]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-4">
-      <div className="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl grid md:grid-cols-2 overflow-hidden">
+    <div className="flex items-center justify-center min-h-screen p-4 dark:bg-slate-950">
+      <div className="w-full max-w-5xl mx-auto bg-white dark:bg-slate-900 rounded-2xl shadow-2xl grid md:grid-cols-2 overflow-hidden">
         {/* Left Panel: Branding */}
-        <div className="hidden md:flex flex-col items-center justify-center p-12 bg-stone-50 text-center">
+        <div className="hidden md:flex flex-col items-center justify-center p-12 bg-stone-50 dark:bg-slate-800 text-center">
           <SystemIcon className="w-48 h-48" />
-          <h1 className="mt-8 text-4xl font-bold tracking-wider text-[#0F3460]">
+          <h1 className="mt-8 text-4xl font-bold tracking-wider text-[#0F3460] dark:text-white">
             SYSTEM
             <br />
             AUTHORIZATION
@@ -297,8 +297,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
         {/* Right Panel: Login Form */}
         <div className="p-8 md:p-12 flex flex-col justify-center">
-          <h2 className="text-2xl font-bold text-gray-800">Login to Account</h2>
-          <p className="mt-3 text-sm text-gray-500">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Login to Account</h2>
+          <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
             Please enter username and password to continue
           </p>
 
@@ -306,7 +306,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <div>
               <label
                 htmlFor="username"
-                className="text-sm font-semibold text-gray-700 block"
+                className="text-sm font-semibold text-gray-700 dark:text-gray-200 block"
               >
                 Username <span className="text-red-500">*</span>
               </label>
@@ -320,14 +320,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 onChange={handleUsernameChange}
                 placeholder="Enter the username"
                 maxLength={SECURITY_CONFIG.MAX_INPUT_LENGTH.username}
-                className={`mt-2 block w-full px-4 py-3 bg-gray-50 border rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition ${
+                className={`mt-2 block w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border rounded-lg placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent transition ${
                   state.validationErrors.username 
-                    ? 'border-red-300 focus:ring-red-500' 
-                    : 'border-gray-300 focus:ring-blue-500'
+                    ? 'border-red-300 dark:border-red-600 focus:ring-red-500' 
+                    : 'border-gray-300 dark:border-slate-600 focus:ring-blue-500'
                 }`}
               />
               {state.validationErrors.username && (
-                <div className="mt-1 text-sm text-red-600">
+                <div className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {state.validationErrors.username.map((error, index) => (
                     <div key={index}>{error}</div>
                   ))}
@@ -338,7 +338,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <div>
               <label
                 htmlFor="password"
-                className="text-sm font-semibold text-gray-700 block"
+                className="text-sm font-semibold text-gray-700 dark:text-gray-200 block"
               >
                 Password <span className="text-red-500">*</span>
               </label>
@@ -353,16 +353,16 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   onChange={handlePasswordChange}
                   placeholder="Enter your password"
                   maxLength={SECURITY_CONFIG.MAX_INPUT_LENGTH.password}
-                  className={`block w-full px-4 py-3 bg-gray-50 border rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition ${
+                  className={`block w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border rounded-lg placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent transition ${
                     state.validationErrors.password 
-                      ? 'border-red-300 focus:ring-red-500' 
-                      : 'border-gray-300 focus:ring-blue-500'
+                      ? 'border-red-300 dark:border-red-600 focus:ring-red-500' 
+                      : 'border-gray-300 dark:border-slate-600 focus:ring-blue-500'
                   }`}
                 />
                 <button
                   type="button"
                   onClick={togglePasswordVisibility}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none"
                   aria-label={state.showPassword ? 'Hide password' : 'Show password'}
                 >
                   {state.showPassword ? (
@@ -373,7 +373,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 </button>
               </div>
               {state.validationErrors.password && (
-                <div className="mt-1 text-sm text-red-600">
+                <div className="mt-1 text-sm text-red-600 dark:text-red-400">
                   {state.validationErrors.password.map((error, index) => (
                     <div key={index}>{error}</div>
                   ))}
@@ -382,7 +382,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </div>
 
             {state.error && (
-              <div className="flex items-center p-4 text-sm text-red-700 bg-red-100 rounded-lg border border-red-300" role="alert">
+              <div className="flex items-center p-4 text-sm text-red-700 dark:text-red-200 bg-red-100 dark:bg-red-900/30 rounded-lg border border-red-300 dark:border-red-800" role="alert">
                 <ExclamationCircleIcon className="w-5 h-5 mr-3 flex-shrink-0" />
                 <span className="font-medium">{state.error}</span>
               </div>

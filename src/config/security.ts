@@ -97,7 +97,19 @@ export const SECURITY_CONFIG = {
   SEND_ERRORS_TO_SERVER: true,
   MASK_SENSITIVE_DATA_IN_LOGS: true,
 } as const;
- 
+
+/**
+ * Security Constants for authentication and validation
+ */
+export const SECURITY_CONSTANTS = {
+  SUSPICIOUS_ATTEMPT_THRESHOLD: 3,
+  BRUTE_FORCE_THRESHOLD: 5,
+  MAX_LOGIN_ATTEMPTS: SECURITY_CONFIG.MAX_LOGIN_ATTEMPTS,
+  LOCKOUT_DURATION_MS: SECURITY_CONFIG.LOCKOUT_DURATION_MS,
+  DEBOUNCE_DELAY_MS: 300,
+  THROTTLE_DELAY_MS: 1000,
+} as const;
+
 /**
  * Content Security Policy string
  */

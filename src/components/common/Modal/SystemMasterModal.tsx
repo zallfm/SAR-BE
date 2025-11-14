@@ -96,7 +96,7 @@ const SystemMasterModal: React.FC<SystemMasterModalProps> = ({
       formData.SYSTEM_CD.trim() !== "" &&
       formData.VALID_FROM_DT !== "" &&
       formData.VALID_TO_DT !== "" &&
-      !dateError
+      dateError === ""
     );
   }, [
     formData.SYSTEM_TYPE,
@@ -134,7 +134,7 @@ const SystemMasterModal: React.FC<SystemMasterModalProps> = ({
       }
 
       await onSave(finalRecord);
-      onClose();r
+      onClose();
     } catch (error) {
       console.error("Failed to save record:", error);
     } finally {
