@@ -112,7 +112,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   // Optimized login handler
   const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     setState(prev => ({
       ...prev,
       error: '',
@@ -127,7 +127,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           ...prev,
           error: 'Account is temporarily locked due to multiple failed attempts. Please try again later.'
         }));
-        
+
         AuditLogger.logWarning(AuditAction.ACCOUNT_LOCKED, {
           userName: state.username,
           description: 'Login attempt on locked account'
@@ -213,7 +213,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           ...prev,
           isLocked: { ...prev.isLocked, [state.username]: true }
         }));
-        
+
         // Set auto-unlock timer
         setTimeout(() => {
           setState(prev => ({
@@ -320,11 +320,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 onChange={handleUsernameChange}
                 placeholder="Enter the username"
                 maxLength={SECURITY_CONFIG.MAX_INPUT_LENGTH.username}
-                className={`mt-2 block w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border rounded-lg placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent transition ${
-                  state.validationErrors.username 
-                    ? 'border-red-300 dark:border-red-600 focus:ring-red-500' 
-                    : 'border-gray-300 dark:border-slate-600 focus:ring-blue-500'
-                }`}
+                className={`mt-2 block w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border rounded-lg placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 !dark:text-white focus:outline-none focus:ring-2 focus:border-transparent transition ${state.validationErrors.username
+                  ? 'border-red-300 dark:border-red-600 focus:ring-red-500'
+                  : 'border-gray-300 dark:border-slate-600 focus:ring-blue-500'
+                  }`}
               />
               {state.validationErrors.username && (
                 <div className="mt-1 text-sm text-red-600 dark:text-red-400">
@@ -353,11 +352,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   onChange={handlePasswordChange}
                   placeholder="Enter your password"
                   maxLength={SECURITY_CONFIG.MAX_INPUT_LENGTH.password}
-                  className={`block w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border rounded-lg placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent transition ${
-                    state.validationErrors.password 
-                      ? 'border-red-300 dark:border-red-600 focus:ring-red-500' 
-                      : 'border-gray-300 dark:border-slate-600 focus:ring-blue-500'
-                  }`}
+                  className={`block w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border rounded-lg placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:border-transparent transition ${state.validationErrors.password
+                    ? 'border-red-300 dark:border-red-600 focus:ring-red-500'
+                    : 'border-gray-300 dark:border-slate-600 focus:ring-blue-500'
+                    }`}
                 />
                 <button
                   type="button"
@@ -392,11 +390,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               <button
                 type="submit"
                 disabled={isSubmitDisabled}
-                className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform ${
-                  isSubmitDisabled
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 hover:scale-105'
-                }`}
+                className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform ${isSubmitDisabled
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700 hover:scale-105'
+                  }`}
               >
                 {state.isLoading ? (
                   <div className="flex items-center">

@@ -422,7 +422,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               }}
               placeholder="Enter the username"
               maxLength={SECURITY_CONFIG.MAX_INPUT_LENGTH.username}
-              className={`block w-full px-4 py-3 pl-5 rounded-xl bg-white/90 dark:bg-slate-800/80 placeholder-gray-400 border focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-[1px] focus:shadow-lg focus:-translate-y-[1px] ${validationErrors.username
+              className={`block w-full px-4 py-3 pl-5 rounded-xl bg-white/90 dark:text-white dark:bg-slate-800/80 placeholder-gray-400 border focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-[1px] focus:shadow-lg focus:-translate-y-[1px] ${validationErrors.username
                 ? "border-red-300 focus:ring-red-500"
                 : `border-slate-200 dark:border-slate-700 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-white dark:focus:ring-offset-slate-900 ${isTypingUsername ? "ring-2 ring-blue-400/40 shadow-md" : ""}`
                 }`}
@@ -461,7 +461,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               }}
               placeholder="Enter your password"
               maxLength={SECURITY_CONFIG.MAX_INPUT_LENGTH.password}
-              className={`block w-full px-4 py-3 pr-12 rounded-xl bg-white/90 dark:bg-slate-800/80 placeholder-gray-400 border focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-[1px] focus:shadow-lg focus:-translate-y-[1px] ${validationErrors.password
+              className={`block w-full px-4 py-3 pr-12 rounded-xl bg-white/90 dark:text-white dark:bg-slate-800/80 placeholder-gray-400 border focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-[1px] focus:shadow-lg focus:-translate-y-[1px] ${validationErrors.password
                 ? "border-red-300 focus:ring-red-500"
                 : `border-slate-200 dark:border-slate-700 focus:ring-blue-500 focus:ring-offset-1 focus:ring-offset-white dark:focus:ring-offset-slate-900 ${isTypingPassword ? "ring-2 ring-blue-400/40 shadow-md" : ""}`
                 }`}
@@ -541,7 +541,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4 relative">
       <div className={`w-full max-w-6xl mx-auto grid lg:grid-cols-2 overflow-hidden rounded-3xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-100 dark:border-slate-800 transition-all duration-700 ${mounted ? "opacity-100 scale-100" : "opacity-0 scale-[0.99]"}`}>
         <div className="relative hidden lg:flex items-end p-10 bg-gradient-to-br from-indigo-600 to-blue-600">
-          <div className="absolute inset-0 opacity-20 animate-pulse" style={{backgroundImage: 'radial-gradient(circle at 20% 20%, white 2px, transparent 2px)', backgroundSize: '24px 24px'}}></div>
+          <div className="absolute inset-0 opacity-20 animate-pulse" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, white 2px, transparent 2px)', backgroundSize: '24px 24px' }}></div>
           <div className={`relative z-10 text-white transition-all duration-700 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
             <SystemIcon className="w-48 h-48 opacity-95 drop-shadow" />
             <h1 className="mt-6 text-4xl font-extrabold leading-tight">System Authorization Review</h1>
