@@ -15,12 +15,16 @@ import { useLogging } from "../../../hooks/useLogging";
 import { loggingUtils } from "../../../utils/loggingIntegration";
 import SearchableDropdown from "../../common/SearchableDropdown";
 import { useApplicationStore } from "../../../store/applicationStore";
+// import { postLogMonitoringApi } from "@/src/api/log_monitoring";
+// import { AuditAction } from "@/src/constants/auditActions";
+// import { useAuthStore } from "@/src/store/authStore";
+import { postLogMonitoringApi } from "../../../../src/api/log_monitoring";
 import { AuditAction } from "../../../../src/constants/auditActions";
 import { useAuthStore } from "../../../../src/store/authStore";
 import { parseApiError } from "@/src/utils/apiError";
 
 const ApplicationPage: React.FC = () => {
-  const { currentUser } = useAuthStore();
+  
   const {
     applications,
     searchTerm,
@@ -175,6 +179,15 @@ const ApplicationPage: React.FC = () => {
 
         await editApplication(id, payload);
 
+        // await postLogMonitoringApi({
+        //   userId: currentUser?.username ?? "anonymous",
+        //   module: "Application",
+        //   action: AuditAction.DATA_UPDATE,
+        //   status: "Success",
+        //   description: `User update aplikasi name ${payload.APPLICATION_NAME}`,
+        //   location: "ApplicationPage.UpdateForm",
+        //   timestamp: new Date().toISOString(),
+        // });
       } else {
         console.log("masuk create ga?");
         console.log("DIVISION_ID_OWNER", application.DIVISION_ID_OWNER);
@@ -188,7 +201,15 @@ const ApplicationPage: React.FC = () => {
           SECURITY_CENTER: application.SECURITY_CENTER!,
         });
 
-
+        // await postLogMonitoringApi({
+        //   userId: currentUser?.username ?? "anonymous",
+        //   module: "Application",
+        //   action: AuditAction.DATA_CREATE,
+        //   status: "Success",
+        //   description: `User create aplikasi name ${application.APPLICATION_NAME}`,
+        //   location: "ApplicationPage.CreateForm",
+        //   timestamp: new Date().toISOString(),
+        // });
       }
 
       setShowSuccessModal(true);
@@ -264,7 +285,15 @@ const ApplicationPage: React.FC = () => {
     try {
       await toggleApplicationStatus(pendingStatusApplication);
 
-
+      // await postLogMonitoringApi({
+      //   userId: currentUser?.username ?? "anonymus",
+      //   module: "Application",
+      //   action: AuditAction.DATA_UPDATE,
+      //   status: "Success",
+      //   description: `User changed status of ${pendingStatusApplication.APPLICATION_NAME}`,
+      //   location: "ApplicationPage.StatusChange",
+      //   timestamp: new Date().toISOString(),
+      // })
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
     } catch (error) {

@@ -6,6 +6,7 @@ import { ActionReview } from "../../common/Button/ActionReview";
 import { ActionDownload } from "../../common/Button/ActionDownload";
 import SearchableDropdown from "../../common/SearchableDropdown";
 import { useAuthStore } from "@/src/store/authStore";
+import { postLogMonitoringApi } from "@/src/api/log_monitoring";
 import { AuditAction } from "@/src/constants/auditActions";
 import { useUarStore } from "@/src/store/uarStore";
 import type { UarHeader } from "@/src/types/uarDivision";
@@ -86,7 +87,7 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = filename || `UAR_${record.uarId}.xlsx`;
+      a.download = filename || `${record.uarId}_FROM_DIV_USER.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -98,11 +99,21 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
     }
   };
   const logFilterChange = async (key: string, value: string) => {
-    try {
-
-    } catch (err) {
-      console.warn("Failed to log filter:", err);
-    }
+    // try {
+    //   await postLogMonitoringApi({
+    //     userId: currentUser?.username ?? "anonymous",
+    //     module: "UAR Division User",
+    //     action: AuditAction.DATA_FILTER,
+    //     status: "Success",
+    //     description: `User ${
+    //       currentUser?.username ?? "unknown"
+    //     } filtered by ${key}: ${value}`,
+    //     location: "UarDivisionUserPage.filter",
+    //     timestamp: new Date().toISOString(),
+    //   });
+    // } catch (err) {
+    //   console.warn("Failed to log filter:", err);
+    // }
   };
 
   const overallProgress = useMemo(() => {
@@ -122,7 +133,7 @@ const UarDivisionUserPage: React.FC<UarDivisionUserPageProps> = ({
 
   const startItem = useMemo(() => {
     if (totalItems === 0 || !divisionUserMeta) return 0;
-    console.log("divuserData", divisionUserMeta);
+    // console.log("divuserData", divisionUserMeta);
     return (divisionUserMeta.page - 1) * divisionUserMeta.limit + 1;
   }, [divisionUserMeta, totalItems]);
 

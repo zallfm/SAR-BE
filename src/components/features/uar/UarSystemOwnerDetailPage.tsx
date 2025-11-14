@@ -7,6 +7,7 @@ import RoleInfoModal from '../../common/Modal/RoleInfoModal';
 import CommentModal from '../../common/Modal/CommentModal';
 import { AuditAction } from '@/src/constants/auditActions';
 import { useAuthStore } from '@/src/store/authStore';
+import { postLogMonitoringApi } from '@/src/api/log_monitoring';
 import { useUarStore } from '@/src/store/uarStore'; // <-- Import store
 import type {
   SystemOwnerUarHeader, // <-- Use new store type for prop
@@ -78,6 +79,7 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
   useEffect(() => {
     if (record.uarId && record.applicationId) {
       const abortController = new AbortController();
+      console.log("TEST")
       getSystemOwnerDetails(
         record.uarId,
         record.applicationId,
@@ -104,9 +106,9 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
           roleDescription: item.ROLE_NAME,
           // Map API status to local state
           approvalStatus:
-            item.DIV_APPROVAL_STATUS === '0'
+            item.SO_APPROVAL_STATUS === '0'
               ? null
-              : item.DIV_APPROVAL_STATUS === '1'
+              : item.SO_APPROVAL_STATUS === '1'
                 ? 'Approved'
                 : 'Revoked',
           comments: [], // Comments are managed locally
@@ -128,12 +130,7 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
     // Logging logic can stay
     const action =
       status === 'Approved' ? AuditAction.DATA_KEEP : AuditAction.DATA_REVOKE;
-    createLog(
-      action,
-      `User ${currentUser?.username ?? 'unknown'
-      } set ${status} for ID ${id} in ${record.uarId}`,
-      'UarSystemOwnerDetailPage.handleRowApprovalChange'
-    );
+
   };
 
   const handleBulkAction = (status: ApprovalStatus) => {
@@ -154,12 +151,7 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
       status === 'Approved'
         ? AuditAction.DATA_KEEP_ALL
         : AuditAction.DATA_REVOKE_ALL;
-    createLog(
-      action,
-      `User ${currentUser?.username ?? 'unknown'} performed bulk ${status} on ${selectedRows.length
-      } item(s) in ${record.uarId}`,
-      'UarSystenOwnerDetailPage.handleBulkAction'
-    );
+
   };
 
   const handleBackClick = () => {
@@ -198,12 +190,7 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
     setIsRoleInfoModalOpen(true);
     // Logging logic can stay
     try {
-      await createLog(
-        AuditAction.DATA_COMMENT_OPEN,
-        `User ${currentUser?.username ?? 'unknown'
-        } opened comment modal for role ${row.roleId} in ${record.uarId}`,
-        'UarSystemOwnerDetailPage.handleOpenCommentModal'
-      );
+
     } catch (err) {
       console.warn('Gagal mencatat log buka comment:', err);
     }
@@ -231,12 +218,7 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
       );
       // Logging logic can stay
       try {
-        await createLog(
-          AuditAction.DATA_COMMENT_SUBMIT,
-          `User ${currentUser?.username ?? 'unknown'} added a comment on role ${commentTarget.roleId
-          } in ${record.uarId}`,
-          'UarSystemOwnerDetailPage.handleSubmitComment'
-        );
+
       } catch (err) {
         console.warn('Gagal mencatat log submit comment:', err);
       }
@@ -245,18 +227,6 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
   };
 
   // --- Utility Functions ---
-  const createLog = async (
-    action: string,
-    description: string,
-    location: string
-  ) => {
-    // (This function is unchanged)
-    try {
-
-    } catch (err) {
-      console.warn('Gagal mencatat log:', err);
-    }
-  };
 
   // --- Pagination (Derived from local state) ---
   const totalItems = tableData.length;
@@ -334,12 +304,9 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
                   decision: row.approvalStatus!, // 'Approved' or 'Revoked'
                 }));
 
-              if (changedItems.length === 0) {
-                alert('No changes to submit.');
-                return;
-              }
 
               const payload: SystemOwnerBatchUpdatePayload = {
+                source: record.source as 'SYSTEM_OWNER' | 'DIVISION_USER',
                 uarId: record.uarId,
                 applicationId: record.applicationId,
                 items: changedItems,
@@ -348,26 +315,8 @@ const UarSystemOwnerDetailPage: React.FC<UarSystemOwnerDetailPageProps> = ({
               // Call the store action
               const { error } = await batchUpdateSystemOwner(payload);
 
-              if (error) {
-                alert(`Error: ${error.message}`);
-                // Log failure
-                await createLog(
-                  AuditAction.DATA_SUBMIT,
-                  `User ${currentUser?.username ?? 'unknown'
-                  } failed to submit review for ${record.uarId}: ${error.message
-                  }`,
-                  'UarSystemOwnerDetailPage.SubmitButton'
-                );
-              } else {
-                alert('Submit successful.');
-                // Log success
-                await createLog(
-                  AuditAction.DATA_SUBMIT,
-                  `User ${currentUser?.username ?? 'unknown'
-                  } submitted review for ${record.uarId}`,
-                  'UarSystemOwnerDetailPage.SubmitButton'
-                );
-              }
+
+
             }}
             disabled={isStoreLoading} // <-- 12. Add loading state
             className="px-8 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed"

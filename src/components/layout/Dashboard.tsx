@@ -1,22 +1,15 @@
 import React, { lazy, Suspense } from "react";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
-import type {
-  LogEntry,
-  UarSystemOwnerRecord,
-  UarDivisionUserRecord,
-} from "../../../data";
+import type { LogEntry, UarSystemOwnerRecord } from "../../../data";
 import { useLogging } from "../../hooks/useLogging";
 import Copyright from "../common/Copyright";
 import { useAuthStore } from "../../store/authStore";
 import { useUIStore } from "../../store/uiStore";
 import { useUarStore } from "../../store/uarStore";
-// import { useLogout } from '@/src/hooks/useAuth'
 import { useLogout, useMenu } from "../../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
-import { postLogMonitoringApi } from "@/src/api/log_monitoring";
-import { AuditAction } from "@/src/constants/auditActions";
 import { UarHeader } from "@/src/types/uarDivision";
+import { SystemOwnerUarHeader } from "@/src/types/uarSystemOwner";
 
 const DashboardContent = lazy(
   () => import("../features/DashboardContent/DashboardContent")
@@ -53,13 +46,14 @@ const UarDivisionUserDetailPage = lazy(
 );
 
 interface DashboardProps {
-  onLogout: () => void
+  onLogout: () => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = () => {
   const { data: menuTree, isLoading, error } = useMenu();
   const { currentUser } = useAuthStore();
   const { activeView, setActiveView, resetActiveView } = useUIStore();
+  const { setSystemOwnerFilters, setDivisionUserFilters } = useUarStore();
   const {
     selectedLog,
     setSelectedLog,
@@ -69,65 +63,65 @@ const Dashboard: React.FC<DashboardProps> = () => {
     selectDivisionUser,
   } = useUarStore();
 
-  const user = currentUser!;
+  // onStart from DashboardContent now passes kind ("so" | "div")
+  const handleStartUarFromDashboard = (uarId: string, kind: "so" | "div") => {
+    if (kind === "so") {
+      setSystemOwnerFilters({ uarId });
+      setActiveView("uar_system_owner");
+      return;
+    }
+    setDivisionUserFilters({ uarId });
+    setActiveView("uar_division_user");
+  };
+  const handleSeeMore = (
+    kind: "so" | "div",
+    listType: "pending" | "reviewed"
+  ) => {
+    if (kind === "so") {
+      setSystemOwnerFilters({
+        status: "InProgress",
+        reviewStatus: listType,
+        uarId: "",
+        page: 1,
+        limit: 10,
+      });
+      setActiveView("uar_system_owner");
+      return;
+    }
 
+    setDivisionUserFilters({
+      status: "InProgress",
+      reviewStatus: listType,
+      uarId: "",
+      page: 1,
+      limit: 10,
+    });
+    setActiveView("uar_division_user");
+  };
+
+  const user = currentUser!;
   const { logUserAction, logNavigation } = useLogging({
     componentName: "Dashboard",
     userId: user.username,
     enablePerformanceLogging: true,
   });
 
-  const { mutateAsync: doLogout, isPending: isLoggingOut } = useLogout();
+  const { mutateAsync: doLogout } = useLogout();
   const handleLogout = async () => {
     try {
-      // await postLogMonitoringApi({
-      //   userId: user.username ?? "anonymous",
-      //   module: "Authentication",
-      //   action: AuditAction.LOGOUT,
-      //   status: "Success",
-      //   description: `User ${
-      //     user.username ?? "unknown"
-      //   } logged out successfully`,
-      //   location: "Dashboard.handleLogout",
-      //   timestamp: new Date().toISOString(),
-      // });
-
-
       await doLogout();
       const { token, currentUser, tokenExpiryMs } = useAuthStore.getState();
       console.debug("[After logout]", { token, currentUser, tokenExpiryMs });
-      console.assert(token === null, "Token should be null after logout");
-      console.assert(currentUser === null, "User should be null after logout");
-      console.assert(
-        tokenExpiryMs === null,
-        "Expiry should be null after logout"
-      );
       resetActiveView();
       window.location.href = "/";
     } catch (e) {
       console.error("Logout error:", e);
-      try {
-        // await postLogMonitoringApi({
-        //   userId: currentUser?.username ?? "anonymous",
-        //   module: "Authentication",
-        //   action: AuditAction.LOGOUT,
-        //   status: "Error",
-        //   description: `User ${
-        //     currentUser?.username ?? "unknown"
-        //   } failed to logout: ${String(e)}`,
-        //   location: "Dashboard.handleLogout",
-        //   timestamp: new Date().toISOString(),
-        // });
-      } catch (err) {
-        console.warn("Failed to log logout error:", err);
-      }
     }
   };
 
   const handleViewDetail = (log: LogEntry) => {
     setSelectedLog(log);
     setActiveView("logging_monitoring_detail");
-
     logNavigation("logging_monitoring", "logging_monitoring_detail", {
       logId: log.NO,
       timestamp: new Date().toISOString(),
@@ -139,7 +133,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
     setActiveView("logging_monitoring");
   };
 
-  const handleReviewUarRecord = (record: UarSystemOwnerRecord) => {
+  const handleReviewUarRecord = (record: SystemOwnerUarHeader) => {
     selectSystemOwner(record);
     setActiveView("uar_system_owner_detail");
   };
@@ -162,7 +156,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const renderContent = () => {
     switch (activeView) {
       case "dashboard":
-        return <DashboardContent />;
+        return <DashboardContent onStart={handleStartUarFromDashboard} onSeeMore={handleSeeMore} />;
       case "application":
         return <ApplicationPage />;
       case "logging_monitoring":
@@ -211,7 +205,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
           <UarDivisionUserPage onReview={handleReviewUarDivisionRecord} />
         );
       default:
-        return <DashboardContent />;
+        return <DashboardContent onStart={handleStartUarFromDashboard} onSeeMore={handleSeeMore} />;
     }
   };
 

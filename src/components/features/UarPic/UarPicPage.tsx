@@ -3,7 +3,6 @@ import { SearchIcon } from "../../icons/SearchIcon";
 import { ChevronDownIcon } from "../../icons/ChevronDownIcon";
 import { EditIcon } from "../../icons/EditIcon";
 import { DeleteIcon } from "../../icons/DeleteIcon";
-import { divisions } from "../../../../data";
 import type { PicUser } from "../../../../data";
 import UarPicModal from "../../common/Modal/UarPicModal";
 import ConfirmationModal from "../../common/Modal/ConfirmationModal";
@@ -75,6 +74,7 @@ const UarPicPage: React.FC = () => {
       controller.abort();
     };
   }, [getPics, filters, currentPage, itemsPerPage]);
+  const divisions = useUarPicStore((state) => state.divisions);
   const totalPages = getTotalPages();
   const currentPics = getCurrentPagePics();
   const meta = useUarPicStore((state) => state.meta);
@@ -99,17 +99,23 @@ const UarPicPage: React.FC = () => {
     setEditingPic(null);
   };
 
-
   const divisionOptions = useMemo(() => {
     const divisionIdsInCurrentPics = currentPics.map(pic => pic.DIVISION_ID);
 
+    // 2. Get the unique division IDs
     const uniqueDivisionIds = [...new Set(divisionIdsInCurrentPics)];
 
-    const divisionNames = uniqueDivisionIds.map(id => divisions[id - 1]);
+    // 3. Map these unique IDs to their corresponding division names
+    const divisionNames = uniqueDivisionIds.map(id => {
+      const division = divisions.find(d => d.id === id);
+      return division ? division.name : null;
+    });
 
-    return divisionNames.filter(Boolean).sort();
-  }, [currentPics]);
+    return divisionNames
+      .filter((name): name is string => !!name)
+      .sort();
 
+  }, [currentPics, divisions]);
   const handleSavePic = async (pic: PicUser) => {
     handleCloseModal();
 
@@ -281,14 +287,11 @@ const UarPicPage: React.FC = () => {
             />
             <SearchableDropdown
               label="Division"
-              value={divisions[Number(filters.divisionId ?? 1) - 1]}
+              value={divisions.find((d) => String(d.id) === String(filters.divisionId))?.name}
+
               onChange={(value) => {
-                const divisionId = divisions.indexOf(value) + 1;
-                if (divisionId > 0 && divisionId <= divisions.length) {
-                  setFilters({ divisionId: divisionId });
-                } else {
-                  setFilters({ divisionId: "" });
-                }
+                const divisionId = divisions.find((d) => d.name === value)?.id
+                setFilters({ divisionId: divisionId });
               }}
               options={divisionOptions} searchable={false}
               placeholder="Division"
@@ -333,7 +336,7 @@ const UarPicPage: React.FC = () => {
                       {pic.PIC_NAME}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      {divisions[pic.DIVISION_ID - 1]}
+                      {divisions.find((d) => d.id === pic.DIVISION_ID)?.name}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
                       {pic.MAIL}

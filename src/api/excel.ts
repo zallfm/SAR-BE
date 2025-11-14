@@ -4,7 +4,9 @@ import { withToken } from "./helper";
 export type ExportUarParams = {
   uar_id: string;
   type?: "div_user" | "so_user";
+  applicationId?: string; // <== tambahkan ini
 };
+
 export const exportExcel = (params: ExportUarParams) =>
   withToken((token) =>
     http<{ blob: Blob; filename?: string }>({
@@ -14,6 +16,7 @@ export const exportExcel = (params: ExportUarParams) =>
       params: {
         uar_id: params.uar_id,
         type: params.type ?? "div_user",
+        ...(params.applicationId ? { applicationId: params.applicationId } : {}), // <== kirim hanya kalau ada
       },
       responseType: "blob",
     })

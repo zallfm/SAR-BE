@@ -73,7 +73,7 @@ export interface UarState {
   setSystemOwnerCurrentPage: (page: number) => void;
   setSystemOwnerItemsPerPage: (size: number) => void;
   getSystemOwnerList: (params?: SystemOwnerUarListFilters & { signal?: AbortSignal }) => Promise<void>;
-  getSystemOwnerDetails: (uarId: string, applicationId: string, signal?: AbortSignal) => Promise<void>;
+  getSystemOwnerDetails: (uarId: string, applicationId: string | undefined, signal?: AbortSignal) => Promise<void>;
   clearSystemOwnerDetails: () => void;
   batchUpdateSystemOwner: (payload: SystemOwnerBatchUpdatePayload) => Promise<{ error?: { message: string } }>;
   getTotalSystemOwnerPages: () => number;
@@ -247,9 +247,7 @@ export const useUarStore = create<UarState>()(
         batchUpdateSystemOwner: async (payload) => {
           set({ isLoading: true });
           try {
-            // Gunakan API baru
-            await batchUpdateApi(payload);
-            // Panggil getSystemOwnerDetails lagi untuk refresh data
+            await batchUpdateSystemOwnerApi(payload);
             await get().getSystemOwnerDetails(payload.uarId, payload.applicationId);
             return { error: undefined };
           } catch (error: any) {
@@ -261,7 +259,7 @@ export const useUarStore = create<UarState>()(
         setSystemOwnerFilters: (newFilters) => {
           set((state) => ({
             systemOwnerFilters: { ...state.systemOwnerFilters, ...newFilters },
-            systemOwnerCurrentPage: 1, 
+            systemOwnerCurrentPage: 1,
           }));
         },
         setSystemOwnerCurrentPage: (page) => set({ systemOwnerCurrentPage: page }),

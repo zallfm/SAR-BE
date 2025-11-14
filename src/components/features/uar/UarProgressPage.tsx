@@ -7,7 +7,8 @@ import { CompletedIcon } from '../../icons/CompletedIcon';
 import { uarDivisionProgress, uarDepartmentProgress, uarSystemProgressData } from '../../../../data';
 import type { UarProgressData } from '../../../../data';
 import { useUarProgressData } from '../../../hooks/useUarProgressData';
-import { UarProgressFilters } from '../../../services/uarProgressService';
+import { useUarProgressStore, UarProgressFilters } from '../../../store/uarProgressStore';
+import type { DivisionChartItem, ApplicationChartItem } from '../../../types/progress';
 import LoadingSpinner from '../../common/LoadingStates/LoadingSpinner';
 import SkeletonLoader from '../../common/LoadingStates/SkeletonLoader';
 import ErrorBoundary from '../../common/ErrorBoundary/ErrorBoundary';
@@ -46,7 +47,15 @@ const StatCard: React.FC<StatCardProps> = React.memo(({ icon, value, label }) =>
         prevProps.label === nextProps.label;
 });
 
-const UarProgressChart: React.FC<{ data: UarProgressData[]; selectedItem: string; yAxisRange?: { min: number, max: number }, onBarClick?: (label: string) => void; }> = React.memo(({ data, selectedItem, yAxisRange, onBarClick }) => {
+interface ChartDataFormat {
+    label: string;
+    review: number;
+    approved: number;
+    soApproved: number;
+    total: number;
+}
+
+const UarProgressChart: React.FC<{ data: ChartDataFormat[]; selectedItem: string; yAxisRange?: { min: number, max: number }, onBarClick?: (label: string) => void; }> = React.memo(({ data, selectedItem, yAxisRange, onBarClick }) => {
     const chartRef = useRef<HTMLCanvasElement>(null);
     const [hiddenDatasets, setHiddenDatasets] = useState<Set<number>>(new Set());
 
@@ -244,21 +253,24 @@ const UarProgressChart: React.FC<{ data: UarProgressData[]; selectedItem: string
 });
 
 const UarProgressPage: React.FC = React.memo(() => {
-    // Zustand store hooks
-    const { filters } = useUarProgressFilters();
+    // --- NEW: Get state and actions directly from the new store ---
     const {
-        selectedPeriod,
-        selectedDivisionFilter,
-        selectedDepartmentFilter,
-        selectedSystemFilter,
+        kpiStats,
+        divisionChartData: rawDivisionData,
+        applicationChartData: rawAppData,
+        filters,
+        filterOptions,
         drilldownDivision,
-        setSelectedPeriod,
-        setSelectedDivisionFilter,
-        setSelectedDepartmentFilter,
-        setSelectedSystemFilter,
-        setDrilldownDivision
-    } = useUarProgressUIState();
-    // ==== logging setup ====
+        isLoading,
+        isFiltersLoading,
+        error,
+        fetchDashboardData,
+        fetchFilterOptions,
+        setFilters,
+        setDrilldownDivision,
+    } = useUarProgressStore();
+
+    // --- Logging (Unchanged) ---
     const { currentUser } = useAuthStore();
     const username = currentUser?.username ?? "anonymous";
     const MODULE = "UAR.PROGRESS";
@@ -269,52 +281,116 @@ const UarProgressPage: React.FC = React.memo(() => {
         location: string;
         extra?: Record<string, unknown>;
     }) => {
-        postLogMonitoringApi({
-            userId: username,
-            module: MODULE,
-            action: p.action,
-            status: p.status ?? "Success",
-            description: p.description,
-            location: p.location,
-            timestamp: new Date().toISOString(),
-            ...(p.extra ? { extra: p.extra } : {}),
-        }).catch(() => { });
+        // postLogMonitoringApi({ ... }); // Uncomment when ready
+        console.log("LOG:", p.description, p.extra);
     };
-    const { setProgressData, setFilteredData } = useUarProgressActions();
-    const {
-        getDivisionOptions,
-        getDivisionChartData,
-        getDepartmentOptions,
-        getSystemOptions,
-        getDepartmentChartData,
-        getSystemChartData,
-        getGrandTotal
-    } = useUarProgressComputed();
 
-    // Get computed values from store with memoization
-    const divisionOptions = useMemo(() => getDivisionOptions(), []);
-    const divisionChartData = useMemo(() => getDivisionChartData(), []);
-    const departmentOptions = useMemo(() => getDepartmentOptions(), [selectedDivisionFilter]);
-    const systemOptions = useMemo(() => getSystemOptions(), [selectedDivisionFilter, selectedDepartmentFilter]);
-    const departmentChartData = useMemo(() => getDepartmentChartData(), [drilldownDivision]);
-    const systemChartData = useMemo(() => getSystemChartData(), [selectedDivisionFilter, selectedDepartmentFilter]);
-    const grandTotal = useMemo(() => getGrandTotal(), []);
+    // --- NEW: Data Fetching on Load ---
+    useEffect(() => {
+        // Fetch main data and filter options on initial component mount
+        logStep({
+            action: AuditAction.DATA_VIEW,
+            description: `User ${username} viewed UAR Progress Page`,
+            location: "UarProgressPage.useEffect[]"
+        });
+        fetchDashboardData();
+        fetchFilterOptions();
+    }, [fetchDashboardData, fetchFilterOptions, username]);
 
-    const systemAppsChartData = useMemo(() => {
-        let filteredData = systemChartData;
+    // --- NEW: Data Transformation (API format -> Chart format) ---
+    const { kpiCards, divisionChartData, applicationChartData } = useMemo(() => {
+        // 1. Transform KPI Stats
+        const kpiCards = {
+            review: kpiStats?.reviewed.percentage.toFixed(1) ?? '0',
+            approved: kpiStats?.divApproved.percentage.toFixed(1) ?? '0',
+            soApproved: kpiStats?.soApproved.percentage.toFixed(1) ?? '0',
+            completed: kpiStats?.completed.percentage.toFixed(1) ?? '0',
+        };
 
-        if (selectedSystemFilter) {
-            filteredData = filteredData.filter(app => app.label === selectedSystemFilter);
-        }
+        const divisionChartData = rawDivisionData.map((d: DivisionChartItem) => ({
+            label: d.divisionName,
+            review: (d.reviewedCount / d.total * 100) || 0,
+            approved: (d.divApprovedCount / d.total * 100) || 0,
+            soApproved: (d.soApprovedCount / d.total * 100) || 0,
+            total: (d.completedCount / d.total * 100) || 0,
+        }));
 
-        return filteredData;
-    }, [systemChartData, selectedSystemFilter]);
+        const applicationChartData = rawAppData.map((d: ApplicationChartItem) => ({
+            label: d.applicationName,
+            review: (d.reviewedCount / d.total * 100) || 0,
+            approved: (d.divApprovedCount / d.total * 100) || 0,
+            soApproved: (d.soApprovedCount / d.total * 100) || 0,
+            total: (d.completedCount / d.total * 100) || 0,
+        }));
+
+        return { kpiCards, divisionChartData, applicationChartData };
+    }, [kpiStats, rawDivisionData, rawAppData]);
+
+
+    const periodOptions = useMemo(() => filterOptions.periods, [filterOptions.periods]);
+    const divisionOptions = useMemo(() => filterOptions.divisions.map(d => d.name), [filterOptions.divisions]);
+    const departmentOptions = useMemo(() => filterOptions.departments.map(d => d.name), [filterOptions.departments]);
+    const applicationOptions = useMemo(() => filterOptions.applications.map(a => a.name), [filterOptions.applications]);
+    console.log(filterOptions, departmentOptions, periodOptions, applicationOptions)
+    const handlePeriodFilterChange = (label: string | null) => {
+        const value = label || undefined;
+        setFilters({ period: value });
+        logStep({
+            action: AuditAction.DATA_FILTER,
+            description: `Filter Period set to "${value || '(cleared)'}"`,
+            location: "UarProgressPage.handlePeriodFilterChange",
+            extra: { period: value || null },
+        });
+    };
+
+    const handleDivisionFilterChange = (label: string | null) => {
+        const selectedDivision = filterOptions.divisions.find(d => d.name === label);
+        setFilters({ divisionId: selectedDivision?.id });
+        logStep({
+            action: AuditAction.DATA_FILTER,
+            description: `Filter Division set to "${label || '(cleared)'}"`,
+            location: "UarProgressPage.handleDivisionFilterChange",
+            extra: { division: label || null, divisionId: selectedDivision?.id || null },
+        });
+    };
+
+    const handleDepartmentFilterChange = (label: string | null) => {
+        const selectedDept = filterOptions.departments.find(d => d.name === label);
+        setFilters({ departmentId: selectedDept?.id });
+        logStep({
+            action: AuditAction.DATA_FILTER,
+            description: `Filter Department set to "${label || '(cleared)'}"`,
+            location: "UarProgressPage.handleDepartmentFilterChange",
+            extra: { department: label || null, departmentId: selectedDept?.id || null },
+        });
+    };
+
+    const handleApplicationFilterChange = (label: string | null) => {
+        const selectedApp = filterOptions.applications.find(a => a.name === label);
+        setFilters({ applicationId: selectedApp?.id });
+        logStep({
+            action: AuditAction.DATA_FILTER,
+            description: `Filter System set to "${label || '(cleared)'}"`,
+            location: "UarProgressPage.handleApplicationFilterChange",
+            extra: { system: label || null, applicationId: selectedApp?.id || null },
+        });
+    };
+
+    const [departmentChartData, setDepartmentChartData] = useState<ChartDataFormat[]>([]); // Local state for now
 
     const handleDivisionBarClick = (divisionLabel: string) => {
+        const division = filterOptions.divisions.find(d => d.name === divisionLabel);
+        if (!division) return;
+
         setDrilldownDivision(divisionLabel);
-        setSelectedDivisionFilter(divisionLabel);
-        setSelectedDepartmentFilter('');
-        setSelectedSystemFilter('');
+
+        // This will trigger the API call in the store
+        setFilters({ divisionId: division.id, departmentId: undefined, applicationId: undefined });
+
+        // TODO: This needs a dedicated API endpoint
+        // For now, we clear it.
+        setDepartmentChartData([]);
+
         logStep({
             action: AuditAction.DATA_FILTER,
             description: `Drilldown to Division "${divisionLabel}" via bar click`,
@@ -324,258 +400,57 @@ const UarProgressPage: React.FC = React.memo(() => {
     };
 
     const handleDepartmentBarClick = (departmentLabel: string) => {
-        setSelectedDepartmentFilter(selectedDepartmentFilter === departmentLabel ? '' : departmentLabel);
-        const next = selectedDepartmentFilter === departmentLabel ? '' : departmentLabel;
-        setSelectedDepartmentFilter(next);
+        const department = filterOptions.departments.find(d => d.name === departmentLabel);
+        const departmentId = filters.departmentId === department?.id ? undefined : department?.id;
+
+        setFilters({ departmentId }); // This will refetch data
+
         logStep({
             action: AuditAction.DATA_FILTER,
-            description: `Toggle Department selection to "${next || '(cleared)'}" via bar click`,
+            description: `Toggle Department selection to "${departmentLabel || '(cleared)'}" via bar click`,
             location: "UarProgressPage.handleDepartmentBarClick",
-            extra: { department: next || null },
+            extra: { department: departmentLabel || null },
         });
-
     };
 
     const handleBackToDivisionView = () => {
         setDrilldownDivision(null);
-        setSelectedDivisionFilter('');
-        setSelectedDepartmentFilter('');
-        setSelectedSystemFilter('');
+        // Clear all filters
+        setFilters({ divisionId: undefined, departmentId: undefined, applicationId: undefined });
         logStep({
             action: AuditAction.DATA_FILTER,
             description: "Back to Division view (clear drilldown + filters)",
             location: "UarProgressPage.handleBackToDivisionView",
         });
-
     };
 
-    const handleDivisionFilterChange = (value: string) => {
-        setSelectedDivisionFilter(value);
-        // Don't set drilldownDivision here - only highlight the selected division
-        // Drilldown only happens when clicking the bar
-        if (!value) {
-            // If clearing the filter and we're drilled down, go back to division view
-            setDrilldownDivision(null);
-        }
-        setSelectedDepartmentFilter('');
-        setSelectedSystemFilter(''); logStep({
-            action: AuditAction.DATA_FILTER,
-            description: `Filter Division set to "${value || '(cleared)'}"`,
-            location: "UarProgressPage.handleDivisionFilterChange",
-            extra: { division: value || null },
-        });
-
-    };
-
-    const handleDepartmentFilterChange = (value: string) => {
-        setSelectedDepartmentFilter(value);
-        setSelectedSystemFilter(''); // Reset system filter when department changes
-        logStep({
-            action: AuditAction.DATA_FILTER,
-            description: `Filter Department set to "${value || '(cleared)'}"`,
-            location: "UarProgressPage.handleDepartmentFilterChange",
-            extra: { department: value || null },
-        });
-    };
-
-    const handlePeriodFilterChange = (value: string) => {
-        setSelectedPeriod(value);
-        logStep({
-            action: AuditAction.DATA_FILTER,
-            description: `Filter Period set to "${value || '(cleared)'}"`,
-            location: "UarProgressPage.handlePeriodFilterChange",
-            extra: { period: value || null },
-        });
-    };
-
-    const handleSystemFilterChange = (value: string) => {
-        setSelectedSystemFilter(value);
-        logStep({
-            action: AuditAction.DATA_FILTER,
-            description: `Filter System set to "${value || '(cleared)'}"`,
-            location: "UarProgressPage.handleSystemFilterChange",
-            extra: { system: value || null },
-        });
-    };
-
-
-
-
+    // --- Chart Titles (Unchanged) ---
     const mainChartTitle = drilldownDivision
         ? `UAR Progress by Department (Division: ${drilldownDivision})`
         : 'UAR Progress by Division';
 
     const systemChartTitle = useMemo(() => {
         let title = 'UAR Progress by System Apps';
-        if (selectedDepartmentFilter) {
-            return `${title} (Department: ${selectedDepartmentFilter})`;
+        const selectedDept = filterOptions.departments.find(d => d.id === filters.departmentId);
+        const selectedDiv = filterOptions.divisions.find(d => d.id === filters.divisionId);
+
+        if (selectedDept) {
+            return `${title} (Department: ${selectedDept.name})`;
         }
-        if (selectedDivisionFilter && !drilldownDivision) {
-            // When a division filter is selected without drilldown, show the division in subtitle
-            return `${title} (Division: ${selectedDivisionFilter})`;
-        }
-        if (drilldownDivision) {
-            // When drilled down to department view, context is clear from Department chart
-            return title;
+        if (selectedDiv && !drilldownDivision) {
+            return `${title} (Division: ${selectedDiv.name})`;
         }
         return `${title} (All)`;
-    }, [selectedDivisionFilter, drilldownDivision, selectedDepartmentFilter]);
+    }, [filters, drilldownDivision, filterOptions]);
 
     const isDrilledDown = !!drilldownDivision;
+    const selectedPeriodLabel = filters.period || "";
+    const selectedDivisionLabel = filterOptions.divisions.find(d => d.id === filters.divisionId)?.name || "";
+    const selectedDepartmentLabel = filterOptions.departments.find(d => d.id === filters.departmentId)?.name || "";
+    const selectedApplicationLabel = filterOptions.applications.find(a => a.id === filters.applicationId)?.name || "";
 
-    // Use grand total from store
-    const grandTotalStats = grandTotal;
-
-    return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center flex-wrap gap-4">
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-800">UAR Progress</h2>
-                </div>
-                <div className="flex gap-4 flex-wrap">
-                    <SearchableDropdown
-                        label="Period"
-                        value={selectedPeriod}
-                        onChange={handlePeriodFilterChange}
-                        options={['07-2025']}
-                    />
-                    <SearchableDropdown
-                        label="Division"
-                        value={selectedDivisionFilter}
-                        onChange={handleDivisionFilterChange}
-                        options={divisionOptions}
-                    />
-                    <SearchableDropdown
-                        label="Department"
-                        value={selectedDepartmentFilter}
-                        onChange={handleDepartmentFilterChange}
-                        options={departmentOptions}
-                    />
-                    <SearchableDropdown
-                        label="System"
-                        value={selectedSystemFilter}
-                        onChange={handleSystemFilterChange}
-                        options={systemOptions}
-                    />
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard icon={<UarReviewIcon />} value={`${grandTotalStats.review}%`} label="UAR Review" />
-                <StatCard icon={<DivisionApprovedIcon />} value={`${grandTotalStats.approved}%`} label="Division Approved" />
-                <StatCard icon={<SoApprovedIcon />} value={`${grandTotalStats.soApproved}%`} label="SO Approved" />
-                <StatCard icon={<CompletedIcon />} value={`${grandTotalStats.completed}%`} label="Completed" />
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                {/* Fixed Header */}
-                <div className="p-6 border-b border-gray-100">
-                    <h3
-                        className={`text-2xl font-bold text-gray-800 ${isDrilledDown ? 'cursor-pointer hover:text-blue-600 transition-colors' : ''}`}
-                        onClick={isDrilledDown ? handleBackToDivisionView : undefined}
-                        aria-label={isDrilledDown ? "Back to Division View" : mainChartTitle}
-                        role="button"
-                    >
-                        {mainChartTitle}
-                    </h3>
-                </div>
-
-                {/* Chart Container */}
-                <div className="relative p-6 pt-0">
-                    <div className="overflow-x-auto">
-                        <div className="min-w-max">
-                            {isDrilledDown ? (
-                                <UarProgressChart
-                                    data={departmentChartData}
-                                    selectedItem={selectedDepartmentFilter}
-                                    onBarClick={handleDepartmentBarClick}
-                                />
-                            ) : (
-                                <UarProgressChart
-                                    data={divisionChartData}
-                                    selectedItem={selectedDivisionFilter}
-                                    onBarClick={handleDivisionBarClick}
-                                />
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                {/* Fixed Header */}
-                <div className="p-6 border-b border-gray-100">
-                    <h3 className="text-2xl font-bold text-gray-800">
-                        {systemChartTitle}
-                    </h3>
-                </div>
-
-                {/* Chart Container */}
-                <div className="relative p-6 pt-0">
-                    <div className="overflow-x-auto">
-                        <div className="min-w-max">
-                            <UarProgressChart data={systemAppsChartData} selectedItem={selectedSystemFilter} />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-});
-
-// Wrapper component with API integration ready
-const UarProgressPageWithAPI: React.FC = React.memo(() => {
-    // Zustand store hooks
-    const { filters, setFilters } = useUarProgressFilters();
-    const { setProgressData, setLoading, setError, setIsRefreshing } = useUarProgressActions();
-    const { loading, error, isRefreshing } = useUarProgressLoading();
-
-    const {
-        data: apiData,
-        loading: apiLoading,
-        error: apiError,
-        refresh,
-        isRefreshing: apiIsRefreshing
-    } = useUarProgressData(filters, {
-        autoRefresh: true,
-        refreshInterval: 30000, // 30 seconds
-        enableCache: true,
-    });
-
-    // Sync API data with Zustand store
-    useEffect(() => {
-        if (apiData) {
-            setProgressData(apiData);
-        }
-    }, [apiData, setProgressData]);
-
-    useEffect(() => {
-        setLoading(apiLoading);
-    }, [apiLoading, setLoading]);
-
-    useEffect(() => {
-        setError(apiError);
-    }, [apiError, setError]);
-
-    useEffect(() => {
-        setIsRefreshing(apiIsRefreshing);
-    }, [apiIsRefreshing, setIsRefreshing]);
-
-    // Debounced filter updates for better performance
-    const debouncedSetFilters = useMemo(
-        () => debounce((newFilters: UarProgressFilters) => {
-            setFilters(newFilters);
-        }, 300),
-        [setFilters]
-    );
-
-    // Performance monitoring
-    useEffect(() => {
-        const stopTiming = performanceMonitor.startTiming('UarProgressPage');
-        return stopTiming;
-    }, []);
-
-    if (loading && !apiData) {
+    // --- NEW: Loading and Error Handling ---
+    if (isLoading && !kpiStats) {
         return (
             <ErrorBoundary>
                 <div className="space-y-6">
@@ -604,61 +479,60 @@ const UarProgressPageWithAPI: React.FC = React.memo(() => {
             <ErrorBoundary>
                 <div className="min-h-screen flex items-center justify-center bg-gray-50">
                     <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6">
-                        <div className="flex items-center mb-4">
-                            <div className="flex-shrink-0">
-                                <svg
-                                    className="h-8 w-8 text-red-400"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z"
-                                    />
-                                </svg>
-                            </div>
-                            <div className="ml-3">
-                                <h3 className="text-lg font-medium text-gray-900">
-                                    Failed to load data
-                                </h3>
-                            </div>
-                        </div>
-                        <div className="mt-2">
-                            <p className="text-sm text-gray-500">
-                                {error}
-                            </p>
-                        </div>
-                        <div className="mt-4 flex gap-2">
-                            <button
-                                onClick={refresh}
-                                disabled={isRefreshing}
-                                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                            >
-                                {isRefreshing ? (
-                                    <div className="flex items-center">
-                                        <LoadingSpinner size="sm" color="white" className="mr-2" />
-                                        Retrying...
-                                    </div>
-                                ) : (
-                                    'Retry'
-                                )}
-                            </button>
-                        </div>
+                        <h3 className="text-lg font-medium text-gray-900">Failed to load data</h3>
+                        <p className="text-sm text-gray-500 mt-2">{error}</p>
+                        <button
+                            onClick={() => {
+                                fetchDashboardData();
+                                fetchFilterOptions();
+                            }}
+                            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+                        >
+                            Retry
+                        </button>
                     </div>
                 </div>
             </ErrorBoundary>
         );
     }
 
-    // For now, use the original component with mock data
-    // TODO: Replace with API data when ready
+    // --- Render JSX ---
     return (
         <ErrorBoundary>
-            <div className="relative">
-                {isRefreshing && (
+            <div className="space-y-6">
+                <div className="flex justify-between items-center flex-wrap gap-4">
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-800">UAR Progress</h2>
+                    </div>
+                    <div className="flex gap-4 flex-wrap">
+                        <SearchableDropdown
+                            label="Period"
+                            value={selectedPeriodLabel}
+                            onChange={(val) => handlePeriodFilterChange(val as string)}
+                            options={periodOptions}
+                        />
+                        <SearchableDropdown
+                            label="Division"
+                            value={selectedDivisionLabel}
+                            onChange={(val) => handleDivisionFilterChange(val as string)}
+                            options={divisionOptions}
+                        />
+                        <SearchableDropdown
+                            label="Department"
+                            value={selectedDepartmentLabel}
+                            onChange={(val) => handleDepartmentFilterChange(val as string)}
+                            options={departmentOptions}
+                        />
+                        <SearchableDropdown
+                            label="System"
+                            value={selectedApplicationLabel}
+                            onChange={(val) => handleApplicationFilterChange(val as string)}
+                            options={applicationOptions}
+                        />
+                    </div>
+                </div>
+
+                {isLoading && (
                     <div className="absolute top-4 right-4 z-50">
                         <div className="bg-white rounded-lg shadow-lg p-3 flex items-center">
                             <LoadingSpinner size="sm" color="blue" className="mr-2" />
@@ -666,10 +540,69 @@ const UarProgressPageWithAPI: React.FC = React.memo(() => {
                         </div>
                     </div>
                 )}
-                <UarProgressPage />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <StatCard icon={<UarReviewIcon />} value={`${kpiCards.review}%`} label="UAR Review" />
+                    <StatCard icon={<DivisionApprovedIcon />} value={`${kpiCards.approved}%`} label="Division Approved" />
+                    <StatCard icon={<SoApprovedIcon />} value={`${kpiCards.soApproved}%`} label="SO Approved" />
+                    <StatCard icon={<CompletedIcon />} value={`${kpiCards.completed}%`} label="Completed" />
+                </div>
+
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="p-6 border-b border-gray-100">
+                        <h3
+                            className={`text-2xl font-bold text-gray-800 ${isDrilledDown ? 'cursor-pointer hover:text-blue-600 transition-colors' : ''}`}
+                            onClick={isDrilledDown ? handleBackToDivisionView : undefined}
+                            aria-label={isDrilledDown ? "Back to Division View" : mainChartTitle}
+                            role="button"
+                        >
+                            {mainChartTitle}
+                        </h3>
+                    </div>
+                    <div className="relative p-6 pt-0">
+                        <div className="overflow-x-auto">
+                            <div className="min-w-max">
+                                {isDrilledDown ? (
+                                    <UarProgressChart
+                                        data={departmentChartData} // This needs a real data source
+                                        selectedItem={selectedDepartmentLabel}
+                                        onBarClick={handleDepartmentBarClick}
+                                    />
+                                ) : (
+                                    <UarProgressChart
+                                        data={divisionChartData}
+                                        selectedItem={selectedDivisionLabel}
+                                        onBarClick={handleDivisionBarClick}
+                                    />
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="p-6 border-b border-gray-100">
+                        <h3 className="text-2xl font-bold text-gray-800">
+                            {systemChartTitle}
+                        </h3>
+                    </div>
+                    <div className="relative p-6 pt-0">
+                        <div className="overflow-x-auto">
+                            <div className="min-w-max">
+                                <UarProgressChart
+                                    data={applicationChartData}
+                                    selectedItem={filterOptions.applications.find(a => a.id === filters.applicationId)?.name || ''}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </ErrorBoundary>
     );
 });
 
-export default UarProgressPageWithAPI;
+
+// Wrapper component with API integration ready
+
+export default UarProgressPage;

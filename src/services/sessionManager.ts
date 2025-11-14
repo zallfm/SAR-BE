@@ -18,6 +18,8 @@ class SessionManager {
   private activityTimeout: NodeJS.Timeout | null = null;
   private warningTimeout: NodeJS.Timeout | null = null;
 
+  private enableAutoTimeout: boolean = false;
+
   constructor() {
     this.setupActivityTracking();
   }
@@ -100,6 +102,7 @@ class SessionManager {
   // Check if session is valid
   public isSessionValid(): boolean {
     if (!this.session) return false;
+    if (!this.enableAutoTimeout) return true;
 
     const now = new Date();
     const timeSinceLastActivity = now.getTime() - this.session.lastActivity.getTime();
@@ -126,6 +129,7 @@ class SessionManager {
 
   // Reset activity timeout
   private resetActivityTimeout(): void {
+    if (!this.enableAutoTimeout) return;
     if (this.activityTimeout) {
       clearTimeout(this.activityTimeout);
     }

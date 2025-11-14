@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { devtools } from "zustand/middleware";
-import type { PicUser } from "../../data";
+import { divisions, type PicUser } from "../../data";
 import {
   createUarApi,
   deleteUarApi,
@@ -14,6 +14,7 @@ import {
   EditUarPayload,
   UarPic,
 } from "../types/pic";
+import { getDivisionOptionsApi } from "../services/uarProgressService";
 
 type ApiMeta = {
   page: number;
@@ -21,6 +22,10 @@ type ApiMeta = {
   total: number;
   totalPages: number;
 };
+
+export interface Division {
+  id: number, name: string
+}
 
 // --- Original Types ---
 
@@ -43,7 +48,7 @@ export interface UarPicState {
   pics: PicUser[];
   filteredPics: PicUser[]; // Kept for compatibility, will mirror 'pics'
   selectedPic: PicUser | null;
-
+  divisions: Division[];
   // ADDED: Meta from server
   meta: ApiMeta | null;
 
@@ -70,6 +75,7 @@ export interface UarPicState {
   setError: (error: string | null) => void;
 
   // CRUD Operations
+  getDivision: () => Promise<void>;
   addPic: (pic: Omit<PicUser, "id">) => Promise<PicResponse>;
   updatePic: (id: string, updates: Partial<PicUser>) => Promise<PicResponse>;
   // MODIFIED: deletePic is now async to allow for refetch
@@ -95,6 +101,7 @@ export const useUarPicStore = create<UarPicState>()(
         pics: [],
         filteredPics: [],
         selectedPic: null,
+        divisions: [],
 
         meta: null, // ADDED
 
@@ -106,6 +113,10 @@ export const useUarPicStore = create<UarPicState>()(
 
         // In useUarPicStore.ts
 
+        getDivision: async () => {
+          const divisionData = await getDivisionOptionsApi()
+          set({ divisions: divisionData });
+        },
         getPics: async (params) => {
           // 1. Destructure the signal from params
           const {
@@ -125,10 +136,12 @@ export const useUarPicStore = create<UarPicState>()(
             limit,
           };
 
+          state.getDivision()
           set({ isLoading: true, error: null });
           try {
             // 2. Pass the signal to your API call
             const res = await getUarApi(query, signal); // <-- PASS SIGNAL HERE
+
 
             // ... (rest of your success logic is fine) ...
             const { data: raw, meta: metaFromApi } = res as {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { CloseIcon } from "../../icons/CloseIcon";
-import { divisions } from "../../../../data";
 import type { PicUser } from "../../../../data";
+import { useUarPicStore } from "@/src/store/uarPicStore";
 
 interface UarPicModalProps {
   onClose: () => void;
@@ -15,7 +15,7 @@ const UarPicModal: React.FC<UarPicModalProps> = ({
   picToEdit,
 }) => {
   const isEditMode = !!picToEdit;
-
+  const { divisions } = useUarPicStore()
   const [name, setName] = useState("");
   const [division, setDivision] = useState("");
   const [email, setEmail] = useState("");
@@ -41,21 +41,27 @@ const UarPicModal: React.FC<UarPicModalProps> = ({
     if (isEditMode && picToEdit) {
       setName(picToEdit.PIC_NAME);
       setDivision(
-        picToEdit.DIVISION_ID ? divisions[picToEdit.DIVISION_ID - 1] : ""
+        divisions.find((d) => d.id === picToEdit.DIVISION_ID)?.name ?? ""
       );
       setEmail(picToEdit.MAIL);
       setDivisionQuery(
-        picToEdit.DIVISION_ID ? divisions[picToEdit.DIVISION_ID - 1] : ""
+        divisions.find((d) => d.id === picToEdit.DIVISION_ID)?.name ?? ""
       );
     }
   }, [picToEdit, isEditMode]);
 
+  const uniqueDivisionNames = useMemo(() => {
+    const names = divisions.map((d) => d.name);
+    return [...new Set(names)].sort();
+  }, [divisions]);
+
   const filteredDivisions = useMemo(() => {
-    if (!divisionQuery) return [...new Set(divisions)].sort();
-    return [...new Set(divisions)]
-      .filter((d) => d.toLowerCase().includes(divisionQuery.toLowerCase()))
-      .sort();
-  }, [divisionQuery]);
+    if (!divisionQuery) return uniqueDivisionNames;
+
+    return uniqueDivisionNames.filter((name) =>
+      name.toLowerCase().includes(divisionQuery.toLowerCase())
+    );
+  }, [divisionQuery, uniqueDivisionNames]);
 
   const handleDivisionSelect = (selectedDivision: string) => {
     setDivision(selectedDivision);
@@ -64,24 +70,24 @@ const UarPicModal: React.FC<UarPicModalProps> = ({
   };
 
   const emailError = useMemo(() => {
-    // Check if the email is properly formatted with the @toyota.co.id domain
-    if (email.length > 0) {
-      if (email.includes("@")) {
-        // Full email address provided
-        if (!/^[^\s@]+@toyota\.co\.id$/.test(email)) {
-          return "You must input email name @toyota.co.id";
-        }
-      } else {
-        if (!/^[^\s@]+$/.test(email)) {
-          return "Invalid email format.";
-        }
-        if (email.length > 30) {
-          return "Email can only contains 30 characters"
-        }
+    const username = email.includes("@") ? email.split('@')[0] : email;
+
+    if (email.length === 0) {
+      return null;
+    }
+
+    if (!/^[^\s@]+$/.test(username)) {
+      return "Invalid email format (check for spaces).";
+    }
+
+    if (email.includes("@")) {
+      if (!/^[^\s@]+@toyota\.co\E.id$/.test(email)) {
+        return "You must use an @toyota.co.id email";
       }
-      if (email.length > 20) {
-        return "Email can only contains 30 characters"
-      }
+    }
+
+    if (username.length > 30) {
+      return "Email username can only contain 30 characters";
     }
 
     return null;
@@ -126,7 +132,7 @@ const UarPicModal: React.FC<UarPicModalProps> = ({
     const picData: PicUser = {
       ID: isEditMode && picToEdit ? picToEdit.ID : "<NEW_ID>", // ID is handled by parent on creation
       PIC_NAME: name.trim(),
-      DIVISION_ID: divisions.findIndex((d) => d === division) + 1,
+      DIVISION_ID: divisions.find((d) => d.name === division)?.id ?? 0,
       MAIL: processedEmail,
     };
     onSave(picData);
@@ -201,7 +207,6 @@ const UarPicModal: React.FC<UarPicModalProps> = ({
                 autoCorrect='off'
                 spellCheck='false'
                 onChange={(e) => {
-                  const index = divisions.indexOf(e.target.value);
                   setDivisionQuery(e.target.value);
                   setDivision("");
                   setIsDivisionDropdownOpen(true);

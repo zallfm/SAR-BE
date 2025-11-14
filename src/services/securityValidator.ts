@@ -209,7 +209,7 @@ export class SecurityValidator {
     }
 
     // Character validation (alphanumeric and underscore only)
-    const validUsernameRegex = /^[a-zA-Z0-9_]+$/;
+    const validUsernameRegex = /^[a-zA-Z0-9_.]+$/;
     if (!validUsernameRegex.test(sanitizedUsername)) {
       errors.push('Username can only contain letters, numbers, and underscores');
     }
