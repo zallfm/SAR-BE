@@ -245,7 +245,7 @@ export const logRepository = {
       Warning: "W",
       InProgress: "P",
     };
-    // console.log("newLog", newLog)
+    console.log("newLog", newLog)
 
     // cari modul by ID/NAMA (tahan banting)
     const moduleRow = await prisma.tB_M_MODULE.findFirst({
@@ -307,6 +307,7 @@ export const logRepository = {
       console.error("[insertLog] TRANSACTION FAILED:", (e as any)?.message, e);
       throw e;
     }
+    console.log("reponewLog", newLog)
 
     return newLog;
   },

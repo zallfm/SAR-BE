@@ -47,9 +47,9 @@ export async function publishMonitoringLog(app: FastifyInstance, input: PublishL
 
   // Fire-and-forget: don't await, let it run in background
   // This prevents blocking the main request flow
-  logRepository.insertLog(newLog).catch((err) => {
+  await logRepository.insertLog(newLog).catch((err) => {
     app.log.warn({ err, processId }, "Failed to insert monitoring log (non-blocking)");
   });
-  
+  console.log("newLog", newLog)
   return newLog;
 }

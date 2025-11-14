@@ -89,7 +89,7 @@ export const authService = {
       AuditLogger.logFailure(AuditAction.LOGIN_FAILED, ERROR_CODES.AUTH_ACCOUNT_LOCKED, {
         userId: username, requestId, description: 'Account locked due to too many failed attempts'
       });
-      publishMonitoringLog(app, {
+      await publishMonitoringLog(app, {
         userId: username, module: 'AUTH', action: 'LOGIN_FAILED', status: 'Error',
         description: 'Account locked due to too many failed attempts', location: '/login'
       });
@@ -133,7 +133,7 @@ export const authService = {
           userId: username, requestId,
           description: 'Account locked due to too many failed attempts (threshold reached)'
         });
-        publishMonitoringLog(app, {
+        await publishMonitoringLog(app, {
           userId: username, module: 'AUTH', action: 'LOGIN_FAILED', status: 'Error',
           description: 'Account locked (threshold reached)', location: '/login'
         });
@@ -152,7 +152,7 @@ export const authService = {
         userId: username, requestId,
         description: `Invalid credentials (${remaining} attempt${remaining === 1 ? '' : 's'} left)`
       });
-      publishMonitoringLog(app, {
+      await publishMonitoringLog(app, {
         userId: username, module: 'AUTH', action: 'LOGIN_FAILED', status: 'Error',
         description: `Invalid credentials (${remaining} attempts left)`, location: '/login'
       });
@@ -202,7 +202,7 @@ export const authService = {
       userId: user!.username, userName: user!.name, userRole: user!.role, requestId,
       description: 'User logged in successfully'
     });
-    publishMonitoringLog(app, {
+    await publishMonitoringLog(app, {
       userId: user!.username, module: 'AUTH', action: 'LOGIN_SUCCESS', status: 'Success',
       description: 'User logged in successfully', location: '/login'
     });
@@ -261,7 +261,7 @@ export const authService = {
       userId: username ?? 'unknown', userRole: decoded?.role ?? 'unknown',
       requestId, description: 'User logged out',
     });
-    publishMonitoringLog(app, {
+    await publishMonitoringLog(app, {
       userId: decoded?.name, module: 'AUTH', action: 'LOGOUT_SUCESS',
       status: 'Success', description: 'User logout successfully', location: '/logout'
     })
