@@ -705,3 +705,385 @@ model TB_M_COMMENT_SYSTEM_OWNER {
 
   @@index([UAR_PERIOD, UAR_ID, USERNAME, ROLE_ID], map: "IX_COMMENT_SO_UAR_FK")
 }
+
+model TB_M_PEFF_ARCHIVE_CONFIG {
+  ID              Int       @id(map: "PK__TB_M_PEF__3214EC27BD7CC2F1") @default(autoincrement())
+  SRC_DB          String    @db.NVarChar(100)
+  SRC_SCHEMA      String    @db.NVarChar(100)
+  SRC_TABLE       String    @db.NVarChar(200)
+  ARC_DB          String    @db.NVarChar(100)
+  ARC_SCHEMA      String    @db.NVarChar(100)
+  ARC_TABLE       String    @db.NVarChar(200)
+  DATE_COLUMN     String    @db.NVarChar(200)
+  YEARS_THRESHOLD Int
+  IS_LOG          Boolean
+  CREATED_BY      String?   @db.NVarChar(100)
+  CREATED_DT      DateTime? @default(now(), map: "DF__TB_M_PEFF__CREAT__1940BAED") @db.DateTime
+  UPDATED_BY      String?   @db.NVarChar(100)
+  UPDATED_DT      DateTime? @db.DateTime
+  IS_ACTIVE       Boolean   @default(true, map: "DF__TB_M_PEFF__IS_AC__1A34DF26")
+}
+
+model TB_M_UAR_LATEST_ROLE {
+  APPLICATION_ID   String    @db.NVarChar(20)
+  USERNAME         String    @db.NVarChar(70)
+  NOREG            String?   @db.NVarChar(8)
+  NAME             String?   @db.NVarChar(80)
+  ROLE_ID          String    @db.NVarChar(50)
+  ROLE_DESCRIPTION String?   @db.NVarChar(200)
+  DIVISION_ID      Int?
+  DIVISION_NAME    String?   @db.NVarChar(255)
+  DEPARTMENT_ID    Int?
+  DEPARTMENT_NAME  String?   @db.NVarChar(255)
+  POSITION_TITLE   String?   @db.NVarChar(100)
+  CREATED_BY       String    @db.NVarChar(20)
+  CREATED_DT       DateTime  @db.Date
+  CHANGED_BY       String?   @db.VarChar(20)
+  CHANGED_DT       DateTime? @db.Date
+
+  @@id([APPLICATION_ID, USERNAME, ROLE_ID], map: "PK_M_UAR_LATEST_ROLE")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_R_ARC_LOG_D {
+  PROCESS_ID      String    @db.NVarChar(30)
+  SEQ_NO          Int
+  MESSAGE_ID      String    @db.NVarChar(12)
+  MESSAGE_TYPE    String    @db.NVarChar(3)
+  MESSAGE_CONTENT String    @db.NVarChar(200)
+  LOCATION        String    @db.NVarChar(50)
+  CREATED_BY      String    @db.NVarChar(20)
+  CREATED_DT      DateTime?
+  CHANGED_BY      String?   @db.NVarChar(20)
+  CHANGED_DT      DateTime? @db.Date
+  MODULE_ID       String?   @db.NVarChar(10)
+  FUNCTION_ID     String?   @db.NVarChar(20)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_R_ARC_LOG_D_BACKUP {
+  PROCESS_ID      Int
+  SEQ_NO          Int
+  MESSAGE_ID      String    @db.NVarChar(12)
+  MESSAGE_TYPE    String    @db.NVarChar(3)
+  MESSAGE_CONTENT String    @db.NVarChar(200)
+  LOCATION        String    @db.NVarChar(50)
+  CREATED_BY      String    @db.NVarChar(20)
+  CREATED_DT      DateTime  @db.Date
+  CHANGED_BY      String?   @db.NVarChar(20)
+  CHANGED_DT      DateTime? @db.Date
+  MODULE_ID       String?   @db.NVarChar(10)
+  FUNCTION_ID     String?   @db.NVarChar(20)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_R_ARC_LOG_H {
+  PROCESS_ID     String    @db.NVarChar(30)
+  MODULE_ID      String    @db.NVarChar(10)
+  FUNCTION_ID    String    @db.NVarChar(20)
+  START_DT       DateTime?
+  END_DT         DateTime?
+  PROCESS_STATUS String?   @db.Char(1)
+  CREATED_BY     String    @db.NVarChar(20)
+  CREATED_DT     DateTime  @db.Date
+  CHANGED_BY     String?   @db.NVarChar(20)
+  CHANGED_DT     DateTime? @db.Date
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_R_ARC_UAR_DIVISION_USER {
+  UAR_PERIOD          String    @db.NVarChar(6)
+  UAR_ID              String    @db.NVarChar(20)
+  USERNAME            String    @db.NVarChar(50)
+  NOREG               String?   @db.NVarChar(8)
+  NAME                String?   @db.NVarChar(80)
+  POSITION_NAME       String?   @db.NVarChar(10)
+  DIVISION_ID         Int
+  DEPARTMENT_ID       Int
+  SECTION_ID          Int?
+  ORG_CHANGED_STATUS  String?   @db.Char(1)
+  APPLICATION_ID      String?   @db.NVarChar(20)
+  ROLE_ID             String    @db.NVarChar(20)
+  REVIEWER_NOREG      String?   @db.NVarChar(8)
+  REVIEWER_NAME       String?   @db.NVarChar(80)
+  REVIEW_STATUS       String?   @db.Char(1)
+  REVIEWED_BY         String?   @db.NVarChar(8)
+  REVIEWED_DT         DateTime? @db.Date
+  DIV_APPROVAL_STATUS String    @db.Char(1)
+  SO_APPROVAL_STATUS  String    @db.Char(1)
+  REMEDIATED_STATUS   String?   @db.Char(1)
+  REMEDIATED_DT       DateTime? @db.Date
+  CREATED_BY          String    @db.NVarChar(20)
+  CREATED_DT          DateTime  @db.Date
+  CHANGED_BY          String?   @db.NVarChar(20)
+  CHANGED_DT          DateTime? @db.Date
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_R_ARC_UAR_SYSTEM_OWNER {
+  UAR_PERIOD         String    @db.NVarChar(6)
+  UAR_ID             String    @db.NVarChar(20)
+  USERNAME           String    @db.NVarChar(50)
+  NOREG              String?   @db.NVarChar(8)
+  NAME               String?   @db.NVarChar(80)
+  POSITION_NAME      String?   @db.NVarChar(10)
+  DIVISION_ID        Int?
+  DEPARTMENT_ID      Int?
+  SECTION_ID         Int?
+  ORG_CHANGED_STATUS String?   @db.Char(1)
+  COMPANY_CD         Int?
+  APPLICATION_ID     String?   @db.NVarChar(20)
+  ROLE_ID            String    @db.NVarChar(20)
+  REVIEWER_NOREG     String?   @db.NVarChar(8)
+  REVIEWER_NAME      String?   @db.NVarChar(80)
+  REVIEW_STATUS      String?   @db.Char(1)
+  REVIEWED_BY        String?   @db.NVarChar(8)
+  REVIEWED_DT        DateTime? @db.Date
+  SO_APPROVAL_STATUS String?   @db.Char(1)
+  SO_APPROVAL_BY     String?   @db.NVarChar(8)
+  SO_APPROVAL_DT     DateTime? @db.Date
+  REMEDIATED_STATUS  String?   @db.Char(1)
+  REMEDIATED_DT      DateTime? @db.Date
+  CREATED_BY         String    @db.NVarChar(20)
+  CREATED_DT         DateTime  @db.Date
+  CHANGED_BY         String?   @db.NVarChar(20)
+  CHANGED_DT         DateTime? @db.Date
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_R_ARC_WORKFLOW {
+  UAR_ID           String    @db.NVarChar(20)
+  SEQ_NO           Int
+  DIVISION_ID      Int
+  DEPARTMENT_ID    Int
+  APPROVAL_CD      Int?
+  APPROVAL_DESC    String?   @db.NVarChar(50)
+  APPROVER_NOREG   String?   @db.NVarChar(8)
+  APPROVER_NAME    String?   @db.NVarChar(80)
+  PLAN_APPROVED_DT DateTime? @db.Date
+  APPROVED_BY      String?   @db.NVarChar(8)
+  APPROVED_DT      DateTime? @db.Date
+  IS_APPROVED      String?   @db.Char(1)
+  IS_REJECTED      String?   @db.Char(1)
+  CREATED_BY       String    @db.NVarChar(20)
+  CREATED_DT       DateTime  @db.Date
+  CHANGED_BY       String?   @db.NVarChar(20)
+  CHANGED_DT       DateTime? @db.Date
+  APPLICATION_ID   String?   @db.VarChar(50)
+  APPLICATION_NAME String?   @db.VarChar(100)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_R_PEFF_LOG_D {
+  PROCESS_ID      String    @db.NVarChar(30)
+  SEQ_NO          Int
+  MESSAGE_ID      String    @db.NVarChar(12)
+  MESSAGE_TYPE    String    @db.NVarChar(3)
+  MESSAGE_CONTENT String    @db.NVarChar(200)
+  LOCATION        String    @db.NVarChar(50)
+  CREATED_BY      String    @db.NVarChar(20)
+  CREATED_DT      DateTime?
+  CHANGED_BY      String?   @db.NVarChar(20)
+  CHANGED_DT      DateTime? @db.Date
+  MODULE_ID       String?   @db.NVarChar(10)
+  FUNCTION_ID     String?   @db.NVarChar(20)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_R_PEFF_LOG_D_BACKUP {
+  PROCESS_ID      Int
+  SEQ_NO          Int
+  MESSAGE_ID      String    @db.NVarChar(12)
+  MESSAGE_TYPE    String    @db.NVarChar(3)
+  MESSAGE_CONTENT String    @db.NVarChar(200)
+  LOCATION        String    @db.NVarChar(50)
+  CREATED_BY      String    @db.NVarChar(20)
+  CREATED_DT      DateTime  @db.Date
+  CHANGED_BY      String?   @db.NVarChar(20)
+  CHANGED_DT      DateTime? @db.Date
+  MODULE_ID       String?   @db.NVarChar(10)
+  FUNCTION_ID     String?   @db.NVarChar(20)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_R_PEFF_LOG_H {
+  PROCESS_ID     String    @db.NVarChar(30)
+  MODULE_ID      String    @db.NVarChar(10)
+  FUNCTION_ID    String    @db.NVarChar(20)
+  START_DT       DateTime?
+  END_DT         DateTime?
+  PROCESS_STATUS String?   @db.Char(1)
+  CREATED_BY     String    @db.NVarChar(20)
+  CREATED_DT     DateTime  @db.Date
+  CHANGED_BY     String?   @db.NVarChar(20)
+  CHANGED_DT     DateTime? @db.Date
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_R_PEFF_UAR_DIVISION_USER {
+  UAR_PERIOD          String    @db.NVarChar(6)
+  UAR_ID              String    @db.NVarChar(20)
+  USERNAME            String    @db.NVarChar(50)
+  NOREG               String?   @db.NVarChar(8)
+  NAME                String?   @db.NVarChar(80)
+  POSITION_NAME       String?   @db.NVarChar(10)
+  DIVISION_ID         Int
+  DEPARTMENT_ID       Int
+  SECTION_ID          Int?
+  ORG_CHANGED_STATUS  String?   @db.Char(1)
+  APPLICATION_ID      String?   @db.NVarChar(20)
+  ROLE_ID             String    @db.NVarChar(20)
+  REVIEWER_NOREG      String?   @db.NVarChar(8)
+  REVIEWER_NAME       String?   @db.NVarChar(80)
+  REVIEW_STATUS       String?   @db.Char(1)
+  REVIEWED_BY         String?   @db.NVarChar(8)
+  REVIEWED_DT         DateTime? @db.Date
+  DIV_APPROVAL_STATUS String    @db.Char(1)
+  SO_APPROVAL_STATUS  String    @db.Char(1)
+  REMEDIATED_STATUS   String?   @db.Char(1)
+  REMEDIATED_DT       DateTime? @db.Date
+  CREATED_BY          String    @db.NVarChar(20)
+  CREATED_DT          DateTime  @db.Date
+  CHANGED_BY          String?   @db.NVarChar(20)
+  CHANGED_DT          DateTime? @db.Date
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_R_PEFF_UAR_SYSTEM_OWNER {
+  UAR_PERIOD         String    @db.NVarChar(6)
+  UAR_ID             String    @db.NVarChar(20)
+  USERNAME           String    @db.NVarChar(50)
+  NOREG              String?   @db.NVarChar(8)
+  NAME               String?   @db.NVarChar(80)
+  POSITION_NAME      String?   @db.NVarChar(10)
+  DIVISION_ID        Int?
+  DEPARTMENT_ID      Int?
+  SECTION_ID         Int?
+  ORG_CHANGED_STATUS String?   @db.Char(1)
+  COMPANY_CD         Int?
+  APPLICATION_ID     String?   @db.NVarChar(20)
+  ROLE_ID            String    @db.NVarChar(20)
+  REVIEWER_NOREG     String?   @db.NVarChar(8)
+  REVIEWER_NAME      String?   @db.NVarChar(80)
+  REVIEW_STATUS      String?   @db.Char(1)
+  REVIEWED_BY        String?   @db.NVarChar(8)
+  REVIEWED_DT        DateTime? @db.Date
+  SO_APPROVAL_STATUS String?   @db.Char(1)
+  SO_APPROVAL_BY     String?   @db.NVarChar(8)
+  SO_APPROVAL_DT     DateTime? @db.Date
+  REMEDIATED_STATUS  String?   @db.Char(1)
+  REMEDIATED_DT      DateTime? @db.Date
+  CREATED_BY         String    @db.NVarChar(20)
+  CREATED_DT         DateTime  @db.Date
+  CHANGED_BY         String?   @db.NVarChar(20)
+  CHANGED_DT         DateTime? @db.Date
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_R_PEFF_WORKFLOW {
+  UAR_ID           String    @db.NVarChar(20)
+  SEQ_NO           Int
+  DIVISION_ID      Int
+  DEPARTMENT_ID    Int
+  APPROVAL_CD      Int?
+  APPROVAL_DESC    String?   @db.NVarChar(50)
+  APPROVER_NOREG   String?   @db.NVarChar(8)
+  APPROVER_NAME    String?   @db.NVarChar(80)
+  PLAN_APPROVED_DT DateTime? @db.Date
+  APPROVED_BY      String?   @db.NVarChar(8)
+  APPROVED_DT      DateTime? @db.Date
+  IS_APPROVED      String?   @db.Char(1)
+  IS_REJECTED      String?   @db.Char(1)
+  CREATED_BY       String    @db.NVarChar(20)
+  CREATED_DT       DateTime  @db.Date
+  CHANGED_BY       String?   @db.NVarChar(20)
+  CHANGED_DT       DateTime? @db.Date
+  APPLICATION_ID   String?   @db.VarChar(50)
+  APPLICATION_NAME String?   @db.VarChar(100)
+
+  @@ignore
+}
+
+model TB_R_ROLE_FUNCTION {
+  ID               BigInt    @id(map: "PK__TB_R_ROL__3214EC2735E3EC5F") @default(autoincrement())
+  APPLICATION_NAME String?   @db.NVarChar(50)
+  ROLE_ID          String    @db.NVarChar(50)
+  ROLE_NAME        String?   @db.NVarChar(100)
+  SCREEN_ID        String?   @db.NVarChar(50)
+  SCREEN_NAME      String?   @db.NVarChar(50)
+  CREATED_BY       String?   @db.NVarChar(70)
+  CREATED_DT       DateTime? @db.Date
+  CHANGED_BY       String?   @db.NVarChar(70)
+  CHANGED_DT       DateTime? @db.Date
+
+  @@index([APPLICATION_NAME, ROLE_ID, SCREEN_ID], map: "IX_TB_R_ROLE_FUNCTION_index")
+}
+
+model TB_R_USER_ROLE {
+  ID               BigInt    @id(map: "PK__TB_R_USE__3214EC2776905A95") @default(autoincrement())
+  APPLICATION_NAME String?   @db.NVarChar(50)
+  USERNAME         String?   @db.NVarChar(70)
+  NO_REG           String?   @db.NVarChar(50)
+  COMPANY_CODE     String?   @db.NVarChar(50)
+  ROLE_ID          String    @db.NVarChar(50)
+  ROLE_NAME        String?   @db.NVarChar(100)
+  CREATED_BY       String?   @db.NVarChar(70)
+  CREATED_DT       DateTime? @db.Date
+  CHANGED_BY       String?   @db.NVarChar(70)
+  CHANGED_DT       DateTime? @db.Date
+
+  @@index([APPLICATION_NAME, USERNAME, ROLE_ID], map: "IX_TB_R_USER_ROLE_index")
+}
+
+model TB_T_SC_ROLE_FUNCTION {
+  ID               BigInt    @id(map: "PK__TB_T_SC___3214EC27489E49F9") @default(autoincrement())
+  APPLICATION_NAME String?   @db.NVarChar(50)
+  ROLE_ID          String    @db.NVarChar(50)
+  ROLE_NAME        String?   @db.NVarChar(100)
+  SCREEN_ID        String?   @db.NVarChar(50)
+  SCREEN_NAME      String?   @db.NVarChar(50)
+  CREATED_BY       String?   @db.NVarChar(70)
+  CREATED_DT       DateTime? @db.Date
+  CHANGED_BY       String?   @db.NVarChar(70)
+  CHANGED_DT       DateTime? @db.Date
+
+  @@index([APPLICATION_NAME, ROLE_ID, SCREEN_ID], map: "IX_TB_T_SC_ROLE_FUNCTION_index")
+}
+
+model TB_T_SC_USER_ROLE {
+  ID               BigInt    @id(map: "PK__TB_T_SC___3214EC27C2EBB843") @default(autoincrement())
+  APPLICATION_NAME String?   @db.NVarChar(50)
+  USERNAME         String?   @db.NVarChar(70)
+  NO_REG           String?   @db.NVarChar(50)
+  COMPANY_CODE     String?   @db.NVarChar(50)
+  ROLE_ID          String    @db.NVarChar(50)
+  ROLE_NAME        String?   @db.NVarChar(100)
+  CREATED_BY       String?   @db.NVarChar(70)
+  CREATED_DT       DateTime? @db.Date
+  CHANGED_BY       String?   @db.NVarChar(70)
+  CHANGED_DT       DateTime? @db.Date
+
+  @@index([APPLICATION_NAME, USERNAME, ROLE_ID], map: "IX_TB_T_SC_USER_ROLE_index")
+}
