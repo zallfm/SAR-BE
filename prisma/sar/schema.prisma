@@ -740,6 +740,8 @@ model TB_M_UAR_LATEST_ROLE {
   CREATED_DT       DateTime  @db.Date
   CHANGED_BY       String?   @db.VarChar(20)
   CHANGED_DT       DateTime? @db.Date
+  NAME_APP         String?   @db.NVarChar(255)
+  ROLE_NAME        String?   @db.NVarChar(255)
 
   @@id([APPLICATION_ID, USERNAME, ROLE_ID], map: "PK_M_UAR_LATEST_ROLE")
 }
