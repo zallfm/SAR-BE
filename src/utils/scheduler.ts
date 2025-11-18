@@ -7,6 +7,7 @@ import {
   runUarSOSyncWorker,
   runUarSOWorker,
 } from "../workers/schedule.worker";
+import { initBatchArcScheduler } from "../modules/batch/batch_arc&purg.service";
 export async function startScheduler(app: FastifyInstance) {
   const scheduledJob = () => {
     // runWorker(app);
@@ -22,6 +23,8 @@ export async function startScheduler(app: FastifyInstance) {
 
   schedule.scheduleJob("*/1 * * * *", scheduledJob);
   schedule.scheduleJob("59 7 * * *", scheduleNotifReminderJob);
+
+  await initBatchArcScheduler()
 
   app.log.info("Scheduler started: Job scheduled to run every minute.");
 }
