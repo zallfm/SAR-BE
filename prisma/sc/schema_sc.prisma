@@ -309,3 +309,39 @@ model TB_T_COUNTER {
   ACCESS_NAME    String   @db.VarChar(100)
   ACCESS_DATE    DateTime @db.DateTime
 }
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_H_EMPLOYEE {
+  NOREG            String?   @db.NVarChar(8)
+  PERSONNEL_NAME   String?   @db.NVarChar(80)
+  MAIL             String?   @db.NVarChar(50)
+  POSITION_NAME    String?   @db.NVarChar(10)
+  CLASS_NAME       String?   @db.NVarChar(20)
+  POSITION_CODE    Int
+  POSITION_TITLE   String?   @db.NVarChar(100)
+  POSITION_LEVEL   Int?
+  JOB_CODE         Int
+  JOB_TITLE        String?   @db.NVarChar(50)
+  DIRECTORATE_ID   Int?
+  DIRECTORATE_NAME String?   @db.NVarChar(255)
+  DIVISION_ID      Int?
+  DIVISION_NAME    String?   @db.NVarChar(255)
+  DEPARTMENT_ID    Int?
+  DEPARTMENT_NAME  String?   @db.NVarChar(255)
+  SECTION_ID       Int?
+  SECTION_NAME     String?   @db.NVarChar(255)
+  LINE_ID          Int?
+  LINE_NAME        String?   @db.NVarChar(255)
+  GROUP_ID         Int?
+  GROUP_NAME       String?   @db.NVarChar(255)
+  VALID_FROM       DateTime  @db.Date
+  VALID_TO         DateTime  @db.Date
+  ORG_ID           Int
+  ORG_TITLE        String?   @db.NVarChar(255)
+  CREATED_BY       String?   @db.NVarChar(20)
+  CREATED_DT       DateTime? @db.Date
+  CHANGED_BY       String?   @db.NVarChar(20)
+  CHANGED_DT       DateTime? @db.Date
+
+  @@ignore
+}

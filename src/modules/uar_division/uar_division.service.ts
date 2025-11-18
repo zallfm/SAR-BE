@@ -9,6 +9,7 @@ import type {
 import {
     currentRequestId,
     currentUserId,
+
 } from "../../core/requestContext";
 import { publishMonitoringLog } from "../log_monitoring/log_publisher";
 
@@ -22,16 +23,17 @@ export const uarDivisionService = {
             period?: string;
             uarId?: string;
             status?: 'InProgress' | 'Finished';
-            createdDateStart?: string;
-            createdDateEnd?: string;
-            completedDateStart?: string;
-            completedDateEnd?: string;
+            createdDate?: string;
+            completedDate?: string;
+            reviewStatus?: 'pending';
         },
-        userDivisionId: number
+        departmentId: number,
+        noreg: string
     ) {
         const { data, total, workflowStatus, completionStats } = await repo.listUars({
             ...params,
-            userDivisionId,
+            departmentId,
+            noreg
         });
 
         const wfStatusMap = new Map(workflowStatus.map((w) => [w.UAR_ID, w]));

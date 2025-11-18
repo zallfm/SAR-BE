@@ -1,6 +1,6 @@
 import { LogDetail, LogEntry } from "../../types/log_monitoring";
 import { prisma } from "../../db/prisma";
-import { Prisma } from "../../generated/prisma";
+import { Prisma } from "../../generated/prisma/index.js";
 
 type Order = "asc" | "desc";
 type SortBy = "NO" | "START_DATE" | "END_DATE";
@@ -245,7 +245,7 @@ export const logRepository = {
       Warning: "W",
       InProgress: "P",
     };
-    // console.log("newLog", newLog)
+    console.log("newLog", newLog)
 
     // cari modul by ID/NAMA (tahan banting)
     const moduleRow = await prisma.tB_M_MODULE.findFirst({
@@ -266,7 +266,7 @@ export const logRepository = {
     const startDt = parseDate(newLog.START_DATE);
     const endDt = newLog.END_DATE ? parseDate(newLog.END_DATE) : null;
 
-    console.log("newLog", newLog)
+    // console.log("newLog", newLog)
 
     try {
       await prisma.$transaction(async (tx) => {
@@ -307,6 +307,7 @@ export const logRepository = {
       console.error("[insertLog] TRANSACTION FAILED:", (e as any)?.message, e);
       throw e;
     }
+    console.log("reponewLog", newLog)
 
     return newLog;
   },

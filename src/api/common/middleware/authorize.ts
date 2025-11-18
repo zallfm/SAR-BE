@@ -1,3 +1,4 @@
+// src/api/common/middleware/authorize.ts
 import fp from 'fastify-plugin';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
@@ -5,20 +6,21 @@ import { ServiceResponse } from '../models/ServiceResponse';
 import { authService } from '../../../modules/auth/auth.service';
 import { env } from '../../../config/env';
 
-// Payload JWT yang kamu pakai (sesuaikan kalau ada field lain)
+// ===== JWT Payload yang dibaca dari token =====
 type JwtPayload = {
-  sub: string;    // username disimpan di 'sub'
+  sub: string;   // username disimpan di 'sub'
   name?: string;
   role?: string;
-  // iat: number;
-  // exp: number;
+  // iat?: number;
+  // exp?: number;
 };
 
-// Profil yang diperkaya dari DB untuk guard permission
+// ===== Profil yang diperkaya dari DB untuk guard permission =====
 type GuardedUser = {
   username: string;
   divisionId: number;
   noreg: string;
+  departmentId: number;
   features: string[];
   functions: string[];
   roles: string[];
@@ -26,7 +28,6 @@ type GuardedUser = {
 
 // ---- AUGMENT TYPES ----
 // Augment milik @fastify/jwt agar req.user dikenali sebagai JwtPayload.
-// ⚠️ JANGAN mendeklarasikan ulang req.user di module 'fastify', cukup di sini.
 declare module '@fastify/jwt' {
   interface FastifyJWT {
     payload: JwtPayload;
@@ -65,7 +66,7 @@ const DEFAULT_PUBLIC = [
   '/tools',
 ];
 
-const dynamicRole = env.DYNAMIC_ROLE
+const dynamicRole = env.DYNAMIC_ROLE;
 
 const startsWithAny = (url: string, bases: string[]) =>
   bases.some((p) => url.startsWith(p));
@@ -75,8 +76,7 @@ export default fp<AuthOpts>(async function authorizePlugin(app: FastifyInstance,
   const base = opts?.prefixBase ?? '';
 
   // Hanya verifikasi token (req.user = JwtPayload)
-  // Support both Bearer Token and Cookie
-  app.decorate('authenticate', async function (req, reply) {
+  app.decorate('authenticate', async function (req: FastifyRequest, reply: FastifyReply) {
     try {
       // Try to verify JWT - @fastify/jwt will handle both Bearer token and cookie
       await (req as any).jwtVerify(); // dari @fastify/jwt; mengisi req.user
@@ -97,7 +97,7 @@ export default fp<AuthOpts>(async function authorizePlugin(app: FastifyInstance,
     try {
       await app.authenticate(req, reply); // set req.user (JwtPayload)
     } catch {
-      return; // authenticate sudah kirim response error
+      return; // authenticate sudah mengirim response error 401
     }
 
     const payload = (req as any).user as JwtPayload | undefined;
@@ -110,13 +110,15 @@ export default fp<AuthOpts>(async function authorizePlugin(app: FastifyInstance,
 
     try {
       // authService.validate mengembalikan profil (sesuai service kamu)
+      // Struktur yang kamu buat: { user: {...}, features: string[], functions: string[], roles: string[] }
       const profile: any = await authService.validate(username);
 
-      // Bentuk req.auth untuk permission guards
+      // Bentuk req.auth untuk permission guards — ambil noreg dari DB
       req.auth = {
         username: profile?.user?.username ?? username,
-        divisionId: 2,
-        noreg: "100000",
+        divisionId: profile?.user?.divisionId ?? 2,            // fallback sementara
+        noreg: profile?.user?.regNo ?? '00000',                // ✅ dari TB_M_USER.REG_NO
+        departmentId: profile?.user?.departmentId ?? 200,     // fallback sementara
         features: profile?.features ?? [],
         functions: profile?.functions ?? [],
         roles: profile?.roles ?? [],
@@ -135,7 +137,6 @@ export default fp<AuthOpts>(async function authorizePlugin(app: FastifyInstance,
   });
 
   // ===== Permission Guards (pakai req.auth, JANGAN req.user) =====
-
   app.decorate('requirePermission', function (permission: string) {
     return async (req, reply) => {
       const u = req.auth;
@@ -144,7 +145,9 @@ export default fp<AuthOpts>(async function authorizePlugin(app: FastifyInstance,
           .status(401)
           .send(ServiceResponse.failure('Unauthorized', null, 401));
       }
-      if (u.roles?.includes(dynamicRole)) return; // super admin bypass
+      // super admin bypass
+      if (u.roles?.includes(dynamicRole)) return;
+
       const ok = u.features?.includes(permission) || u.functions?.includes(permission);
       if (!ok) {
         return reply

@@ -9,6 +9,8 @@ import { uarGenerateRoutes } from "./master_data/uar_generate/uar_generate.route
 import { uarDivisionRoutes } from "./uar_division/uar_division.routes";
 import { excelUarRoutes } from "./excel/excel.route";
 import { uarSystemOwnerRoutes } from "./uar_system_owner/uar_system_owner.routes";
+import { dashboardRoutes } from "./dashboard/dashboard.routes";
+import { uarLatestRoleRoutes } from "./uar_latest_role/uar_latest_role.routes";
 
 export async function indexRoutes(app: FastifyInstance) {
   app.register(async (r) => {
@@ -30,6 +32,9 @@ export async function indexRoutes(app: FastifyInstance) {
 
   app.register(uarDivisionRoutes, { prefix: "/uar_division" })
   app.register(uarSystemOwnerRoutes, { prefix: "/uar_system_owner" })
+  app.register(uarLatestRoleRoutes, { prefix: "/uar_latest_role" })
+
+  app.register(dashboardRoutes, { prefix: "/dashboard" })
   app.register(excelUarRoutes, { prefix: "/excel_uar" })
   app.register(async (r) => {
     r.addHook('preHandler', app.requireAnyPermission(['APPLICATION_VIEW', 'APPLICATION_MANAGE']));

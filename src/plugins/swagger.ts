@@ -39,6 +39,7 @@ export default fp(async function swaggerPlugin(app: FastifyInstance) {
         { name: 'Application' },
         { name: 'UAR Division' },
         { name: 'UAR System Owner' },
+        { name: 'UAR Latest Role' },
         { name: 'Excel UAR' },
         { name: 'UAR Generate' },
         { name: 'TDD' },

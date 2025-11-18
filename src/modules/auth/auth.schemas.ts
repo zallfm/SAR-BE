@@ -22,6 +22,7 @@ export const loginSchema = {
           properties: {
             token: { type: 'string' },
             expiresIn: { type: 'number' },
+            expireAt: { type: 'number' },
             user: {
               type: 'object',
               required: ['username', 'name', 'role'],
@@ -30,6 +31,7 @@ export const loginSchema = {
                 name: { type: 'string' },
                 role: { type: 'string' },
                 divisionId: { type: 'number' },
+                departmentId: { type: 'number' },
                 noreg: { type: 'string' }
               }
             }
@@ -39,7 +41,7 @@ export const loginSchema = {
     }
   }
 } as const;
-
+ 
 export const getMenuSchema = {
   querystring: {
     type: 'object',
@@ -58,7 +60,7 @@ export const getMenuSchema = {
     }
   }
 } as const;
-
+ 
 export const getProfileSchema = {
   querystring: {
     type: 'object',
@@ -109,5 +111,4 @@ export const getProfileSchema = {
       }
     }
   }
-} as const;
-
+} as const;  
