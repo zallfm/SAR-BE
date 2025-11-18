@@ -223,7 +223,8 @@ export const uarDivisionRepository = {
             },
         });
     },
-
+    // DIVISION_ID
+    // PERONNEL_NAME
     async getUar(uarId: string, userDivisionId: number) {
         const [header, details] = await prisma.$transaction([
             prisma.tB_R_WORKFLOW.findFirst({
@@ -256,6 +257,17 @@ export const uarDivisionRepository = {
                 select: { DEPARTMENT_NAME: true },
             })
             : null;
+
+        const soHeadEmployee = header?.DIVISION_ID
+            ? await prisma.tB_M_EMPLOYEE.findFirst({
+                where: {
+                    DIVISION_ID: header.DIVISION_ID,
+                    POSITION_NAME: "So Head",
+                },
+                select: { PERSONNEL_NAME: true },
+            })
+            : null;
+
 
         const division = header?.DIVISION_ID ? await prisma.tB_M_DIVISION.findFirst({
             where: { DIVISION_ID: header.DIVISION_ID },
@@ -327,13 +339,14 @@ export const uarDivisionRepository = {
             PERSONNEL_NAME: d.NOREG != null ? EmployeeNameMap.get(d.NOREG) ?? null : null,
         }));
 
-    
+
         const result = {
             header: {
                 ...header,
                 DEPARTMENT_NAME: department?.DEPARTMENT_NAME ?? null,
                 DIVISION_NAME: division?.DIVISION_NAME ?? null,
-                PERONNEL_NAME: employee?.PERSONNEL_NAME ?? null,
+                PERSONNEL_NAME: employee?.PERSONNEL_NAME ?? null,
+                SO_NAME: soHeadEmployee?.PERSONNEL_NAME ?? null,
             },
             details: detailsWithSectionName,
         };
