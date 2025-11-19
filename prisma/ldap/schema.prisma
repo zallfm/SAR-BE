@@ -1,0 +1,550 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../src/generated/prisma-ldap"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DB_CONNECTION_LDAP")
+}
+
+model authors_docs {
+  pers_id Int
+  doc_id  Int
+
+  @@id([pers_id, doc_id], map: "PK_authors_docs")
+}
+
+model documents {
+  id       Int     @id(map: "PK_documents") @default(autoincrement())
+  abstract String? @db.NVarChar(255)
+  title    String? @db.NVarChar(255)
+  body     Bytes?  @db.VarBinary(4096)
+}
+
+model groups {
+  id          Int     @id(map: "PK_groups") @default(autoincrement())
+  name        String? @db.NVarChar(255)
+  description String? @db.NVarChar(255)
+}
+
+model institutes {
+  id          Int     @id(map: "PK_institutes") @default(autoincrement())
+  name        String  @db.NVarChar(255)
+  l           String? @db.NVarChar(255)
+  postalCode  String? @db.NVarChar(255)
+  st          String? @db.NVarChar(255)
+  street      String? @db.NVarChar(255)
+  description String? @db.NVarChar(255)
+}
+
+model ldap_attr_mappings {
+  id               Int              @id(map: "pk_ldap_attr_mappings") @default(autoincrement())
+  oc_map_id        Int
+  name             String           @db.NVarChar(512)
+  sel_expr         String?          @db.NVarChar(4000)
+  sel_expr_u       String?          @db.NVarChar(512)
+  from_tbls        String?          @db.VarChar(4000)
+  join_where       String?          @db.NVarChar(512)
+  add_proc         String?          @db.NVarChar(512)
+  delete_proc      String?          @db.NVarChar(512)
+  param_order      Int
+  expect_return    Int
+  ldap_oc_mappings ldap_oc_mappings @relation(fields: [oc_map_id], references: [id], onUpdate: NoAction, map: "FK__ldap_attr__oc_ma__00200768")
+}
+
+model ldap_entries {
+  id                    Int                     @id(map: "pk_ldap_entries") @default(autoincrement())
+  dn                    String                  @unique(map: "unq2_ldap_entries") @db.NVarChar(255)
+  oc_map_id             Int
+  parent                Int
+  keyval                Int
+  ldap_oc_mappings      ldap_oc_mappings        @relation(fields: [oc_map_id], references: [id], onUpdate: NoAction, map: "FK__ldap_entr__oc_ma__03F0984C")
+  ldap_entry_objclasses ldap_entry_objclasses[] @ignore
+  ldap_referrals        ldap_referrals[]        @ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model ldap_entry_objclasses {
+  entry_id     Int
+  oc_name      String?      @db.NVarChar(64)
+  ldap_entries ldap_entries @relation(fields: [entry_id], references: [id], onUpdate: NoAction, map: "FK__ldap_entr__entry__09A971A2")
+
+  @@ignore
+}
+
+model ldap_oc_mappings {
+  id                 Int                  @id(map: "pk_ldap_oc_mappings") @default(autoincrement())
+  name               String               @unique(map: "unq1_ldap_oc_mappings") @db.NVarChar(64)
+  keytbl             String               @db.NVarChar(64)
+  keycol             String               @db.NVarChar(64)
+  create_proc        String?              @db.NVarChar(255)
+  delete_proc        String?              @db.NVarChar(255)
+  expect_return      Int
+  ldap_attr_mappings ldap_attr_mappings[]
+  ldap_entries       ldap_entries[]
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model ldap_referrals {
+  entry_id     Int
+  url          String       @db.Text
+  ldap_entries ldap_entries @relation(fields: [entry_id], references: [id], onUpdate: NoAction, map: "FK__ldap_refe__entry__0F624AF8")
+
+  @@ignore
+}
+
+model members {
+  id       Int    @id(map: "PK_members") @default(autoincrement())
+  group_id Int
+  name     String @db.NVarChar(255)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model object_class_grouping {
+  ID        Int?
+  GroupName String? @db.VarChar(50)
+
+  @@ignore
+}
+
+model persons {
+  id          Int     @id(map: "PK_persons") @default(autoincrement())
+  cn          String? @db.NVarChar(255)
+  name        String? @db.NVarChar(255)
+  surname     String? @db.NVarChar(255)
+  description String? @db.NVarChar(255)
+  title       String? @db.NVarChar(255)
+  password    String? @db.NVarChar(64)
+}
+
+model phones {
+  id      Int    @id(map: "PK_phones") @default(autoincrement())
+  phone   String @db.NVarChar(255)
+  pers_id Int
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model SearchTMP {
+  id            Int     @default(autoincrement())
+  name          String  @db.NVarChar(64)
+  keytbl        String  @db.NVarChar(64)
+  keycol        String  @db.NVarChar(64)
+  create_proc   String? @db.NVarChar(255)
+  delete_proc   String? @db.NVarChar(255)
+  expect_return Int
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_H_USER_LOGIN_INFO {
+  ID        Int
+  USERNAME  String?   @db.VarChar(64)
+  SESSIONID String?   @db.VarChar(64)
+  LOGINTIME DateTime? @db.DateTime
+  IPADDRESS String?   @db.VarChar(16)
+  DURATION  Int?
+  BROWSER   String?   @db.VarChar(50)
+  SC        Int?
+
+  @@ignore
+}
+
+model TB_M_ACTION {
+  ACTION_ID          Int       @id(map: "PK_TB_M_ACTION")
+  ACTION_NAME        String    @db.VarChar(100)
+  CREATED_BY         String    @db.VarChar(20)
+  CREATED_DT         DateTime  @db.DateTime
+  CHANGED_BY         String?   @db.VarChar(20)
+  CHANGED_DT         DateTime? @db.DateTime
+  ACTION_DESCRIPTION String?   @db.VarChar(100)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_M_AUTHORIZATION_DETAIL {
+  AUTHORIZATION_ID       Int
+  BRANCH_ID              Int
+  SYSTEM_ID              Int?
+  ROLE_ID                Int
+  SCREEN_ID              Int?
+  ACTION_ID              Int?
+  OBJECT_ID              Int?
+  AUTHORIZATION_GROUP_ID Int?
+  SCREEN_AUTH            Int?
+  ACTION_AUTH            Int?
+  OBJECT_AUTH            Int?
+  CREATED_BY             String    @db.VarChar(20)
+  CREATED_DT             DateTime  @db.DateTime
+  CHANGED_BY             String?   @db.VarChar(20)
+  CHANGED_DT             DateTime? @db.DateTime
+
+  @@ignore
+}
+
+model TB_M_AUTHORIZATION_GROUP {
+  BRANCH_ID                       Int
+  SYSTEM_ID                       Int
+  AUTHORIZATION_GROUP_ID          Int
+  AUTHORIZATION_GROUP_NAME        String    @db.VarChar(Max)
+  AUTHORIZATION_GROUP_DESCRIPTION String?   @db.VarChar(50)
+  CREATED_BY                      String    @db.VarChar(20)
+  CREATED_DATE                    DateTime  @db.DateTime
+  CHANGED_BY                      String?   @db.VarChar(20)
+  CHANGED_DATE                    DateTime? @db.DateTime
+
+  @@id([BRANCH_ID, AUTHORIZATION_GROUP_ID, SYSTEM_ID], map: "PK_TB_M_AREA")
+}
+
+model TB_M_AUTHORIZATION_LEVEL {
+  BRANCH_ID    Int
+  LEVEL_ID     Int
+  LEVEL_NAME   String    @db.VarChar(255)
+  CREATED_BY   String    @db.VarChar(20)
+  CREATED_DATE DateTime  @db.DateTime
+  CHANGED_BY   String?   @db.VarChar(20)
+  CHANGED_DATE DateTime? @db.DateTime
+
+  @@id([LEVEL_ID, BRANCH_ID], map: "PK_TB_M_AUTHORIZATION_LEVEL")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_M_AUTHORIZATION_MAIN {
+  BRANCH_ID    Int
+  SYSTEM_ID    Int?
+  USERNAME     String    @db.VarChar(64)
+  ROLE_ID      Int?
+  CREATED_BY   String    @db.VarChar(20)
+  CREATED_DATE DateTime  @db.DateTime
+  CHANGED_BY   String?   @db.VarChar(20)
+  CHANGED_DATE DateTime? @db.DateTime
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_M_AUTHORIZATION_MAPPING {
+  BRANCH_ID    Int
+  SYSTEM_ID    Int?
+  USERNAME     String    @db.VarChar(64)
+  ROLE_ID      Int?
+  CREATED_BY   String    @db.VarChar(20)
+  CREATED_DATE DateTime  @db.DateTime
+  CHANGED_BY   String?   @db.VarChar(20)
+  CHANGED_DATE DateTime? @db.DateTime
+
+  @@ignore
+}
+
+model TB_M_AUTHORIZATION_STRUCTURE {
+  AUTHORIZATION_ID           Int
+  AUTHORIZATION_ABBREVIATION String?   @db.VarChar(20)
+  AUTHORIZATION_NAME         String    @db.VarChar(255)
+  PARENT_ID                  Int
+  LEVEL_ID                   Int
+  DELETED_FLAG               Int
+  CREATED_BY                 String    @db.VarChar(20)
+  CREATED_DATE               DateTime  @db.DateTime
+  CHANGED_BY                 String?   @db.VarChar(20)
+  CHANGED_DATE               DateTime? @db.DateTime
+
+  @@id([LEVEL_ID, AUTHORIZATION_ID], map: "PK_TB_M_AUTHORIZATION_STRUCTURE")
+}
+
+model TB_M_BRANCH {
+  BRANCH_COUNTRY      String?   @db.VarChar(10)
+  BRANCH_COMPANY_TYPE String?   @db.VarChar(10)
+  BRANCH_COMPANY_NAME String?   @db.VarChar(100)
+  BRANCH_ID           Int       @id(map: "PK_TB_M_BRANCH")
+  BRANCH_ABBREVIATION String    @db.VarChar(10)
+  BRANCH_NAME         String?   @db.VarChar(100)
+  CREATED_BY          String    @db.VarChar(20)
+  CREATED_DATE        DateTime  @db.DateTime
+  CHANGED_BY          String?   @db.VarChar(20)
+  CHANGED_DATE        DateTime? @db.DateTime
+  ID                  Int?
+}
+
+model TB_M_CC_CODE {
+  BRANCH_ID    Int
+  CC_CODE      String    @db.VarChar(20)
+  CC_NAME      String?   @db.VarChar(100)
+  CREATED_BY   String    @db.VarChar(20)
+  CREATED_DATE DateTime  @db.DateTime
+  CHANGED_BY   String?   @db.VarChar(20)
+  CHANGED_DATE DateTime? @db.DateTime
+
+  @@id([CC_CODE, BRANCH_ID], map: "PK_TB_M_CC_CODE")
+}
+
+model TB_M_CLASS {
+  BRANCH_ID    Int
+  CLASS_ID     String    @db.VarChar(2)
+  CLASS_NAME   String    @db.VarChar(20)
+  CREATED_BY   String    @db.VarChar(20)
+  CREATED_DATE DateTime  @db.DateTime
+  CHANGED_BY   String?   @db.VarChar(20)
+  CHANGED_DATE DateTime? @db.DateTime
+
+  @@id([CLASS_ID, BRANCH_ID], map: "PK_TB_M_CLASS")
+}
+
+model TB_M_COMPANY_OF_ORIGIN {
+  COMPANY_ID   Int       @id(map: "PK_TB_M_COMPANY_OF_ORIGIN")
+  COMPANY_NAME String    @db.VarChar(100)
+  CREATED_BY   String    @db.VarChar(20)
+  CREATED_DT   DateTime  @db.DateTime
+  CHANGED_BY   String?   @db.VarChar(20)
+  CHANGED_DATE DateTime? @db.DateTime
+  COMPANY_CODE String?   @db.VarChar(10)
+}
+
+model TB_M_EMPLOYEE {
+  BRANCH_ID                Int
+  USERNAME                 String    @id(map: "PK_TB_M_EMPLOYEE") @db.VarChar(64)
+  PASSWORD                 String?   @db.VarChar(104)
+  PASSWORD_EXPIRATION_DATE DateTime? @db.DateTime
+  USER_EXPIRATION_DATE     DateTime? @db.DateTime
+  ACTIVE_DIRECTORY_FLAG    Int
+  LOCK_FLAG                Int
+  ISACTIVE_FLAG            Int
+  NOTIFICATION_FLAG        Int
+  NO_REG                   String?   @db.VarChar(8)
+  FIRST_NAME               String?   @db.VarChar(20)
+  LAST_NAME                String?   @db.VarChar(20)
+  FULL_NAME                String?   @db.VarChar(80)
+  TEL_NO                   String?   @db.VarChar(20)
+  MOBILE_NO                String?   @db.VarChar(20)
+  CLASS_ID                 String?   @db.VarChar(2)
+  JOB_FUNCTION_ID          Int?
+  CC_CODE                  String?   @db.VarChar(20)
+  COMPANY_ID               Int
+  LOCATION_ID              Int?
+  ISPRODUCTION             Int?
+  MAX_LOGIN                Int
+  QUOTA                    Int?
+  DELETED_FLAG             Int
+  DEFAULT_APP              String?   @db.VarChar(20)
+  ID                       Int?
+  CREATED_BY               String    @db.VarChar(20)
+  CREATED_DATE             DateTime  @db.DateTime
+  CHANGED_BY               String?   @db.VarChar(20)
+  CHANGED_DATE             DateTime? @db.DateTime
+  EMAIL                    String?   @db.VarChar(50)
+  LAST_LOGON               DateTime? @db.DateTime
+  MULTIPLE_LOGIN           Int?
+  PASSWORD_MUST_BE_CHANGED Boolean?
+}
+
+model TB_M_FILE {
+  FILE_ID      Int       @id(map: "PK_TB_M_FILE")
+  FILE_NAME    String    @db.VarChar(100)
+  CREATED_BY   String    @db.VarChar(20)
+  CREATED_DATE DateTime  @db.DateTime
+  CHANGED_BY   String?   @db.VarChar(20)
+  CHANGED_DATE DateTime? @db.DateTime
+}
+
+model TB_M_GROUP {
+  BRANCH_ID       Int
+  USER_GROUP_ID   Int
+  USER_GROUP_NAME String    @db.VarChar(100)
+  CREATED_BY      String    @db.VarChar(20)
+  CREATED_DT      DateTime  @db.DateTime
+  CHANGED_BY      String?   @db.VarChar(20)
+  CHANGED_DT      DateTime? @db.DateTime
+
+  @@id([BRANCH_ID, USER_GROUP_ID], map: "PK_TB_M_GROUP")
+}
+
+model TB_M_GROUP_MAPPING {
+  BRANCH_ID     Int
+  USERNAME      String    @db.VarChar(64)
+  USER_GROUP_ID Int
+  CREATED_BY    String    @db.VarChar(20)
+  CREATED_DT    DateTime  @db.DateTime
+  CHANGED_BY    String?   @db.VarChar(20)
+  CHANGED_DT    DateTime? @db.DateTime
+
+  @@id([BRANCH_ID, USERNAME, USER_GROUP_ID], map: "PK_TB_M_GROUP_MAPPING")
+}
+
+model TB_M_JOB_FUNCTION {
+  JOB_FUNCTION_ID   Int       @id(map: "PK_TB_M_JOB_FUNCTION")
+  JOB_FUNCTION_NAME String    @db.VarChar(50)
+  CREATED_BY        String    @db.VarChar(20)
+  CREATED_DATE      DateTime  @db.DateTime
+  CHANGED_BY        String?   @db.VarChar(20)
+  CHANGED_DATE      DateTime? @db.DateTime
+}
+
+model TB_M_LOCATION {
+  LOCATION_ID   Int       @id(map: "PK_TB_M_LOCATION")
+  LOCATION_NAME String    @db.VarChar(100)
+  CREATED_BY    String    @db.VarChar(20)
+  CREATED_DATE  DateTime  @db.DateTime
+  CHANGED_BY    String?   @db.VarChar(20)
+  CHANGED_DATE  DateTime? @db.DateTime
+}
+
+model TB_M_OBJECT {
+  OBJECT_ID    Int       @id(map: "PK_TB_M_OBJECT")
+  OBJECT_NAME  String    @db.VarChar(100)
+  CREATED_BY   String    @db.VarChar(20)
+  CREATED_DATE DateTime  @db.DateTime
+  CHANGED_BY   String?   @db.VarChar(20)
+  CHANGED_DATE DateTime? @db.DateTime
+}
+
+model TB_M_ORGANIZATION_LEVEL {
+  BRANCH_ID    Int
+  LEVEL_ID     Int
+  LEVEL_NAME   String    @db.VarChar(225)
+  CREATED_BY   String    @db.VarChar(20)
+  CREATED_DATE DateTime  @db.DateTime
+  CHANGED_BY   String?   @db.VarChar(20)
+  CHANGED_DATE DateTime? @db.DateTime
+
+  @@id([LEVEL_ID, BRANCH_ID], map: "PK_TB_M_ORGANIZATION_LEVEL")
+}
+
+model TB_M_ORGANIZATION_STRUCTURE {
+  UNIT_ID           Int       @id(map: "PK_TB_M_ORGANIZATION_STRUCTURE")
+  UNIT_ABBREVIATION String?   @db.VarChar(20)
+  UNIT_NAME         String    @db.VarChar(255)
+  PARENT_ID         Int
+  LEVEL_ID          Int
+  DELETED_FLAG      Int
+  CREATED_BY        String    @db.VarChar(20)
+  CREATED_DATE      DateTime  @db.DateTime
+  CHANGED_BY        String?   @db.VarChar(20)
+  CHANGED_DATE      DateTime? @db.DateTime
+}
+
+model TB_M_POSITION {
+  BRANCH_ID      Int
+  POSITION_ID    Int
+  POSITION_NAME  String?   @db.VarChar(100)
+  POSITION_LEVEL Int?
+  CREATED_BY     String    @db.VarChar(20)
+  CREATED_DATE   DateTime  @db.DateTime
+  CHANGED_BY     String?   @db.VarChar(20)
+  CHANGED_DATE   DateTime? @db.DateTime
+
+  @@id([POSITION_ID, BRANCH_ID], map: "PK_TB_M_POSITION")
+}
+
+model TB_M_ROLE {
+  BRANCH_ID              Int
+  SYSTEM_ID              Int
+  ROLE_ID                Int
+  ROLE_NAME              String    @db.VarChar(300)
+  ROLE_SESSION_TIMEOUT   Int
+  ROLE_SENT_MAX_FILESIZE Int
+  CREATED_BY             String    @db.VarChar(20)
+  CREATED_DATE           DateTime  @db.DateTime
+  CHANGED_BY             String?   @db.VarChar(20)
+  CHANGED_DATE           DateTime? @db.DateTime
+  ID                     Int?
+
+  @@id([ROLE_ID, BRANCH_ID, SYSTEM_ID], map: "PK_TB_M_ROLE")
+}
+
+model TB_M_SCREEN {
+  SCREEN_ID          Int
+  SCREEN_NAME        String    @db.VarChar(100)
+  ACTION_ID          Int
+  OBJECT_ID          Int
+  MPIN_FLAG          Int
+  CREATED_BY         String    @db.VarChar(20)
+  CREATED_DATE       DateTime  @db.DateTime
+  CHANGED_BY         String?   @db.VarChar(20)
+  CHANGED_DATE       DateTime? @db.DateTime
+  SCREEN_DESCRIPTION String?   @db.VarChar(100)
+
+  @@id([SCREEN_ID, ACTION_ID, OBJECT_ID], map: "PK_TB_M_SCREEN_1")
+}
+
+model TB_M_SYSTEM {
+  BRANCH_ID          Int
+  SYSTEM_ID          Int
+  SYSTEM_NAME        String    @db.VarChar(20)
+  SYSTEM_DESCRIPTION String?   @db.VarChar(50)
+  SYSTEM_GROUP       String?   @db.VarChar(50)
+  SYSTEM_URL         String?   @db.VarChar(200)
+  CREATED_BY         String?   @db.VarChar(20)
+  CREATED_DATE       DateTime? @db.DateTime
+  CHANGED_BY         String?   @db.VarChar(20)
+  CHANGED_DATE       DateTime? @db.DateTime
+
+  @@id([SYSTEM_ID, BRANCH_ID], map: "PK_TB_M_SYSTEM")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_M_USER_POSITION_MAP {
+  BRANCH_ID      Int
+  USERNAME       String    @db.VarChar(64)
+  POSITION_ID    Int?
+  DIRECTORATE_ID Int?
+  DIVISION_ID    Int?
+  DEPARTMENT_ID  Int?
+  SECTION_ID     Int?
+  LINE_ID        Int?
+  GROUP_ID       Int?
+  CREATED_BY     String    @db.VarChar(20)
+  CREATED_DATE   DateTime  @db.DateTime
+  CHANGED_BY     String?   @db.VarChar(20)
+  CHANGED_DATE   DateTime? @db.DateTime
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_T_AUTHORIZATION_DETAIL {
+  PROCESS_ID             BigInt?
+  AUTHORIZATION_ID       Int?
+  BRANCH_ID              Int?
+  SYSTEM_ID              Int?
+  ROLE_ID                Int?
+  SCREEN_ID              Int?
+  ACTION_ID              Int?
+  OBJECT_ID              Int?
+  AUTHORIZATION_GROUP_ID Int?
+  SCREEN_AUTH            Int?
+  ACTION_AUTH            Int?
+  OBJECT_AUTH            Int?
+  CREATED_BY             String?   @db.VarChar(20)
+  CREATED_DT             DateTime? @db.DateTime
+  CHANGED_BY             String?   @db.VarChar(20)
+  CHANGED_DT             DateTime? @db.DateTime
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_T_AUTHORIZATION_MAPPING_DUPLICATE {
+  BRANCH_ID    Int
+  SYSTEM_ID    Int?
+  USERNAME     String    @db.VarChar(64)
+  ROLE_ID      Int?
+  CREATED_BY   String    @db.VarChar(20)
+  CREATED_DATE DateTime  @db.DateTime
+  CHANGED_BY   String?   @db.VarChar(20)
+  CHANGED_DATE DateTime? @db.DateTime
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_T_USER_LOGIN_INFO {
+  ID        Int
+  USERNAME  String?   @db.VarChar(64)
+  SESSIONID String?   @db.VarChar(64)
+  LOGINTIME DateTime? @db.DateTime
+  IPADDRESS String?   @db.VarChar(16)
+  DURATION  Int?
+  BROWSER   String?   @db.VarChar(50)
+  SC        Int?
+
+  @@ignore
+}

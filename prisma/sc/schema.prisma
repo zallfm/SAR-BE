@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "sqlserver"
-  url      = env("DB_CONNECTION_SC")
+  url      = env("DB_CONNECTION_GLOBAL_SC")
 }
 
 model TB_M_APPLICATION {

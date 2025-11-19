@@ -16,6 +16,7 @@ import {
 import { Schedule } from "../../../types/schedule";
 import { publishMonitoringLog } from "../../log_monitoring/log_publisher";
 import { currentRequestId, currentUserId } from "../../../core/requestContext";
+import { WorkerContext } from "../../../workers/worker.context.js";
 
 type ScheduleWhereInput = Prisma.TB_M_SCHEDULEWhereInput;
 type ScheduleCompoundId =
@@ -415,7 +416,7 @@ export const scheduleService = {
     }
   },
 
-  async getRunningUarSchedules(app: FastifyInstance) {
+  async getRunningUarSchedules(ctx: WorkerContext) {
     const today = new Date();
     const startOfDay = new Date(
       today.getFullYear(),
@@ -429,7 +430,7 @@ export const scheduleService = {
     );
 
     try {
-      const runningSchedules = await app.prisma.tB_M_SCHEDULE.findMany({
+      const runningSchedules = await ctx.prisma.tB_M_SCHEDULE.findMany({
         where: {
           SCHEDULE_UAR_DT: {
             gte: startOfDay,
@@ -438,7 +439,7 @@ export const scheduleService = {
           SCHEDULE_STATUS: "1",
         },
       });
-      return runningSchedules.map((s) => formatSchedule(s as any));
+      return runningSchedules.map((s: any) => formatSchedule(s as any));
     } catch (e) {
       app.log.error(e, "Failed to get running UAR schedules");
       throw new ApplicationError(
@@ -448,9 +449,8 @@ export const scheduleService = {
     }
   },
 
-  async getRunningSyncSchedules(app: FastifyInstance) {
+  async getRunningSyncSchedules(ctx: WorkerContext) {
     const today = new Date();
-    // Normalize to midnight for date-only comparison
     const startOfToday = new Date(
       today.getFullYear(),
       today.getMonth(),
@@ -458,7 +458,7 @@ export const scheduleService = {
     );
 
     try {
-      const runningSchedules = await app.prisma.tB_M_SCHEDULE.findMany({
+      const runningSchedules = await ctx.prisma.tB_M_SCHEDULE.findMany({
         where: {
           SCHEDULE_SYNC_START_DT: { lte: startOfToday },
           SCHEDULE_SYNC_END_DT: { gte: startOfToday },
@@ -478,12 +478,12 @@ export const scheduleService = {
 
 export async function runCreateOnlySync(
   sourcePicList: UarPic[],
-  app: FastifyInstance
+  ctx: WorkerContext
 ) {
   app.log.info("--- Starting Create-Only Sync ---");
 
   try {
-    const databasePicList = await app.prisma.tB_M_UAR_PIC.findMany({
+    const databasePicList = await ctx.prisma.tB_M_UAR_PIC.findMany({
       select: { ID: true },
     });
     app.log.info(
@@ -628,21 +628,21 @@ async function createManyWithManualDuplicateCheck(
 const randomDelay = (ms = 500) =>
   new Promise((resolve) => setTimeout(resolve, Math.random() * ms));
 
-export async function fetchFromDB1(app: FastifyInstance): Promise<UarPic[]> {
+export async function fetchFromDB1(ctx: WorkerContext): Promise<UarPic[]> {
   app.log.info("Fetching data from DB1...");
   await randomDelay(300);
   app.log.info(`Fetched ${uarSO1.length} records from DB1.`);
   return uarSO1;
 }
 
-export async function fetchFromDB2(app: FastifyInstance): Promise<UarPic[]> {
+export async function fetchFromDB2(ctx: WorkerContext): Promise<UarPic[]> {
   app.log.info("Fetching data from DB2...");
   await randomDelay(500);
   app.log.info(`Fetched ${uarSO2.length} records from DB2.`);
   return uarSO2;
 }
 
-export async function fetchFromDB3(app: FastifyInstance): Promise<UarPic[]> {
+export async function fetchFromDB3(ctx: WorkerContext): Promise<UarPic[]> {
   app.log.info("Fetching data from DB3...");
   await randomDelay(200);
 
@@ -655,14 +655,14 @@ export async function fetchFromDB3(app: FastifyInstance): Promise<UarPic[]> {
   return uarSO3;
 }
 
-export async function fetchFromDB4(app: FastifyInstance): Promise<UarPic[]> {
+export async function fetchFromDB4(ctx: WorkerContext): Promise<UarPic[]> {
   app.log.info("Fetching data from DB4...");
   await randomDelay(400);
   app.log.info(`Fetched ${uarSO4.length} records from DB4.`);
   return uarSO4;
 }
 
-export async function fetchFromDB5(app: FastifyInstance): Promise<UarPic[]> {
+export async function fetchFromDB5(ctx: WorkerContext): Promise<UarPic[]> {
   app.log.info("Fetching data from DB5...");
   await randomDelay(600);
   app.log.info(`Fetched ${uarSO5.length} records from DB5.`);
