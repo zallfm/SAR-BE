@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../src/generated/prisma-tmmin"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DB_CONNECTION_TMMIN_ROLE")
+}
+
+model TB_M_ROLE_HEADER {
+  APPLICATION_ID String  @db.VarChar(50)
+  ROLE_ID        String  @db.VarChar(20)
+  ROLE_NAME      String? @db.VarChar(200)
+  USERNAME       String  @db.VarChar(200)
+
+  @@id([APPLICATION_ID, ROLE_ID, USERNAME], map: "PK_TB_M_ROLE_HEADER")
+}
+
+model TB_M_USER {
+  USERNAME   String  @id(map: "PK_TB_M_USER") @db.VarChar(200)
+  REG_NO     String? @db.VarChar(10)
+  FIRST_NAME String? @db.VarChar(30)
+  LAST_NAME  String? @db.VarChar(30)
+  EMAIL      String? @db.VarChar(200)
+}

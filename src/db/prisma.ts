@@ -1,12 +1,15 @@
 import { PrismaClient as PrismaSAR } from "../generated/prisma/index.js";
 import { PrismaClient as PrismaSC } from "../generated/prisma-sc/index.js";
+import { PrismaClient as PrismaLdap } from "../generated/prisma-ldap/index.js";
+import { PrismaClient as PrismaTmmin } from "../generated/prisma-tmmin/index.js";
 
 declare global {
   var prisma: PrismaSAR | undefined;
   var prismaSC: PrismaSC | undefined;
+  var prismaLdap: PrismaLdap | undefined;
+  var prismaTmmin: PrismaTmmin | undefined;
 }
 
-// koneksi ke SAR db
 export const prisma =
   global.prisma ||
   new PrismaSAR({
@@ -16,14 +19,27 @@ export const prisma =
         : ["error"],
   });
 
-// koneksi ke GLOBAL_SC_DB_DEV
 export const prismaSC =
   global.prismaSC ||
   new PrismaSC({
     log: ["error"],
-  })
+  });
+
+export const prismaLdap =
+  global.prismaLdap ||
+  new PrismaLdap({
+    log: ["error"],
+  });
+
+export const prismaTmmin =
+  global.prismaTmmin ||
+  new PrismaTmmin({
+    log: ["error"],
+  });
 
 if (process.env.NODE_ENV !== "production") {
   global.prisma = prisma;
   global.prismaSC = prismaSC;
+  global.prismaLdap = prismaLdap;
+  global.prismaTmmin = prismaTmmin;
 }

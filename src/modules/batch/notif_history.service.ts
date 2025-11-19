@@ -257,6 +257,7 @@ export const notificationHistoryService = {
 };
 
 import { TB_R_UAR_SYSTEM_OWNER } from "../../generated/prisma/index.js";
+import { WorkerContext } from "../../workers/worker.context.js";
 
 type UarSystemOwner = TB_R_UAR_SYSTEM_OWNER;
 
@@ -291,7 +292,7 @@ export const notificationService = {
    * Queues a single notification, checking for duplicates first.
    */
   async queueNotification(
-    app: FastifyInstance,
+    ctx: WorkerContext,
     candidate: {
       REQUEST_ID: string;
       ITEM_CODE: string;
@@ -301,7 +302,7 @@ export const notificationService = {
     checkDuplicates = true
   ) {
     if (checkDuplicates) {
-      const existing = await app.prisma.tB_H_NOTIFICATION.findFirst({
+      const existing = await ctx.prisma.tB_H_NOTIFICATION.findFirst({
         where: {
           REQUEST_ID: candidate.REQUEST_ID,
           ITEM_CODE: candidate.ITEM_CODE,
@@ -316,7 +317,7 @@ export const notificationService = {
       }
     }
 
-    await app.prisma.tB_T_CANDIDATE_NOTIFICATION.create({
+    await ctx.prisma.tB_T_CANDIDATE_NOTIFICATION.create({
       data: {
         ID: BigInt(Date.now()),
         REQUEST_ID: candidate.REQUEST_ID,
@@ -330,19 +331,16 @@ export const notificationService = {
   },
 
   async triggerInitialNotifications(
-    app: FastifyInstance,
+    ctx: WorkerContext,
     newUarTasks: Omit<UarSystemOwner, "ID">[]
   ) {
-    app.log.info(
-      `Triggering initial notifications for ${newUarTasks.length} tasks...`
-    );
+
 
     // Get all unique Application IDs from the new tasks
     const appIds = [...new Set(newUarTasks.map((task) => task.APPLICATION_ID))];
 
     // Fetch all relevant approvers in one query
-    console.log("appids", appIds);
-    const applications = await app.prisma.tB_M_APPLICATION.findMany({
+    const applications = await ctx.prisma.tB_M_APPLICATION.findMany({
       where: {
         APPLICATION_ID: { in: appIds as string[] },
       },
