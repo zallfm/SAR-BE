@@ -15,6 +15,9 @@ export const env = {
   APPLICATION_ID: process.env.APPLICATION_ID ?? "SARSYS",
   DYNAMIC_ROLE: process.env.DYNAMIC_ROLE ?? "adminsar",
 
+  UAR_TYPE_DIV_USER: process.env.UAR_TYPE_DIV_USER ?? "div_user",
+  UAR_TYPE_SO_USER: process.env.UAR_TYPE_SO_USER ?? "so_user",
+
   JWT_SECRET: process.env.JWT_SECRET ?? "changeme",
   TOKEN_EXPIRES_IN: Number(process.env.TOKEN_EXPIRES_IN ?? 8 * 60 * 60),
 
