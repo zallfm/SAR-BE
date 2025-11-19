@@ -2,9 +2,10 @@ import ExcelJS from "exceljs";
 import type { FillPattern, Alignment, Borders } from "exceljs";
 import { uarDivisionService as svc } from "../uar_division/uar_division.service";
 import { uarSystemOwnerService as svcso } from "../uar_system_owner/uar_system_owner.service";
+import { env } from "../../config/env";
 
 type BuildOpts = {
-  type?: "div_user" | "so_user";
+  type?: string;
   applicationId?: string;
   userNoreg?: string;
 };
@@ -14,7 +15,8 @@ export async function buildUarExcelTemplate(
   userDivisionId: number,
   opts?: BuildOpts
 ) {
-  const type = opts?.type ?? "div_user";
+  const type = opts?.type ?? env.UAR_TYPE_DIV_USER;
+  // console.log("type", type)
 
   const fallback = "Not Found";
   const v = <T>(x: T | null | undefined, fb = fallback) =>
@@ -28,14 +30,14 @@ export async function buildUarExcelTemplate(
   let header: any | null = null;
   let details: any[] = [];
 
-  if (type === "div_user") {
+  if (type === env.UAR_TYPE_DIV_USER) {
     const resp: any = await svc.getUar(uarId, userDivisionId);
     // Antisipasi 2 bentuk (langsung vs dibungkus {data})
     const h = resp?.header ?? resp?.data?.header ?? null;
     const d = resp?.details ?? resp?.data?.details ?? [];
     header = h;
     details = Array.isArray(d) ? d : [];
-  } else {
+  } else if (env.UAR_TYPE_SO_USER) {
     if (!opts?.applicationId || !opts?.userNoreg) {
       throw new Error("buildUarExcelTemplate: For type 'so_user' it is mandatory to fill in opts.applicationId and opts.userNoreg");
     }
@@ -47,12 +49,16 @@ export async function buildUarExcelTemplate(
     const dv = payload?.divisionUsers ?? payload?.details?.divisionUsers ?? [];
     details = [...so, ...dv];
   }
+  // console.log("headers", header)
+  // console.log("details", details)
 
   const systemName =
     (header?.APPLICATION_NAME ?? header?.applicationName) ?? fallback;
 
   const divisionName =
     (header?.DIVISION_NAME ?? header?.divisionName) ?? fallback;
+
+    // console.log("header", header)
 
   const departmentName =
     (header?.DEPARTMENT_NAME ?? header?.departmentName);
@@ -154,25 +160,119 @@ export async function buildUarExcelTemplate(
   ws.getCell(2, apprLeftCol).alignment = center as Alignment;
   ws.getCell(2, apprLeftCol).font = { bold: true };
 
+  // ---- APPROVER STATUS HELPER ----
+  const allSoApproved =
+    details.length > 0 && details.every((d) => yes(d?.SO_APPROVAL_STATUS));
+
+  const allDivApproved =
+    details.length > 0 && details.every((d) => yes(d?.DIV_APPROVAL_STATUS));
+  // console.log("header", header)
+  const soName = header?.SO_NAME ?? "";
+  // div name for system owner
+  const divName = header?.DIV_NAME ?? "";
+  const divHeadName = header?.PERONNEL_NAME ?? header?.PERSONNEL_NAME ?? "";
+
+  const deptMap = new Map<number, string>();
+  details.forEach((d) => {
+    const deptId = d?.DEPARTMENT_ID;
+    const reviewer = d?.REVIEWER_NAME;
+    if (!deptId || !reviewer) return;
+    if (!deptMap.has(deptId)) {
+      deptMap.set(deptId, reviewer);
+    }
+  });
+  const departmentHeadNames = Array.from(deptMap.values());
+  // console.log("departmentHeadNames", departmentHeadNames)
+
+  // berapa banyak baris untuk kolom Department Head
+  const rowsForDept = Math.max(departmentHeadNames.length, 3);
+
+  // console.log("departmentHeadNames", departmentHeadNames)
+
   const apprRowHeader = 3;
   const approverCols = ["System Owner", "Division Head", "Department Head"];
   const span = Math.floor((apprRightCol - apprLeftCol + 1) / 3);
+
+  const bodyApprovedStart = apprRowHeader + 1;                // row 4
+  const bodyApprovedEnd = bodyApprovedStart + rowsForDept - 1; // dinamis
+  const nameRow = bodyApprovedEnd + 1;                                    // row 6
+
   approverCols.forEach((title, idx) => {
     const c1 = apprLeftCol + idx * span;
     const c2 = c1 + span - 1;
+
+    // ===== Header text: System Owner / Division Head / Department Head =====
     ws.mergeCells(apprRowHeader, c1, apprRowHeader, c2);
-    const cell = ws.getCell(apprRowHeader, c1);
-    cell.value = title;
-    cell.alignment = center as Alignment;
-    cell.font = { bold: true };
-    ws.mergeCells(apprRowHeader + 1, c1, apprRowHeader + 3, c2);
+    const headerCell = ws.getCell(apprRowHeader, c1);
+    headerCell.value = title;
+    headerCell.alignment = center as Alignment;
+    headerCell.font = { bold: true };
+
+    if (title === "Department Head") {
+      // ===== Kolom Department Head: list nama per baris =====
+      for (let i = 0; i < rowsForDept; i++) {
+        const r = bodyApprovedStart + i; // row 4..(4+rowsForDept-1)
+        ws.mergeCells(r, c1, r, c2);
+        const cell = ws.getCell(r, c1);
+        cell.value = departmentHeadNames[i] ?? "";
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: "left",
+          wrapText: true,
+        } as Alignment;
+      }
+      return;
+    }
+
+    // ===== System Owner & Division Head =====
+    // Bagian tengah: Approved (tinggi mengikuti rowsForDept)
+    ws.mergeCells(bodyApprovedStart, c1, bodyApprovedEnd, c2);
+    const bodyCell = ws.getCell(bodyApprovedStart, c1);
+    bodyCell.alignment = center as Alignment;
+
+    if (title === "System Owner") {
+      bodyCell.value = allSoApproved ? "Approved" : "";
+    } else if (title === "Division Head") {
+      if (type === env.UAR_TYPE_DIV_USER) {
+        bodyCell.value = allDivApproved ? "Approved" : "";
+      } else if (env.UAR_TYPE_SO_USER) {
+        bodyCell.value = "Approved"
+      }
+    }
+    // console.log("soName", soName)
+    // console.log("divHeadName", divHeadName)
+
+    // Baris paling bawah: nama SO / Div Head
+    ws.mergeCells(nameRow, c1, nameRow, c2);
+    const nameCell = ws.getCell(nameRow, c1);
+    if (type === env.UAR_TYPE_DIV_USER) {
+      if (title === "System Owner") {
+        nameCell.value = soName || "";
+      } else if (title === "Division Head") {
+        nameCell.value = divHeadName || "";
+      }
+    } else if (env.UAR_TYPE_SO_USER) {
+      if (title === "System Owner") {
+        nameCell.value = soName || "";
+      } else if (title === "Division Head") {
+        nameCell.value = divName || "";
+      }
+    }
+    nameCell.alignment = center as Alignment;
   });
 
-  for (let r = 2; r <= apprRowHeader + 3; r++) {
+  ws.getRow(bodyApprovedStart).height = 35; // row Approved baris 1
+  ws.getRow(bodyApprovedEnd).height = 35;   // row Approved baris 2
+
+  // Optional: perbesar baris nama SO / Div Head
+  ws.getRow(nameRow).height = 20;
+
+  for (let r = 2; r <= nameRow; r++) {
     for (let c = apprLeftCol; c <= apprRightCol; c++) {
       ws.getCell(r, c).border = borderThin;
     }
   }
+
 
   const gapBeforeJobRole = 2;
   const jobRoleTitleRow = infoStartRow + info.length + gapBeforeJobRole;
@@ -261,23 +361,30 @@ export async function buildUarExcelTemplate(
     const row = ws.getRow(r);
 
     row.getCell("NO").value = i + 1;
-    row.getCell("USER_ID").value       = v(d?.USERNAME);
-    row.getCell("NOREG").value         = v(d?.NOREG);
+    row.getCell("USER_ID").value = v(d?.USERNAME);
+    row.getCell("NOREG").value = v(d?.NOREG);
     row.getCell("EMPLOYEE_NAME").value = v(d?.NAME);
-    row.getCell("POSITION").value      = v(d?.POSITION_NAME);
-    row.getCell("SECTION").value       = v(d?.SECTION_NAME ?? d?.SECTION_ID);
-    row.getCell("DEPARTMENT").value    = v(d?.DEPARTMENT_NAME ?? d?.DEPARTMENT_ID);
-    row.getCell("DIVISION").value      = v(divisionName);
+    row.getCell("POSITION").value = v(d?.POSITION_NAME);
+    row.getCell("SECTION").value = v(d?.SECTION_NAME ?? d?.SECTION_ID);
+    row.getCell("DEPARTMENT").value = v(d?.DEPARTMENT_NAME ?? d?.DEPARTMENT_ID);
+    row.getCell("DIVISION").value = v(divisionName);
 
     uniqueRoles.forEach((roleId, j) => {
       const col = firstRoleCol + j;
       row.getCell(col).value = g.roles.has(roleId) ? 1 : "";
     });
 
-    const keepOk =
-      yes(d?.DIV_APPROVAL_STATUS) || yes(d?.SO_APPROVAL_STATUS) || yes(d?.REVIEW_STATUS);
+    const statusForKeep = type === env.UAR_TYPE_DIV_USER ? d?.DIV_APPROVAL_STATUS : d?.SO_APPROVAL_STATUS;
 
-    row.getCell("KEEP").value = keepOk ? "1" : "";
+    // // untuk excel div user
+    // const keepOk =
+    //   d?.DIV_APPROVAL_STATUS
+
+    // // untuk excel so
+    // const keepOk =
+    //   d?.SO_APPROVAL_STATUS
+
+    row.getCell("KEEP").value = statusForKeep === "1" ? "1" : "";
     row.getCell("ASSIGN_TO").value = "";
     row.getCell("DELETE").value = "";
     row.getCell("REMARK").value = "";

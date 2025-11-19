@@ -14,7 +14,7 @@ import { PrismaClient as LdapPrismaClient } from "../generated/prisma-ldap";
 import { runGlobalSecuritySyncWorker } from "../workers/sync/globalScSync.worker";
 import { runLdapSyncWorker } from "../workers/sync/ldapSync.worker";
 import { runTmminRoleSyncWorker } from "../workers/sync/tmminRoleSync.worker";
-
+import { initBatchArcScheduler } from "../modules/batch/batch_arc&purg.service";
 export async function startScheduler(app: FastifyInstance) {
 
   const workerContext: WorkerContext = {
@@ -127,4 +127,8 @@ export async function startScheduler(app: FastifyInstance) {
   schedule.scheduleJob("0 0 * * 3", scheduleLdapSyncJob);
   schedule.scheduleJob("0 0 * * 4", scheduleTmminRoleSyncJob);
   app.log.info("Scheduler started: Jobs are now scheduled.");
+}
+  await initBatchArcScheduler()
+
+  app.log.info("Scheduler started: Job scheduled to run every minute.");
 }

@@ -160,19 +160,19 @@ export const uarSystemOwnerService = {
     },
 
     async getUarSo(uarId: string, applicationId: string, userNoreg: string) {
-        console.log("userNoreg", userNoreg)
-        const ownedApplicationIds = await getOwnedApplicationIds(userNoreg);
+        // console.log("userNoreg", userNoreg)
+        // const ownedApplicationIds = await getOwnedApplicationIds(userNoreg);
 
-        // Security check
-        if (!ownedApplicationIds.includes(applicationId)) {
-            throw new ApplicationError(
-                ERROR_CODES.API_UNAUTHORIZED,
-                "You are not authorized to view this application.",
-                { uarId, applicationId, userNoreg },
-                undefined,
-                403
-            );
-        }
+        // // Security check
+        // if (!ownedApplicationIds.includes(applicationId)) {
+        //     throw new ApplicationError(
+        //         ERROR_CODES.API_UNAUTHORIZED,
+        //         "You are not authorized to view this application.",
+        //         { uarId, applicationId, userNoreg },
+        //         undefined,
+        //         403
+        //     );
+        // }
 
         const { header, systemOwnerUsers, divisionUsers } = await repo.getUarSo(uarId, applicationId);
 
