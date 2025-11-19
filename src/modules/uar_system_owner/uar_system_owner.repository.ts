@@ -565,7 +565,11 @@ export const uarSystemOwnerRepository =
             // ===== APP NAME (untuk header) =====
             const appPromise = tx.tB_M_APPLICATION.findUnique({
                 where: { APPLICATION_ID: applicationId },
-                select: { APPLICATION_ID: true, APPLICATION_NAME: true, DIVISION_ID_OWNER: true },
+                select: {
+                    APPLICATION_ID: true,
+                    APPLICATION_NAME: true,
+                    DIVISION_ID_OWNER: true,
+                },
             });
 
             const [soUsers, divUsers, app] = await Promise.all([
@@ -573,7 +577,8 @@ export const uarSystemOwnerRepository =
                 divisionUsersPromise,
                 appPromise,
             ]);
-            // console.log("soUsers",soUsers)
+
+            // ===== DIVISION MAP =====
             const divisionIds = Array.from(
                 new Set(
                     [...soUsers, ...divUsers]
@@ -593,56 +598,130 @@ export const uarSystemOwnerRepository =
                 divisions.map((d) => [d.DIVISION_ID, d.DIVISION_NAME])
             );
 
+            // ===== DEPARTMENT MAP =====
+            const departmentIds = Array.from(
+                new Set(
+                    [...soUsers, ...divUsers]
+                        .map((u) => u.DEPARTMENT_ID)
+                        .filter((v): v is number => v !== null && v !== undefined)
+                )
+            );
+
+            // ===== SECTION MAP =====
+            const sectionIds = Array.from(
+                new Set(
+                    [...soUsers, ...divUsers]
+                        .map((u) => u.SECTION_ID)
+                        .filter((v): v is number => v !== null && v !== undefined)
+                )
+            );
+            const sections = sectionIds.length
+                ? await tx.tB_M_EMPLOYEE.findMany({
+                    where: { SECTION_ID: { in: sectionIds } },
+                    select: { SECTION_ID: true, SECTION_NAME: true },
+                })
+                : [];
+            const sectionMap = new Map(
+                sections.map((s) => [s.SECTION_ID, s.SECTION_NAME])
+            );
+
+            const departments = departmentIds.length
+                ? await tx.tB_M_EMPLOYEE.findMany({
+                    where: { DEPARTMENT_ID: { in: departmentIds } },
+                    select: { DEPARTMENT_ID: true, DEPARTMENT_NAME: true },
+                })
+                : [];
+
+            const deptMap = new Map(
+                departments.map((d) => [d.DEPARTMENT_ID, d.DEPARTMENT_NAME])
+            );
+
+            // ===== ENRICH ROWS: tambahkan DIVISION_NAME & DEPARTMENT_NAME di setiap detail =====
             const soUsersWithDivisionName = soUsers.map((u) => ({
                 ...u,
                 DIVISION_NAME: u.DIVISION_ID
                     ? divMap.get(u.DIVISION_ID) ?? null
                     : null,
+                DEPARTMENT_NAME: u.DEPARTMENT_ID
+                    ? deptMap.get(u.DEPARTMENT_ID) ?? null
+                    : null,
+                SECTION_NAME: u.SECTION_ID
+                    ? sectionMap.get(u.SECTION_ID) ?? null
+                    : null,
             }));
 
             const divUsersWithDivisionName = divUsers.map((u) => ({
                 ...u,
-                DIVISION_NAME: divMap.get(u.DIVISION_ID) ?? null,
+                DIVISION_NAME: u.DIVISION_ID
+                    ? divMap.get(u.DIVISION_ID) ?? null
+                    : null,
+                DEPARTMENT_NAME: u.DEPARTMENT_ID
+                    ? deptMap.get(u.DEPARTMENT_ID) ?? null
+                    : null,
+                SECTION_NAME: u.SECTION_ID
+                    ? sectionMap.get(u.SECTION_ID) ?? null
+                    : null,
             }));
 
-            // divisiona_name
-            const division = app?.DIVISION_ID_OWNER ? await tx.tB_M_DIVISION.findUnique({
-                where: { DIVISION_ID: app.DIVISION_ID_OWNER },
-                select: { DIVISION_NAME: true, DIVISION_ID: true }
-            }) : null
+            // ===== HEADER (division / department untuk header saja) =====
+            const division = app?.DIVISION_ID_OWNER
+                ? await tx.tB_M_DIVISION.findUnique({
+                    where: { DIVISION_ID: app.DIVISION_ID_OWNER },
+                    select: { DIVISION_NAME: true, DIVISION_ID: true },
+                })
+                : null;
 
-            // department
             const wf = await tx.tB_R_WORKFLOW.findFirst({
                 where: { UAR_ID: uarId },
                 select: { DEPARTMENT_ID: true },
             });
+
             const departmentId = wf?.DEPARTMENT_ID ?? null;
-            const depertmenName = departmentId ? await tx.tB_M_EMPLOYEE.findFirst({
-                where: { DEPARTMENT_ID: departmentId },
-                select: { DEPARTMENT_NAME: true }
-            }) : null
+            // console.log("departmentId", departmentId)
+            const departmentNameRow = departmentId
+                ? await tx.tB_M_EMPLOYEE.findFirst({
+                    where: { DEPARTMENT_ID: departmentId },
+                    select: { DEPARTMENT_NAME: true },
+                })
+                : null;
+
+            const soHeadEmployee = await tx.tB_M_EMPLOYEE.findFirst({
+                where: {
+                    DIVISION_ID: app?.DIVISION_ID_OWNER,
+                    POSITION_NAME: "So Head",
+                },
+                select: { PERSONNEL_NAME: true },
+            });
+
+            const divHeadEmployee = await tx.tB_M_EMPLOYEE.findFirst({
+                where: {
+                    DIVISION_ID: app?.DIVISION_ID_OWNER,
+                    POSITION_NAME: "Div Head",
+                },
+                select: { PERSONNEL_NAME: true },
+            });
+
             // ===== HEADER BUILDER =====
             const uarPeriod =
-                soUsers[0]?.UAR_PERIOD ??
-                divUsers[0]?.UAR_PERIOD ??
-                null;
+                soUsers[0]?.UAR_PERIOD ?? divUsers[0]?.UAR_PERIOD ?? null;
 
             const allRows = [...soUsers, ...divUsers];
 
-            // createdDate = tanggal paling awal dari semua baris
             const createdDate =
                 allRows
                     .map((u) => u.CREATED_DT)
                     .filter(Boolean)
-                    .sort((a: any, b: any) => new Date(a).getTime() - new Date(b).getTime())[0] ?? null;
+                    .sort(
+                        (a: any, b: any) =>
+                            new Date(a).getTime() - new Date(b).getTime()
+                    )[0] ?? null;
 
-            // definisi selesai (silakan sesuaikan bila perlu)
             const isDone = (u: any) => {
-                const yes = new Set(['Y', 'YES', 'APPROVED', 'DONE', 'COMPLETED']);
+                const yes = new Set(["Y", "YES", "APPROVED", "DONE", "COMPLETED"]);
                 return (
-                    yes.has(String(u.REVIEW_STATUS ?? '').toUpperCase()) ||
-                    yes.has(String(u.SO_APPROVAL_STATUS ?? '').toUpperCase()) ||
-                    yes.has(String(u.REMEDIATED_STATUS ?? '').toUpperCase())
+                    yes.has(String(u.REVIEW_STATUS ?? "").toUpperCase()) ||
+                    yes.has(String(u.SO_APPROVAL_STATUS ?? "").toUpperCase()) ||
+                    yes.has(String(u.REMEDIATED_STATUS ?? "").toUpperCase())
                 );
             };
 
@@ -651,25 +730,25 @@ export const uarSystemOwnerRepository =
             const percent = total > 0 ? Math.floor((done / total) * 100) : 0;
             const percentComplete = `${percent}% (${done} of ${total})`;
 
-            // completedDate = kalau semua selesai → ambil tanggal aksi terbaru
             const completedDate =
                 done === total && total > 0
                     ? allRows
                         .map(
                             (u) =>
                                 u.REMEDIATED_DT ??
-                                // u.SO_APPROVAL_DT ??
                                 u.REVIEWED_DT ??
                                 u.CHANGED_DT ??
                                 u.CREATED_DT
                         )
                         .filter(Boolean)
-                        .sort((a: any, b: any) => new Date(b).getTime() - new Date(a).getTime())[0] ?? null
+                        .sort(
+                            (a: any, b: any) =>
+                                new Date(b).getTime() - new Date(a).getTime()
+                        )[0] ?? null
                     : null;
 
-            // status sederhana: 0 (belum), 1 (progres), 2 (complete)
             const status =
-                total === 0 ? '0' : done === 0 ? '0' : done === total ? '2' : '1';
+                total === 0 ? "0" : done === 0 ? "0" : done === total ? "2" : "1";
 
             const header = {
                 uarId,
@@ -677,17 +756,21 @@ export const uarSystemOwnerRepository =
                 applicationId,
                 applicationName: app?.APPLICATION_NAME ?? null,
                 divisionName: division?.DIVISION_NAME ?? null,
-                departmentName: depertmenName?.DEPARTMENT_NAME ?? null,
+                departmentName: departmentNameRow?.DEPARTMENT_NAME ?? null,
+                SO_NAME: soHeadEmployee?.PERSONNEL_NAME ?? null,
+                DIV_NAME: divHeadEmployee?.PERSONNEL_NAME ?? null,
                 percentComplete,
                 createdDate,
                 completedDate,
                 status,
             };
-            // console.log("header", header)
 
-            // ===== RETURN: tetap kompatibel dengan service =====
+            // console.log("header", header);
+            // console.log("soUsersWithDivisionName", soUsersWithDivisionName);
+            // console.log("divUsersWithDivisionName", divUsersWithDivisionName);
+
             return {
-                header,                 // <-- tambahan (service kamu akan mengabaikan jika tidak dipass)
+                header,
                 systemOwnerUsers: soUsersWithDivisionName,
                 divisionUsers: divUsersWithDivisionName,
             };
@@ -714,7 +797,7 @@ export const uarSystemOwnerRepository =
             .filter(item => item.decision === "Revoked")
             .map(item => ({ USERNAME: item.username, ROLE_ID: item.roleId }));
 
-        console.log("TEST", revokedItems, approvedItems)
+        // console.log("TEST", revokedItems, approvedItems)
         try {
             return await prisma.$transaction(async (tx) => {
 
@@ -740,11 +823,11 @@ export const uarSystemOwnerRepository =
                         CHANGED_BY: username,
                         CHANGED_DT: now,
                     };
-                } else { 
+                } else {
                     client = tx.tB_R_UAR_DIVISION_USER;
-                    statusField = 'SO_APPROVAL_STATUS'; 
+                    statusField = 'SO_APPROVAL_STATUS';
                     approveData = {
-                        SO_APPROVAL_STATUS: "1", 
+                        SO_APPROVAL_STATUS: "1",
                         CHANGED_BY: username,
                         CHANGED_DT: now,
                     };
@@ -761,7 +844,7 @@ export const uarSystemOwnerRepository =
                             APPLICATION_ID: applicationId,
                             OR: approvedItems,
                         },
-                        data: approveData, 
+                        data: approveData,
                     })
                     : { count: 0 };
 
@@ -781,7 +864,7 @@ export const uarSystemOwnerRepository =
                         UAR_ID: uarId,
                         APPLICATION_ID: applicationId,
                     },
-                    select: { [statusField]: true }, 
+                    select: { [statusField]: true },
                 });
 
                 const totalItems = allItemsInUar.length;
@@ -789,10 +872,10 @@ export const uarSystemOwnerRepository =
                 let pendingCount = 0;
 
                 for (const item of allItemsInUar) {
-                    const status = item[statusField]; 
+                    const status = item[statusField];
                     if (status === '2') {
                         rejectedCount++;
-                    } else if (status === '0' || status === null) { 
+                    } else if (status === '0' || status === null) {
                         pendingCount++;
                     }
                 }
