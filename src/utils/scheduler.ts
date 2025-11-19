@@ -19,6 +19,7 @@ import {
   getBatchArcConfig,
   buildBatchArcCron
 } from "../modules/batch/batch_arc&purg.service";
+import { runBatchTermination } from "../modules/batch/batch_termination.service";
 export async function startScheduler(app: FastifyInstance) {
 
   const workerContext: WorkerContext = {
@@ -156,6 +157,18 @@ export async function startScheduler(app: FastifyInstance) {
     }
   };
 
+  const scheduleTerminationBatchJob = () => {
+    app.log.info("[BATCH_TERMINATION] Running nightly termination batch job.");
+
+    runBatchTermination(app.prisma, app.log).catch(err => {
+      app.log.error(err, "[BATCH_TERMINATION] Nightly batch failed");
+    });
+  };
+
+  // test satu menit
+  // schedule.scheduleJob("* * * * *", scheduleTerminationBatchJob);
+  // jam 12 malem
+  schedule.scheduleJob("0 0 * * *", scheduleTerminationBatchJob);
   // schedule.scheduleJob("*/1 * * * *", mainScheduledJob);
   schedule.scheduleJob("0 8 * * *", scheduleNotifReminderJob);
   schedule.scheduleJob("0 0 * * 1", scheduleSecuritySyncJob);
