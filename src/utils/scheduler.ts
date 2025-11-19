@@ -15,7 +15,6 @@ import { runGlobalSecuritySyncWorker } from "../workers/sync/globalScSync.worker
 import { runLdapSyncWorker } from "../workers/sync/ldapSync.worker";
 import { runTmminRoleSyncWorker } from "../workers/sync/tmminRoleSync.worker";
 import { initBatchArcScheduler } from "../modules/batch/batch_arc&purg.service";
-import { initBatchArcScheduler } from "../modules/batch/batch_arc&purg.service";
 export async function startScheduler(app: FastifyInstance) {
 
   const workerContext: WorkerContext = {
