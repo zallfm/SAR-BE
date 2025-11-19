@@ -706,6 +706,7 @@ model TB_M_COMMENT_SYSTEM_OWNER {
   @@index([UAR_PERIOD, UAR_ID, USERNAME, ROLE_ID], map: "IX_COMMENT_SO_UAR_FK")
 }
 
+<<<<<<< HEAD
 model TB_T_SC_ROLE_FUNCTION {
   ID               BigInt    @id(map: "PK__TB_T_SC___3214EC27489E49F9") @default(autoincrement())
   APPLICATION_NAME String?   @db.NVarChar(50)
@@ -768,6 +769,8 @@ model TB_R_USER_ROLE {
   @@index([APPLICATION_NAME, USERNAME, ROLE_ID], map: "IX_TB_R_USER_ROLE_index")
 }
 
+=======
+>>>>>>> 563ee7b91d99928f8dcf3fd9f2d914c3d68419ce
 model TB_M_PEFF_ARCHIVE_CONFIG {
   ID              Int       @id(map: "PK__TB_M_PEF__3214EC27BD7CC2F1") @default(autoincrement())
   SRC_DB          String    @db.NVarChar(100)
