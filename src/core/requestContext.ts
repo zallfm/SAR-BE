@@ -6,6 +6,9 @@ type RequestContextValue = {
   requestId: string;
   role?: string;
   username?: string;
+  noreg?: string;
+  divisionId?: number;
+  departmentId?: number;
 };
 
 const als = new AsyncLocalStorage<RequestContextValue>();
@@ -31,7 +34,8 @@ export function getRequestContext(): RequestContextValue {
 // helper cepat
 export const currentUserId = () => getRequestContext().userId;
 export const currentRequestId = () => getRequestContext().requestId;
-
+export const currentNoreg = () => getRequestContext().noreg;
+export const currentDepartmentId = () => getRequestContext().departmentId;
 // (opsional) ekstrak user dari fastify request
 export function extractUserFromRequest(app: FastifyInstance, req: FastifyRequest) {
   // kalau sudah verify, fastify-jwt isi req.user
@@ -56,9 +60,12 @@ export function extractUserFromRequest(app: FastifyInstance, req: FastifyRequest
           userId: String(decoded.sub ?? "unknown"),
           role: decoded.role ? String(decoded.role) : undefined,
           username: decoded.name ? String(decoded.name) : undefined,
+          noreg: decoded.noreg ? String(decoded.noreg) : undefined,
+          divisionId: decoded.divisionId ? String(decoded.divisionId) : undefined,
+          departmentId: decoded.departmentId ? String(decoded.departmentId) : undefined,
         };
       }
-    } catch {}
+    } catch { }
   }
 
   return { userId: "unknown" };

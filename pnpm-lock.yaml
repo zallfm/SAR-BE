@@ -29,6 +29,12 @@ importers:
       '@fastify/static':
         specifier: ^8.3.0
         version: 8.3.0
+      '@fastify/swagger':
+        specifier: ^9.6.1
+        version: 9.6.1
+      '@fastify/swagger-ui':
+        specifier: ^5.2.3
+        version: 5.2.3
       '@prisma/adapter-mssql':
         specifier: ^6.17.1
         version: 6.18.0
@@ -62,6 +68,9 @@ importers:
       multipart:
         specifier: ^0.1.5
         version: 0.1.5
+      node-cron:
+        specifier: ^4.2.1
+        version: 4.2.1
       node-schedule:
         specifier: ^2.1.1
         version: 2.1.1
@@ -101,13 +110,13 @@ importers:
         version: 6.18.0(typescript@5.9.3)
       ts-jest:
         specifier: ^29.2.5
-        version: 29.4.5(@babel/core@7.28.4)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.28.4))(esbuild@0.25.11)(jest-util@29.7.0)(jest@29.7.0(@types/node@24.7.2)(ts-node@10.9.2(@types/node@24.7.2)(typescript@5.9.3)))(typescript@5.9.3)
+        version: 29.4.5(@babel/core@7.28.5)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.28.5))(esbuild@0.25.12)(jest-util@29.7.0)(jest@29.7.0(@types/node@24.10.0)(ts-node@10.9.2(@types/node@24.10.0)(typescript@5.9.3)))(typescript@5.9.3)
       ts-node:
         specifier: ^10.9.2
-        version: 10.9.2(@types/node@24.7.2)(typescript@5.9.3)
+        version: 10.9.2(@types/node@24.10.0)(typescript@5.9.3)
       tsup:
         specifier: ^8.5.0
-        version: 8.5.0(jiti@2.6.1)(tsx@4.20.6)(typescript@5.9.3)
+        version: 8.5.0(jiti@2.6.1)(tsx@4.20.6)(typescript@5.9.3)(yaml@2.8.1)
       tsx:
         specifier: ^4.19.1
         version: 4.20.6
@@ -567,6 +576,12 @@ packages:
   '@fastify/static@8.3.0':
     resolution: {integrity: sha512-yKxviR5PH1OKNnisIzZKmgZSus0r2OZb8qCSbqmw34aolT4g3UlzYfeBRym+HJ1J471CR8e2ldNub4PubD1coA==}
 
+  '@fastify/swagger-ui@5.2.3':
+    resolution: {integrity: sha512-e7ivEJi9EpFcxTONqICx4llbpB2jmlI+LI1NQ/mR7QGQnyDOqZybPK572zJtcdHZW4YyYTBHcP3a03f1pOh0SA==}
+
+  '@fastify/swagger@9.6.1':
+    resolution: {integrity: sha512-fKlpJqFMWoi4H3EdUkDaMteEYRCfQMEkK0HJJ0eaf4aRlKd8cbq0pVkOfXDXmtvMTXYcnx3E+l023eFDBsA1HA==}
+
   '@isaacs/balanced-match@4.0.1':
     resolution: {integrity: sha512-yzMTt9lEb8Gv7zRioUilSglI0c0smZ9k5D65677DLWLtWJaXIS3CqcGyUFByYKlnUj6TkjLVs54fBl6+TiGQDQ==}
     engines: {node: 20 || >=22}
@@ -678,6 +693,9 @@ packages:
   '@lukeed/ms@2.0.2':
     resolution: {integrity: sha512-9I2Zn6+NJLfaGoz9jN3lpwDgAYvfGeNYdbAIjJOqzs4Tpc+VU3Jqq4IofSUBKajiDS8k9fZIg18/z13mpk1bsA==}
     engines: {node: '>=8'}
+
+  '@pinojs/redact@0.4.0':
+    resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -1980,6 +1998,10 @@ packages:
   json-schema-ref-resolver@3.0.0:
     resolution: {integrity: sha512-hOrZIVL5jyYFjzk7+y7n5JDzGlU8rfWDuYyHwGa2WA8/pcmMHezp2xsVwxrebD/Q9t8Nc5DboieySDpCp4WG4A==}
 
+  json-schema-resolver@3.0.0:
+    resolution: {integrity: sha512-HqMnbz0tz2DaEJ3ntsqtx3ezzZyDE7G56A/pPY/NGmrPu76UzsWquOpHFRAf5beTNXoH2LU5cQePVvRli1nchA==}
+    engines: {node: '>=20'}
+
   json-schema-traverse@1.0.0:
     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
 
@@ -2225,6 +2247,10 @@ packages:
   neo-async@2.6.2:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
 
+  node-cron@4.2.1:
+    resolution: {integrity: sha512-lgimEHPE/QDgFlywTd8yTR61ptugX3Qer29efeyWw2rv259HtGBNn1vZVmp8lB9uo9wC0t/AT4iGqXxia+CJFg==}
+    engines: {node: '>=6.0.0'}
+
   node-fetch-native@1.6.7:
     resolution: {integrity: sha512-g9yhqoedzIUm0nTnTqAQvueMPVOuIY16bqgAJJC8XOOubYFNwz6IER9qs0Gq2Xd0+CecCKFjtdDTMA4u4xG06Q==}
 
@@ -2275,6 +2301,9 @@ packages:
   open@10.2.0:
     resolution: {integrity: sha512-YgBpdJHPyQ2UE5x+hlSXcnejzAvD0b22U2OuAP+8OnlJT+PjWPxtgmGqKKc+RgTM63U9gN0YzrYc71R2WT/hTA==}
     engines: {node: '>=18'}
+
+  openapi-types@12.1.3:
+    resolution: {integrity: sha512-N4YtSYJqghVu4iek2ZUvcN/0aqH1kRDuNqzcycDxhOUpg7GdvLa2F3DgS6yBNhInhv2r/6I0Flkn7CqL8+nIcw==}
 
   p-limit@2.3.0:
     resolution: {integrity: sha512-//88mFWSJx8lxCzwdAABTJL2MyWB12+eIY7MDL2SqLmAkeKU9qxRvWuSyTjm3FUmpBEMuFfckAIqEaVGUDxb6w==}
@@ -2924,6 +2953,11 @@ packages:
   yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}
 
+  yaml@2.8.1:
+    resolution: {integrity: sha512-lcYcMxX2PO9XMGvAJkJ3OsNMw+/7FKes7/hgerGUYWIoWu5j/+YQqcZr5JnPZWzOsEBgMbSbiSTn/dv/69Mkpw==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
   yargs-parser@21.1.1:
     resolution: {integrity: sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw==}
     engines: {node: '>=12'}
@@ -3467,6 +3501,24 @@ snapshots:
       fastq: 1.19.1
       glob: 11.0.3
 
+  '@fastify/swagger-ui@5.2.3':
+    dependencies:
+      '@fastify/static': 8.3.0
+      fastify-plugin: 5.1.0
+      openapi-types: 12.1.3
+      rfdc: 1.4.1
+      yaml: 2.8.1
+
+  '@fastify/swagger@9.6.1':
+    dependencies:
+      fastify-plugin: 5.1.0
+      json-schema-resolver: 3.0.0
+      openapi-types: 12.1.3
+      rfdc: 1.4.1
+      yaml: 2.8.1
+    transitivePeerDependencies:
+      - supports-color
+
   '@isaacs/balanced-match@4.0.1': {}
 
   '@isaacs/brace-expansion@5.0.0':
@@ -3681,6 +3733,8 @@ snapshots:
   '@js-joda/core@5.6.5': {}
 
   '@lukeed/ms@2.0.2': {}
+
+  '@pinojs/redact@0.4.0': {}
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
@@ -4218,9 +4272,9 @@ snapshots:
     dependencies:
       run-applescript: 7.1.0
 
-  bundle-require@5.1.0(esbuild@0.25.11):
+  bundle-require@5.1.0(esbuild@0.25.12):
     dependencies:
-      esbuild: 0.25.11
+      esbuild: 0.25.12
       load-tsconfig: 0.2.5
 
   c12@3.1.0:
@@ -5229,6 +5283,14 @@ snapshots:
     dependencies:
       dequal: 2.0.3
 
+  json-schema-resolver@3.0.0:
+    dependencies:
+      debug: 4.4.3
+      fast-uri: 3.1.0
+      rfdc: 1.4.1
+    transitivePeerDependencies:
+      - supports-color
+
   json-schema-traverse@1.0.0: {}
 
   json5@2.2.3: {}
@@ -5461,6 +5523,8 @@ snapshots:
 
   neo-async@2.6.2: {}
 
+  node-cron@4.2.1: {}
+
   node-fetch-native@1.6.7: {}
 
   node-int64@0.4.0: {}
@@ -5509,6 +5573,8 @@ snapshots:
       define-lazy-prop: 3.0.0
       is-inside-container: 1.0.0
       wsl-utils: 0.1.0
+
+  openapi-types@12.1.3: {}
 
   p-limit@2.3.0:
     dependencies:
@@ -5601,12 +5667,13 @@ snapshots:
       exsolve: 1.0.7
       pathe: 2.0.3
 
-  postcss-load-config@6.0.1(jiti@2.6.1)(tsx@4.20.6):
+  postcss-load-config@6.0.1(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.1):
     dependencies:
       lilconfig: 3.1.3
     optionalDependencies:
       jiti: 2.6.1
       tsx: 4.20.6
+      yaml: 2.8.1
 
   pretty-format@29.7.0:
     dependencies:
@@ -5974,7 +6041,7 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  ts-jest@29.4.5(@babel/core@7.28.4)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.28.4))(esbuild@0.25.11)(jest-util@29.7.0)(jest@29.7.0(@types/node@24.7.2)(ts-node@10.9.2(@types/node@24.7.2)(typescript@5.9.3)))(typescript@5.9.3):
+  ts-jest@29.4.5(@babel/core@7.28.5)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.28.5))(esbuild@0.25.12)(jest-util@29.7.0)(jest@29.7.0(@types/node@24.10.0)(ts-node@10.9.2(@types/node@24.10.0)(typescript@5.9.3)))(typescript@5.9.3):
     dependencies:
       bs-logger: 0.2.6
       fast-json-stable-stringify: 2.1.0
@@ -5991,8 +6058,8 @@ snapshots:
       '@babel/core': 7.28.5
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
-      babel-jest: 29.7.0(@babel/core@7.28.4)
-      esbuild: 0.25.11
+      babel-jest: 29.7.0(@babel/core@7.28.5)
+      esbuild: 0.25.12
       jest-util: 29.7.0
 
   ts-node@10.9.2(@types/node@24.10.0)(typescript@5.9.3):
@@ -6015,18 +6082,18 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tsup@8.5.0(jiti@2.6.1)(tsx@4.20.6)(typescript@5.9.3):
+  tsup@8.5.0(jiti@2.6.1)(tsx@4.20.6)(typescript@5.9.3)(yaml@2.8.1):
     dependencies:
-      bundle-require: 5.1.0(esbuild@0.25.11)
+      bundle-require: 5.1.0(esbuild@0.25.12)
       cac: 6.7.14
       chokidar: 4.0.3
       consola: 3.4.2
       debug: 4.4.3
-      esbuild: 0.25.11
+      esbuild: 0.25.12
       fix-dts-default-cjs-exports: 1.0.1
       joycon: 3.1.1
       picocolors: 1.1.1
-      postcss-load-config: 6.0.1(jiti@2.6.1)(tsx@4.20.6)
+      postcss-load-config: 6.0.1(jiti@2.6.1)(tsx@4.20.6)(yaml@2.8.1)
       resolve-from: 5.0.0
       rollup: 4.52.5
       source-map: 0.8.0-beta.0
@@ -6157,6 +6224,8 @@ snapshots:
   y18n@5.0.8: {}
 
   yallist@3.1.1: {}
+
+  yaml@2.8.1: {}
 
   yargs-parser@21.1.1: {}
 

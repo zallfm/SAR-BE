@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { Prisma } from "../../generated/prisma";
+import { Prisma } from "../../generated/prisma/index.js";
 import { ApplicationError } from "../../core/errors/applicationError";
 import { ERROR_CODES } from "../../core/errors/errorCodes";
 import { ERROR_MESSAGES } from "../../core/errors/errorMessages";
@@ -18,7 +18,7 @@ export const runtimeParamService = {
       limit = 10,
       q,
       key,
-      sortBy = "KEY", 
+      sortBy = "KEY",
       order = "asc",
     } = query;
 
@@ -39,9 +39,9 @@ export const runtimeParamService = {
     }
 
     const orderBy: Prisma.TB_M_APPLICATION_RUNTIME_PARAMOrderByWithRelationInput =
-      {
-        [sortBy]: order,
-      };
+    {
+      [sortBy]: order,
+    };
 
     try {
       const [data, total] = await app.prisma.$transaction([

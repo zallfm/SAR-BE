@@ -4,7 +4,7 @@ type TxLike = { $queryRaw<T = unknown>(...args: any[]): Promise<T> };
 
 type MergeCount = { inserted: number; updated: number };
 type GenParams = { period: string; application_id: string; createdBy: string };
-
+// TB_M_APPLICATION
 /**
  * DIVISION USER:
  * - Sumber: TB_M_AUTH_MAPPING (NOREG valid)
@@ -116,15 +116,23 @@ WHERE h.HEAD_NOREG IS NULL;  -- exclude head
 -- MERGE Header: TB_R_WORKFLOW (SEQ=1, Division)
 -- Approver = DivHead
 -- =========================
-;WITH head_src AS (
+;WITH app_info AS (
+  SELECT a.APPLICATION_ID, a.APPLICATION_NAME
+  FROM TB_M_APPLICATION a
+  WHERE a.APPLICATION_ID = @APP_ID
+),
+head_src AS (
   SELECT DISTINCT
     @UAR_ID AS UAR_ID,
     1       AS SEQ_NO,
     h.DIVISION_ID,
     h.DEPARTMENT_ID,
     h.HEAD_NOREG   AS APPROVER_NOREG,
-    h.HEAD_NAME    AS APPROVER_NAME
+    h.HEAD_NAME    AS APPROVER_NAME,
+    ai.APPLICATION_ID AS APPLICATION_ID,
+    ai.APPLICATION_NAME AS APPLICATION_NAME
   FROM #pick_head h
+  CROSS JOIN app_info ai
 ),
 head_with_plan AS (
   SELECT
@@ -149,6 +157,7 @@ head_with_plan AS (
       END
   ) cfg
 )
+-- APPLICATION_ID
 MERGE TB_R_WORKFLOW WITH (HOLDLOCK) AS wf
 USING head_with_plan AS x
   ON ( wf.UAR_ID = x.UAR_ID
@@ -157,17 +166,21 @@ USING head_with_plan AS x
        AND ISNULL(wf.DEPARTMENT_ID,'') = ISNULL(x.DEPARTMENT_ID,'') )
 WHEN NOT MATCHED THEN
   INSERT (UAR_ID, SEQ_NO, DIVISION_ID, DEPARTMENT_ID,
+          APPLICATION_ID, APPLICATION_NAME,
           APPROVAL_CD, APPROVAL_DESC,
           APPROVER_NOREG, APPROVER_NAME,
           PLAN_APPROVED_DT,
           CREATED_BY, CREATED_DT)
   VALUES (x.UAR_ID, x.SEQ_NO, x.DIVISION_ID, x.DEPARTMENT_ID,
+          x.APPLICATION_ID, x.APPLICATION_NAME,
           1, 'Division Approval',
           x.APPROVER_NOREG, x.APPROVER_NAME,
           x.PLAN_APPROVED_DT,
           ${p.createdBy}, SYSDATETIME())
 WHEN MATCHED THEN
   UPDATE SET
+    wf.APPLICATION_ID    = x.APPLICATION_ID,
+    wf.APPLICATION_NAME  = x.APPLICATION_NAME,    
     wf.APPROVER_NOREG = x.APPROVER_NOREG,
     wf.APPROVER_NAME  = x.APPROVER_NAME,
     wf.PLAN_APPROVED_DT = x.PLAN_APPROVED_DT,
@@ -218,13 +231,13 @@ WHEN NOT MATCHED THEN
   INSERT (
     UAR_PERIOD, UAR_ID, USERNAME, ROLE_ID, APPLICATION_ID,
     DIVISION_ID, DEPARTMENT_ID, NOREG, NAME, POSITION_NAME, SECTION_ID,
-    REVIEWER_NOREG, REVIEWER_NAME,
+    REVIEWER_NOREG, REVIEWER_NAME, DIV_APPROVAL_STATUS, SO_APPROVAL_STATUS,
     CREATED_BY, CREATED_DT
   )
   VALUES (
     src.UAR_PERIOD, src.UAR_ID, src.USERNAME, src.ROLE_ID, src.APPLICATION_ID,
     src.DIVISION_ID, src.DEPARTMENT_ID, src.NOREG, src.NAME, src.POSITION_NAME, src.SECTION_ID,
-    src.REVIEWER_NOREG, src.REVIEWER_NAME,
+    src.REVIEWER_NOREG, src.REVIEWER_NAME, '0', '0',
     ${p.createdBy}, SYSDATETIME()
   )
 WHEN MATCHED THEN
@@ -520,6 +533,7 @@ export const uarGenerateRepository = {
   async generateAll(p: GenParams) {
     return prisma.$transaction(async (tx) => {
       const divisionUser = await mergeDivisionUserTx(tx, p);
+      // console.log("divisionUser", divisionUser)
       const systemOwner = await mergeSystemOwnerTx(tx, p);
       return { divisionUser, systemOwner };
     });

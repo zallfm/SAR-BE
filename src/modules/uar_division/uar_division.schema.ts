@@ -123,25 +123,23 @@ export const batchUpdateSchema: FastifySchema = {
   },
 };
 
-export const exportUarExcelSchema = {
-  description: "Export template UAR Division (cek tampilan)",
-  tags: ["UAR Division"],
+export const exportUarExcelSchema: FastifySchema = {
   querystring: {
     type: "object",
     properties: {
-      uar_id: { type: "string", description: "ID UAR" },
-      type: {
-        type: "string",
-        description: "Tipe export",
-        enum: ["div_user", "so_user"],
-        default: "div_user"
-      }
+      uar_id: { type: "string", description: "UAR_ID (mis. UAR_202511_APP001)" },
+      type: { type: "string", enum: ["div_user", "so_user"], description: "Jenis export" },
+      applicationId: { type: "string", description: "Wajib jika type=so_user" },
     },
     required: ["uar_id"],
     additionalProperties: false,
+    allOf: [
+      {
+        if: { properties: { type: { const: "so_user" } } },
+        then: { required: ["applicationId"] },
+      },
+    ],
   },
-  response: {
-    200: { type: "string", format: "binary" },
-  },
-} as const;
+  // response: tidak perlu divalidasi (file/binary). Biarkan kosong.
+};
 

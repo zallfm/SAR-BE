@@ -17,25 +17,6 @@ export async function authRoutes(app: FastifyInstance) {
         tags: ['Authentication'],
         description: 'User login endpoint. Returns JWT token for authentication.',
         summary: 'User Login',
-        response: {
-          200: {
-            description: 'Login successful',
-            type: 'object',
-            properties: {
-              code: { type: 'string', example: 'OK' },
-              message: { type: 'string', example: 'Login successful' },
-              requestId: { type: 'string' },
-              data: {
-                type: 'object',
-                properties: {
-                  token: { type: 'string', description: 'JWT token for authentication' },
-                  expiresIn: { type: 'number', description: 'Token expiration in seconds' },
-                  user: { type: 'object' },
-                },
-              },
-            },
-          },
-        },
       },
       errorHandler,
     },

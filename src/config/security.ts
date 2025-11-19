@@ -9,6 +9,8 @@ export const SECURITY_CONFIG = {
 
   // total duration locked
   LOCKOUT_DURATION_MS: 0.2 * 60 * 1000,
+  PASSWORD_MAX_AGE_DAYS: Number(process.env.PASSWORD_MAX_AGE_DAYS ?? 90),
+  PASSWORD_EXPIRY_WARNING_DAYS: Number(process.env.PASSWORD_EXPIRY_WARNING_DAYS ?? 7),
 
   MAX_API_CALLS_PER_MINUTE: 60
 } as const;

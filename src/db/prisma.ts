@@ -1,5 +1,5 @@
-import { PrismaClient as PrismaSAR } from "../generated/prisma";
-import { PrismaClient as PrismaSC } from "../generated/prisma-sc";
+import { PrismaClient as PrismaSAR } from "../generated/prisma/index.js";
+import { PrismaClient as PrismaSC } from "../generated/prisma-sc/index.js";
 
 declare global {
   var prisma: PrismaSAR | undefined;

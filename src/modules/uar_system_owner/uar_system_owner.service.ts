@@ -12,11 +12,7 @@ import {
 } from "../../core/requestContext";
 import { publishMonitoringLog } from "../log_monitoring/log_publisher";
 
-/**
- * Gets the list of Application IDs owned by the given user (noreg).
- * @param userNoreg The user's NOREG.
- * @returns A promise that resolves to an array of application IDs.
- */
+
 async function getOwnedApplicationIds(userNoreg: string): Promise<string[]> {
     const apps = await repo.findAppsByOwner(userNoreg);
     if (apps.length === 0) {
@@ -34,6 +30,7 @@ async function getOwnedApplicationIds(userNoreg: string): Promise<string[]> {
 
 export const uarSystemOwnerService = {
 
+
     async list(
         params: {
             page: number;
@@ -41,15 +38,19 @@ export const uarSystemOwnerService = {
             period?: string;
             uarId?: string;
             applicationId?: string;
+            status?: 'InProgress' | 'Finished';
+            createdDate?: string;
+            completedDate?: string;
+            reviewStatus?: 'pending';
         },
-        userNoreg: string
+        divisionId: number,
+        noreg: string
     ) {
-        const ownedApplicationIds = await getOwnedApplicationIds(userNoreg);
 
         // --- FIX 1: Destructure dateStats ---
-        const { data, total, completionStats, dateStats } = await repo.listUars({
+        const { data, total, completionStats, dateStats, divisionStats } = await repo.listUars({
             ...params,
-            ownedApplicationIds,
+            noreg, divisionId
         });
 
         // Map completion stats by UAR_ID + APP_ID
@@ -66,6 +67,23 @@ export const uarSystemOwnerService = {
             const current = percentMap.get(key)!;
             current.total += count;
             // '1' = Approved, '2' = Revoked
+            if (status === '1' || status === '2') {
+                current.completed += count;
+            }
+        }
+
+        for (const stat of divisionStats) {
+            const key = `${stat.UAR_ID}_${stat.APPLICATION_ID}`;
+            const count = stat._count._all;
+            const status = stat.SO_APPROVAL_STATUS; // Use the division status field
+
+            if (!percentMap.has(key)) {
+                percentMap.set(key, { completed: 0, total: 0 });
+            }
+
+            const current = percentMap.get(key)!;
+            current.total += count;
+            // '1' = Approved, '2' = Revoked (assuming status codes are the same)
             if (status === '1' || status === '2') {
                 current.completed += count;
             }
@@ -107,12 +125,14 @@ export const uarSystemOwnerService = {
             return {
                 uarId: r.UAR_ID,
                 uarPeriod: r.UAR_PERIOD,
-                applicationId: r.APPLICATION_ID ?? 'N/A', // <-- FIX: Handled potential null
-                applicationName: r.TB_M_APPLICATION?.APPLICATION_NAME ?? 'N/A',
+                applicationId: r.APPLICATION_ID,
+                divisionId: r.DIVISION_ID ?? 'N/A',
+                divisionOwner: r.TB_M_DIVISION?.DIVISION_NAME ?? 'N/A',
                 percentComplete: percentCompleteString,
                 createdDate: createdDate?.toISOString() ?? "",
                 completedDate: completedDate?.toISOString() ?? null,
-                status: newStatus
+                status: newStatus,
+                source: r.source
             };
         });
 
@@ -121,18 +141,8 @@ export const uarSystemOwnerService = {
 
 
     async getDetails(uarId: string, applicationId: string, userNoreg: string) {
-        const ownedApplicationIds = await getOwnedApplicationIds(userNoreg);
 
-        // Security check
-        if (!ownedApplicationIds.includes(applicationId)) {
-            throw new ApplicationError(
-                ERROR_CODES.API_UNAUTHORIZED,
-                "You are not authorized to view this application.",
-                { uarId, applicationId, userNoreg },
-                undefined,
-                403
-            );
-        }
+
 
         const { systemOwnerUsers, divisionUsers } = await repo.getUarDetails(uarId, applicationId);
 
@@ -149,10 +159,41 @@ export const uarSystemOwnerService = {
         return { systemOwnerUsers, divisionUsers };
     },
 
+    async getUarSo(uarId: string, applicationId: string, userNoreg: string) {
+        // console.log("userNoreg", userNoreg)
+        // const ownedApplicationIds = await getOwnedApplicationIds(userNoreg);
+
+        // // Security check
+        // if (!ownedApplicationIds.includes(applicationId)) {
+        //     throw new ApplicationError(
+        //         ERROR_CODES.API_UNAUTHORIZED,
+        //         "You are not authorized to view this application.",
+        //         { uarId, applicationId, userNoreg },
+        //         undefined,
+        //         403
+        //     );
+        // }
+
+        const { header, systemOwnerUsers, divisionUsers } = await repo.getUarSo(uarId, applicationId);
+
+        if (systemOwnerUsers.length === 0 && divisionUsers.length === 0) {
+            throw new ApplicationError(
+                ERROR_CODES.APP_NOT_FOUND,
+                "No UAR data found for this ID and application.",
+                { uarId, applicationId },
+                undefined,
+                404
+            );
+        }
+        // console.log("header, systemOwnerUsers, divisionUsers", { header, systemOwnerUsers, divisionUsers })
+        return { header, systemOwnerUsers, divisionUsers };
+    },
+
 
     async batchUpdate(
         dto: UarSystemOwnerBatchUpdateDTO,
-        userNoreg: string
+        userNoreg: string,
+        username: string | undefined,
     ) {
         if (!dto.items || dto.items.length === 0) {
             throw new ApplicationError(
@@ -164,22 +205,11 @@ export const uarSystemOwnerService = {
             );
         }
 
-        const ownedApplicationIds = await getOwnedApplicationIds(userNoreg);
 
-        // Security check
-        if (!ownedApplicationIds.includes(dto.applicationId)) {
-            throw new ApplicationError(
-                ERROR_CODES.API_UNAUTHORIZED,
-                "You are not authorized to update this application.",
-                dto,
-                undefined,
-                403
-            );
-        }
 
-        const result = await repo.batchUpdate(dto, userNoreg);
+        const result = await repo.batchUpdate(dto, userNoreg, username);
 
-        if (result.count === 0) {
+        if (result.userUpdateResult.count === 0) {
             throw new ApplicationError(
                 ERROR_CODES.APP_UPDATE_FAILED,
                 "Update failed. No matching UAR items found."

@@ -19,22 +19,27 @@ export const uarDivisionRepository = {
     async listUars(params: {
         page: number;
         limit: number;
-        userDivisionId: number;
         period?: string;
         uarId?: string;
         status?: 'InProgress' | 'Finished';
         createdDate?: string;
         completedDate?: string;
+        noreg?: string;
+        departmentId?: number;
+        reviewStatus?: 'pending';
+
     }) {
         const {
-            page, limit, userDivisionId, period, uarId,
-            status, createdDate, completedDate
+            page, limit, period, uarId,
+            status, createdDate, completedDate, reviewStatus, departmentId, noreg
         } = params;
 
         let workflowFilteredUarIds: string[] | undefined = undefined;
+        // console.log("departmentId", departmentId)
         const whereWorkflow: any = {
-            DIVISION_ID: userDivisionId,
+            DEPARTMENT_ID: departmentId,
         };
+        const dbPeriod = period ? period.replace('-', '') : undefined;
         const hasWorkflowFilter = createdDate || completedDate;
 
         if (createdDate) {
@@ -60,7 +65,7 @@ export const uarDivisionRepository = {
         let inProgressUarIds: string[] | undefined;
         if (status) {
             const whereStatus: any = {
-                DIVISION_ID: userDivisionId,
+                DEPARTMENT_ID: departmentId,
                 OR: [
                     { DIV_APPROVAL_STATUS: '0' },
                 ]
@@ -71,7 +76,7 @@ export const uarDivisionRepository = {
             }
 
             const inProgressUars = await prisma.tB_R_UAR_DIVISION_USER.findMany({
-                where: whereStatus, 
+                where: whereStatus,
                 select: { UAR_ID: true },
                 distinct: ['UAR_ID']
             });
@@ -83,10 +88,12 @@ export const uarDivisionRepository = {
         }
 
         const whereUar: any = {
-            DIVISION_ID: userDivisionId,
+            DEPARTMENT_ID: departmentId,
+            REVIEWER_NOREG: noreg
+
         };
-        if (period) {
-            whereUar.UAR_PERIOD = period;
+        if (dbPeriod) {
+            whereUar.UAR_PERIOD = dbPeriod;
         }
 
         const uarIdFilter: any = {};
@@ -97,6 +104,7 @@ export const uarDivisionRepository = {
         if (workflowFilteredUarIds) {
             uarIdFilter.in = workflowFilteredUarIds;
         }
+
 
         if (status && inProgressUarIds) {
             if (status === 'InProgress') {
@@ -116,6 +124,14 @@ export const uarDivisionRepository = {
                     uarIdFilter.notIn = inProgressUarIds;
                 }
             }
+        }
+
+        if (reviewStatus === 'pending') {
+            // REVIEW_STATUS = NULL
+            whereUar.REVIEW_STATUS = { equals: null };
+        } else if (reviewStatus === 'reviewed') {
+            // REVIEW_STATUS IS NOT NULL
+            whereUar.REVIEW_STATUS = { not: null };
         }
 
         if (Object.keys(uarIdFilter).length > 0) {
@@ -164,7 +180,7 @@ export const uarDivisionRepository = {
             prisma.tB_R_WORKFLOW.findMany({
                 where: {
                     UAR_ID: { in: uarIds }, // Only get wf data for the 10 on the page
-                    DIVISION_ID: userDivisionId,
+                    DEPARTMENT_ID: departmentId,
                 },
                 distinct: ["UAR_ID"],
                 orderBy: [
@@ -183,7 +199,7 @@ export const uarDivisionRepository = {
                 by: ['UAR_ID', 'DIV_APPROVAL_STATUS'],
                 where: {
                     UAR_ID: { in: uarIds },
-                    DIVISION_ID: userDivisionId
+                    DEPARTMENT_ID: departmentId
                 },
                 _count: {
                     _all: true
@@ -207,7 +223,8 @@ export const uarDivisionRepository = {
             },
         });
     },
-
+    // DIVISION_ID
+    // PERONNEL_NAME
     async getUar(uarId: string, userDivisionId: number) {
         const [header, details] = await prisma.$transaction([
             prisma.tB_R_WORKFLOW.findFirst({
@@ -219,7 +236,6 @@ export const uarDivisionRepository = {
                 orderBy: { NAME: "asc" },
             }),
         ]);
-        // console.log("header", header)
 
         if (!header && (!details || details.length === 0)) {
             throw new ApplicationError(
@@ -241,6 +257,17 @@ export const uarDivisionRepository = {
                 select: { DEPARTMENT_NAME: true },
             })
             : null;
+
+        const soHeadEmployee = header?.DIVISION_ID
+            ? await prisma.tB_M_EMPLOYEE.findFirst({
+                where: {
+                    DIVISION_ID: header.DIVISION_ID,
+                    POSITION_NAME: "So Head",
+                },
+                select: { PERSONNEL_NAME: true },
+            })
+            : null;
+
 
         const division = header?.DIVISION_ID ? await prisma.tB_M_DIVISION.findFirst({
             where: { DIVISION_ID: header.DIVISION_ID },
@@ -312,17 +339,14 @@ export const uarDivisionRepository = {
             PERSONNEL_NAME: d.NOREG != null ? EmployeeNameMap.get(d.NOREG) ?? null : null,
         }));
 
-        // (opsional) isi SECTION_NAME di header dari salah satu detail (kalau mau)
-        // const headerSectionName =
-        //     header?.DEPARTMENT_ID && detailsWithSectionName.length
-        //         ? detailsWithSectionName[0].SECTION_NAME ?? null
-        //         : null;
+
         const result = {
             header: {
                 ...header,
                 DEPARTMENT_NAME: department?.DEPARTMENT_NAME ?? null,
                 DIVISION_NAME: division?.DIVISION_NAME ?? null,
-                PERONNEL_NAME: employee?.PERSONNEL_NAME ?? null,
+                PERSONNEL_NAME: employee?.PERSONNEL_NAME ?? null,
+                SO_NAME: soHeadEmployee?.PERSONNEL_NAME ?? null,
             },
             details: detailsWithSectionName,
         };
@@ -335,7 +359,7 @@ export const uarDivisionRepository = {
         userNoreg: string,
         userDivisionId: number
     ) {
-        const { uarId, items, comments } = dto; // 'decision' is no longer top-level
+        const { uarId, items, comments } = dto;
         const now = await getDbNow();
 
         const approvedItems = items
@@ -349,7 +373,6 @@ export const uarDivisionRepository = {
         try {
             return await prisma.$transaction(async (tx) => {
 
-                // 2. Run updateMany for Approved items (if any)
                 const approveUpdateResult = (approvedItems.length > 0)
                     ? await tx.tB_R_UAR_DIVISION_USER.updateMany({
                         where: {
@@ -358,7 +381,7 @@ export const uarDivisionRepository = {
                             OR: approvedItems,
                         },
                         data: {
-                            DIV_APPROVAL_STATUS: "1", // 'Approve'
+                            DIV_APPROVAL_STATUS: "1",
                             REVIEWED_BY: userNoreg,
                             REVIEWED_DT: now,
                         },

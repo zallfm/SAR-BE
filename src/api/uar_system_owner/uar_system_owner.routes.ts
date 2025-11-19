@@ -5,6 +5,7 @@ import {
     getUarDetailsSchema,
     batchUpdateSchema,
     addCommentSchema,
+    getUarExcelSchema,
 } from "../../modules/uar_system_owner/uar_system_owner.schema";
 
 export async function uarSystemOwnerRoutes(app: FastifyInstance) {
@@ -18,6 +19,12 @@ export async function uarSystemOwnerRoutes(app: FastifyInstance) {
         "/:uarId/applications/:applicationId",
         { schema: getUarDetailsSchema },
         uarSystemOwnerController.getDetails(app)
+    );
+
+    app.get(
+        "/getExcel/:uarId/applications/:applicationId",
+        { schema: getUarExcelSchema },
+        uarSystemOwnerController.getUarSo(app)
     );
 
     app.post(

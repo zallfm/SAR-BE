@@ -1,12 +1,9 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { uarSystemOwnerService as svc } from "./uar_system_owner.service";
 import type { UarSystemOwnerAddCommentDTO, UarSystemOwnerBatchUpdateDTO } from "../../types/uar_system_owner";
-/**
- * Extracts authenticated user's noreg.
- * Assumes the auth plugin attaches { noreg: string } to req.auth.
- */
+
 function getAuthInfo(req: FastifyRequest) {
-    const auth = req.auth as { noreg: string };
+    const auth = req.auth as { noreg: string, divisionId: number, username: string | undefined };
     if (!auth?.noreg) {
         throw new Error(
             "User authentication details (noreg) not found. Check auth plugin."
@@ -26,12 +23,16 @@ export const uarSystemOwnerController = {
                     period?: string;
                     uarId?: string;
                     applicationId?: string;
+                    status?: 'InProgress' | 'Finished';
+                    createdDate?: string;
+                    completedDate?: string;
+                    reviewStatus?: 'pending';
                 };
             }>,
             reply: FastifyReply
         ) => {
-            const { noreg } = getAuthInfo(req);
-            const { page = 1, limit = 10, period, uarId, applicationId } = req.query ?? {};
+            const { noreg, divisionId } = getAuthInfo(req);
+            const { page = 1, limit = 10, period, uarId, applicationId, completedDate, createdDate, reviewStatus, status } = req.query ?? {};
 
             const result = await svc.list(
                 {
@@ -40,8 +41,14 @@ export const uarSystemOwnerController = {
                     period,
                     uarId,
                     applicationId,
+                    createdDate,
+                    completedDate,
+                    reviewStatus,
+                    status
                 },
-                noreg
+                divisionId,
+                noreg,
+
             );
 
             return reply.send({
@@ -54,7 +61,6 @@ export const uarSystemOwnerController = {
             });
         },
 
-
     getDetails: (_app: FastifyInstance) =>
         async (
             req: FastifyRequest<{ Params: { uarId: string, applicationId: string } }>,
@@ -66,16 +72,38 @@ export const uarSystemOwnerController = {
             return reply.send({ data });
         },
 
+    getUarSo: (_app: FastifyInstance) =>
+        async (
+            req: FastifyRequest<{ Params: { uarId: string; applicationId: string } }>,
+            reply: FastifyReply
+        ) => {
+            const { noreg } = getAuthInfo(req);
+            const { uarId, applicationId } = req.params;
+
+            // service SEKARANG harus return: { header, systemOwnerUsers, divisionUsers }
+            const { header, systemOwnerUsers, divisionUsers } =
+                await svc.getUarSo(uarId, applicationId, noreg);
+            // console.log("controller", header)
+            // console.log("systemOwnerUsers", systemOwnerUsers)
+
+            return reply.status(200).send({
+                success: true,
+                code: 'OK',
+                message: 'OK',
+                data: { header, systemOwnerUsers, divisionUsers },
+            });
+        },
 
     batchUpdate: (_app: FastifyInstance) =>
         async (
             req: FastifyRequest<{ Body: UarSystemOwnerBatchUpdateDTO }>,
             reply: FastifyReply
         ) => {
-            const { noreg } = getAuthInfo(req);
+            const { noreg, username } = getAuthInfo(req);
             const result = await svc.batchUpdate(
                 req.body,
-                noreg
+                noreg,
+                username
             );
             return reply.send({
                 message: `Batch update successful.`,

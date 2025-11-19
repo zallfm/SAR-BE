@@ -4,6 +4,7 @@ export interface User {
   role: 'ADMINISTRATOR' | 'DPH' | 'SO';
   divisionId: number;
   noreg: string;
+  departmentId: number;
 }
 
 export interface TokenPayload {
