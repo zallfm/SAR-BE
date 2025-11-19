@@ -1,0 +1,799 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../src/generated/prisma-datamaster"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DB_CONNECTION_DATAMASTER")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model SAP_LFA1 {
+  MANDT      String? @db.VarChar(3)
+  LIFNR      String? @db.VarChar(10)
+  LAND1      String? @db.VarChar(3)
+  NAME1      String? @db.VarChar(35)
+  NAME2      String? @db.VarChar(35)
+  NAME3      String? @db.VarChar(35)
+  NAME4      String? @db.VarChar(35)
+  ORT01      String? @db.VarChar(35)
+  ORT02      String? @db.VarChar(35)
+  PFACH      String? @db.VarChar(10)
+  PSTL2      String? @db.VarChar(10)
+  PSTLZ      String? @db.VarChar(10)
+  REGIO      String? @db.VarChar(3)
+  SORTL      String? @db.VarChar(10)
+  STRAS      String? @db.VarChar(35)
+  ADRNR      String? @db.VarChar(10)
+  MCOD1      String? @db.VarChar(25)
+  MCOD2      String? @db.VarChar(25)
+  MCOD3      String? @db.VarChar(25)
+  ANRED      String? @db.VarChar(15)
+  BAHNS      String? @db.VarChar(25)
+  BBBNR      String? @db.VarChar(7)
+  BBSNR      String? @db.VarChar(5)
+  BEGRU      String? @db.VarChar(4)
+  BRSCH      String? @db.VarChar(4)
+  BUBKZ      String? @db.VarChar(1)
+  DATLT      String? @db.VarChar(14)
+  DTAMS      String? @db.VarChar(1)
+  DTAWS      String? @db.VarChar(2)
+  ERDAT      String? @db.VarChar(8)
+  ERNAM      String? @db.VarChar(12)
+  ESRNR      String? @db.VarChar(11)
+  KONZS      String? @db.VarChar(10)
+  KTOKK      String? @db.VarChar(4)
+  KUNNR      String? @db.VarChar(10)
+  LNRZA      String? @db.VarChar(10)
+  LOEVM      String? @db.VarChar(1)
+  SPERR      String? @db.VarChar(1)
+  SPERM      String? @db.VarChar(1)
+  SPRAS      String? @db.VarChar(1)
+  STCD1      String? @db.VarChar(16)
+  STCD2      String? @db.VarChar(11)
+  STKZA      String? @db.VarChar(1)
+  STKZU      String? @db.VarChar(1)
+  TELBX      String? @db.VarChar(15)
+  TELF1      String? @db.VarChar(16)
+  TELF2      String? @db.VarChar(16)
+  TELFX      String? @db.VarChar(31)
+  TELTX      String? @db.VarChar(30)
+  TELX1      String? @db.VarChar(30)
+  XCPDK      String? @db.VarChar(1)
+  XZEMP      String? @db.VarChar(1)
+  VBUND      String? @db.VarChar(6)
+  FISKN      String? @db.VarChar(10)
+  STCEG      String? @db.VarChar(20)
+  STKZN      String? @db.VarChar(1)
+  SPERQ      String? @db.VarChar(2)
+  GBORT      String? @db.VarChar(25)
+  GBDAT      String? @db.VarChar(8)
+  SEXKZ      String? @db.VarChar(1)
+  KRAUS      String? @db.VarChar(11)
+  REVDB      String? @db.VarChar(8)
+  QSSYS      String? @db.VarChar(4)
+  KTOCK      String? @db.VarChar(4)
+  PFORT      String? @db.VarChar(35)
+  WERKS      String? @db.VarChar(4)
+  LTSNA      String? @db.VarChar(1)
+  WERKR      String? @db.VarChar(1)
+  PLKAL      String? @db.VarChar(2)
+  DUEFL      String? @db.VarChar(1)
+  TXJCD      String? @db.VarChar(15)
+  SPERZ      String? @db.VarChar(1)
+  SCACD      String? @db.VarChar(4)
+  SFRGR      String? @db.VarChar(4)
+  LZONE      String? @db.VarChar(10)
+  XLFZA      String? @db.VarChar(1)
+  DLGRP      String? @db.VarChar(4)
+  FITYP      String? @db.VarChar(2)
+  STCDT      String? @db.VarChar(2)
+  REGSS      String? @db.VarChar(1)
+  ACTSS      String? @db.VarChar(3)
+  STCD3      String? @db.VarChar(18)
+  STCD4      String? @db.VarChar(18)
+  IPISP      String? @db.VarChar(1)
+  TAXBS      String? @db.VarChar(1)
+  PROFS      String? @db.VarChar(30)
+  STGDL      String? @db.VarChar(2)
+  EMNFR      String? @db.VarChar(10)
+  LFURL      String? @db.VarChar(132)
+  J_1KFREPRE String? @db.VarChar(10)
+  J_1KFTBUS  String? @db.VarChar(30)
+  J_1KFTIND  String? @db.VarChar(30)
+  CONFS      String? @db.VarChar(1)
+  UPDAT      String? @db.VarChar(8)
+  UPTIM      String? @db.VarChar(6)
+  NODEL      String? @db.VarChar(1)
+  QSSYSDAT   String? @db.VarChar(8)
+  PODKZB     String? @db.VarChar(1)
+  FISKU      String? @db.VarChar(10)
+  STENR      String? @db.VarChar(18)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model SAP_LFAS {
+  MANDT String? @db.VarChar(3)
+  LIFNR String? @db.VarChar(10)
+  LAND1 String? @db.VarChar(3)
+  STCEG String? @db.VarChar(20)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model SAP_LFB1 {
+  MANDT String?  @db.VarChar(3)
+  LIFNR String?  @db.VarChar(10)
+  BUKRS String?  @db.VarChar(4)
+  PERNR String?  @db.VarChar(8)
+  ERDAT String?  @db.VarChar(8)
+  ERNAM String?  @db.VarChar(12)
+  SPERR String?  @db.VarChar(1)
+  LOEVM String?  @db.VarChar(1)
+  ZUAWA String?  @db.VarChar(3)
+  AKONT String?  @db.VarChar(10)
+  BEGRU String?  @db.VarChar(4)
+  VZSKZ String?  @db.VarChar(2)
+  ZWELS String?  @db.VarChar(10)
+  XVERR String?  @db.VarChar(1)
+  ZAHLS String?  @db.VarChar(1)
+  ZTERM String?  @db.VarChar(4)
+  EIKTO String?  @db.VarChar(12)
+  ZSABE String?  @db.VarChar(15)
+  KVERM String?  @db.VarChar(30)
+  FDGRV String?  @db.VarChar(10)
+  BUSAB String?  @db.VarChar(2)
+  LNRZE String?  @db.VarChar(10)
+  LNRZB String?  @db.VarChar(10)
+  ZINDT String?  @db.VarChar(8)
+  ZINRT String?  @db.VarChar(2)
+  DATLZ String?  @db.VarChar(8)
+  XDEZV String?  @db.VarChar(1)
+  WEBTR Decimal? @db.Decimal(13, 2)
+  KULTG Int?
+  REPRF String?  @db.VarChar(1)
+  TOGRU String?  @db.VarChar(4)
+  HBKID String?  @db.VarChar(5)
+  XPORE String?  @db.VarChar(1)
+  QSZNR String?  @db.VarChar(10)
+  QSZDT String?  @db.VarChar(8)
+  QSSKZ String?  @db.VarChar(2)
+  BLNKZ String?  @db.VarChar(2)
+  MINDK String?  @db.VarChar(3)
+  ALTKN String?  @db.VarChar(10)
+  ZGRUP String?  @db.VarChar(2)
+  MGRUP String?  @db.VarChar(2)
+  UZAWE String?  @db.VarChar(2)
+  QSREC String?  @db.VarChar(2)
+  QSBGR String?  @db.VarChar(1)
+  QLAND String?  @db.VarChar(3)
+  XEDIP String?  @db.VarChar(1)
+  FRGRP String?  @db.VarChar(4)
+  TOGRR String?  @db.VarChar(4)
+  TLFXS String?  @db.VarChar(31)
+  INTAD String?  @db.VarChar(130)
+  XLFZB String?  @db.VarChar(1)
+  GUZTE String?  @db.VarChar(4)
+  GRICD String?  @db.VarChar(2)
+  GRIDT String?  @db.VarChar(2)
+  XAUSZ String?  @db.VarChar(1)
+  CERDT String?  @db.VarChar(8)
+  CONFS String?  @db.VarChar(1)
+  UPDAT String?  @db.VarChar(8)
+  UPTIM String?  @db.VarChar(6)
+  NODEL String?  @db.VarChar(1)
+  TLFNS String?  @db.VarChar(30)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model SAP_LFB5 {
+  MANDT String? @db.VarChar(3)
+  LIFNR String? @db.VarChar(10)
+  BUKRS String? @db.VarChar(4)
+  MABER String? @db.VarChar(2)
+  MAHNA String? @db.VarChar(4)
+  MANSP String? @db.VarChar(1)
+  MADAT String? @db.VarChar(8)
+  MAHNS String? @db.VarChar(1)
+  LFRMA String? @db.VarChar(10)
+  GMVDT String? @db.VarChar(8)
+  BUSAB String? @db.VarChar(2)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model SAP_LFBK {
+  MANDT String? @db.VarChar(3)
+  LIFNR String? @db.VarChar(10)
+  BANKS String? @db.VarChar(3)
+  BANKL String? @db.VarChar(15)
+  BANKN String? @db.VarChar(18)
+  BKONT String? @db.VarChar(2)
+  BVTYP String? @db.VarChar(4)
+  XEZER String? @db.VarChar(1)
+  BKREF String? @db.VarChar(20)
+  KOINH String? @db.VarChar(60)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model SAP_LFBW {
+  MANDT     String?  @db.VarChar(3)
+  LIFNR     String?  @db.VarChar(10)
+  BUKRS     String?  @db.VarChar(4)
+  WITHT     String?  @db.VarChar(2)
+  WT_SUBJCT String?  @db.VarChar(1)
+  QSREC     String?  @db.VarChar(2)
+  WT_WTSTCD String?  @db.VarChar(16)
+  WT_WITHCD String?  @db.VarChar(2)
+  WT_EXNR   String?  @db.VarChar(15)
+  WT_EXRT   Decimal? @db.Decimal(5, 2)
+  WT_EXDF   String?  @db.VarChar(8)
+  WT_EXDT   String?  @db.VarChar(8)
+  WT_WTEXRS String?  @db.VarChar(2)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model SAP_LFM1 {
+  MANDT String?  @db.VarChar(3)
+  LIFNR String?  @db.VarChar(10)
+  EKORG String?  @db.VarChar(4)
+  ERDAT String?  @db.VarChar(8)
+  ERNAM String?  @db.VarChar(12)
+  SPERM String?  @db.VarChar(1)
+  LOEVM String?  @db.VarChar(1)
+  LFABC String?  @db.VarChar(1)
+  WAERS String?  @db.VarChar(5)
+  VERKF String?  @db.VarChar(30)
+  TELF1 String?  @db.VarChar(16)
+  MINBW Decimal? @db.Decimal(13, 2)
+  ZTERM String?  @db.VarChar(4)
+  INCO1 String?  @db.VarChar(3)
+  INCO2 String?  @db.VarChar(28)
+  WEBRE String?  @db.VarChar(1)
+  KZABS String?  @db.VarChar(1)
+  KALSK String?  @db.VarChar(2)
+  KZAUT String?  @db.VarChar(1)
+  EXPVZ String?  @db.VarChar(1)
+  ZOLLA String?  @db.VarChar(6)
+  MEPRF String?  @db.VarChar(1)
+  EKGRP String?  @db.VarChar(3)
+  BOLRE String?  @db.VarChar(1)
+  UMSAE String?  @db.VarChar(1)
+  XERSY String?  @db.VarChar(1)
+  PLIFZ Int?
+  MRPPP String?  @db.VarChar(3)
+  LFRHY String?  @db.VarChar(3)
+  LIBES String?  @db.VarChar(1)
+  LIPRE String?  @db.VarChar(2)
+  LISER String?  @db.VarChar(1)
+  PRFRE String?  @db.VarChar(1)
+  NRGEW String?  @db.VarChar(1)
+  BOIND String?  @db.VarChar(1)
+  BLIND String?  @db.VarChar(1)
+  KZRET String?  @db.VarChar(1)
+  SKRIT String?  @db.VarChar(1)
+  BSTAE String?  @db.VarChar(4)
+  RDPRF String?  @db.VarChar(4)
+  MEGRU String?  @db.VarChar(4)
+  VENSL Decimal? @db.Decimal(4, 1)
+  BOPNR String?  @db.VarChar(4)
+  XERSR String?  @db.VarChar(1)
+  EIKTO String?  @db.VarChar(12)
+  ABUEB String?  @db.VarChar(4)
+  PAPRF String?  @db.VarChar(4)
+  AGREL String?  @db.VarChar(1)
+  XNBWY String?  @db.VarChar(1)
+  VSBED String?  @db.VarChar(2)
+  LEBRE String?  @db.VarChar(1)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model SAP_LFM2 {
+  MANDT String?  @db.VarChar(3)
+  LIFNR String?  @db.VarChar(10)
+  EKORG String?  @db.VarChar(4)
+  LTSNR String?  @db.VarChar(6)
+  WERKS String?  @db.VarChar(4)
+  ERDAT String?  @db.VarChar(8)
+  ERNAM String?  @db.VarChar(12)
+  SPERM String?  @db.VarChar(1)
+  LOEVM String?  @db.VarChar(1)
+  LFABC String?  @db.VarChar(1)
+  WAERS String?  @db.VarChar(5)
+  VERKF String?  @db.VarChar(30)
+  TELF1 String?  @db.VarChar(16)
+  MINBW Decimal? @db.Decimal(13, 2)
+  ZTERM String?  @db.VarChar(4)
+  INCO1 String?  @db.VarChar(3)
+  INCO2 String?  @db.VarChar(28)
+  WEBRE String?  @db.VarChar(1)
+  KZABS String?  @db.VarChar(1)
+  KALSK String?  @db.VarChar(2)
+  KZAUT String?  @db.VarChar(1)
+  EXPVZ String?  @db.VarChar(1)
+  ZOLLA String?  @db.VarChar(6)
+  MEPRF String?  @db.VarChar(1)
+  EKGRP String?  @db.VarChar(3)
+  BOLRE String?  @db.VarChar(1)
+  UMSAE String?  @db.VarChar(1)
+  XERSY String?  @db.VarChar(1)
+  PLIFZ Int?
+  MRPPP String?  @db.VarChar(3)
+  LFRHY String?  @db.VarChar(3)
+  LIBES String?  @db.VarChar(1)
+  LIPRE String?  @db.VarChar(2)
+  LISER String?  @db.VarChar(1)
+  DISPO String?  @db.VarChar(3)
+  BOIND String?  @db.VarChar(1)
+  BSTAE String?  @db.VarChar(4)
+  RDPRF String?  @db.VarChar(4)
+  MEGRU String?  @db.VarChar(4)
+  BOPNR String?  @db.VarChar(4)
+  XERSR String?  @db.VarChar(1)
+  ABUEB String?  @db.VarChar(4)
+  PAPRF String?  @db.VarChar(4)
+  XNBWY String?  @db.VarChar(1)
+  LEBRE String?  @db.VarChar(1)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model SAP_WYT1 {
+  MANDT String? @db.VarChar(3)
+  LIFNR String? @db.VarChar(10)
+  LTSNR String? @db.VarChar(6)
+  ERNAM String? @db.VarChar(12)
+  ERDAT String? @db.VarChar(8)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model SAP_WYT1T {
+  MANDT String? @db.VarChar(3)
+  SPRAS String? @db.VarChar(1)
+  LIFNR String? @db.VarChar(10)
+  LTSNR String? @db.VarChar(6)
+  LTSBZ String? @db.VarChar(20)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model SAP_WYT3 {
+  MANDT String? @db.VarChar(3)
+  LIFNR String? @db.VarChar(10)
+  EKORG String? @db.VarChar(4)
+  LTSNR String? @db.VarChar(6)
+  WERKS String? @db.VarChar(4)
+  PARVW String? @db.VarChar(2)
+  PARZA String? @db.VarChar(3)
+  ERNAM String? @db.VarChar(12)
+  ERDAT String? @db.VarChar(8)
+  LIFN2 String? @db.VarChar(10)
+  DEFPA String? @db.VarChar(1)
+  PERNR String? @db.VarChar(8)
+  PARNR String? @db.VarChar(10)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_H_PERSON_INFO {
+  NOREG         String    @db.VarChar(8)
+  NAME          String?   @db.VarChar(80)
+  DATE_OF_BIRTH DateTime? @db.Date
+  NATIONALITY   String?   @db.VarChar(10)
+  GENDER        String?   @db.VarChar(10)
+  Class         String?   @db.VarChar(50)
+  ORG_ID        Int?
+  UNIT_CODE     String?   @db.VarChar(10)
+  POSITION_ABBR String?   @db.VarChar(10)
+  STATUS        String?   @db.VarChar(30)
+  MAIN_LOCATION String?   @db.VarChar(40)
+  EMAIL         String?   @db.VarChar(80)
+  TELEPHONE     String?   @db.VarChar(80)
+  PHONE_EXT     String?   @db.VarChar(5)
+  ADDRESS       String?   @db.VarChar(600)
+  CREATED_BY    String?   @db.VarChar(64)
+  CREATED_DT    DateTime? @db.DateTime
+  UPDATED_BY    String?   @db.VarChar(64)
+  UPDATED_DT    DateTime? @db.DateTime
+  ACT           Int?
+  DT            DateTime? @default(now(), map: "DF__TB_H_PERSON___DT__6B24EA82") @db.DateTime
+  AHOST         String?   @db.VarChar(128)
+  ID            Int       @default(autoincrement())
+
+  @@ignore
+}
+
+model tb_item {
+  item_code String      @id(map: "tb_item_pk") @db.VarChar(16)
+  item_name String      @db.VarChar(64)
+  item_um   String      @db.VarChar(8)
+  create_by String      @db.VarChar(16)
+  create_on DateTime    @db.DateTime
+  update_by String?     @db.VarChar(16)
+  update_on DateTime?   @db.DateTime
+  tb_pr_dtl tb_pr_dtl[]
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_M_AD_NOREG_MAPPING {
+  NOREG       String?   @db.VarChar(8)
+  AD_USERNAME String?   @db.VarChar(106)
+  CREATED_BY  String?   @db.VarChar(50)
+  CREATED_DT  DateTime? @db.DateTime
+  UPDATED_BY  String?   @db.VarChar(50)
+  UPDATED_DT  DateTime? @db.DateTime
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_M_EMAIL_MAPPING {
+  AREA  String? @db.VarChar(50)
+  EMAIL String? @db.VarChar(50)
+
+  @@ignore
+}
+
+model TB_M_EXCHANGE_RATE {
+  CURR_CD       String    @db.VarChar(3)
+  VALID_FROM_DT DateTime  @db.DateTime
+  VALID_TO_DT   DateTime? @db.DateTime
+  EXCHANGE_RATE Decimal?  @db.Decimal(16, 5)
+  CREATED_BY    String?   @db.VarChar(20)
+  CREATED_DT    DateTime? @db.DateTime
+  CHANGED_BY    String?   @db.VarChar(20)
+  CHANGED_DT    DateTime? @db.DateTime
+
+  @@id([CURR_CD, VALID_FROM_DT], map: "PK_TB_M_EXCHANGE_RATE")
+}
+
+model TB_M_NAMES {
+  ID               Int           @id(map: "PK_M_NAMES")
+  PARID            Int?
+  TEXT             String?       @db.VarChar(255)
+  DT               String?       @db.VarChar(10)
+  CREATED_BY       String        @db.VarChar(64)
+  CREATED_DT       DateTime      @db.DateTime
+  UPDATED_BY       String?       @db.VarChar(64)
+  UPDATED_DT       DateTime?     @db.DateTime
+  TB_M_NAMES       TB_M_NAMES?   @relation("TB_M_NAMESToTB_M_NAMES", fields: [PARID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_M_NAMES_PARID")
+  other_TB_M_NAMES TB_M_NAMES[]  @relation("TB_M_NAMESToTB_M_NAMES")
+  TB_R_VALUES      TB_R_VALUES[]
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_M_ORG_MGMT {
+  DATE          String?   @db.VarChar(10)
+  LINE_CD       String?   @db.VarChar(20)
+  LINE_NAME     String?   @db.VarChar(100)
+  SHIFT_CD      Int?
+  REGISTERED_MP Decimal?  @db.Decimal(10, 4)
+  LH_QTY        Decimal?  @db.Decimal(10, 4)
+  GH_QTY        Decimal?  @db.Decimal(10, 4)
+  CREATED_BY    String?   @db.VarChar(50)
+  CREATED_DT    DateTime? @db.DateTime
+
+  @@ignore
+}
+
+model TB_M_ORG_POSITION {
+  POSITION_LEVEL Int       @id(map: "PK_TB_M_ORG_POSITION")
+  POSITION_ABBR  String    @db.VarChar(10)
+  POSITION_DESC  String?   @db.VarChar(50)
+  LEVEL_ID       Int?
+  ORG_LEVEL_ID   Int?
+  GROUP_LEVEL_ID Int?
+  CREATED_BY     String?   @db.VarChar(64)
+  CREATED_DT     DateTime? @db.DateTime
+  UPDATED_BY     String?   @db.VarChar(64)
+  UPDATED_DT     DateTime? @db.DateTime
+}
+
+model TB_M_ORG_RANK {
+  ORG_ID      Int       @id(map: "PK_TB_M_ORG_RANK")
+  ORG_PARENT  Int?
+  ORG_TITLE   String?   @db.VarChar(40)
+  SHORT_TITLE String?   @db.VarChar(20)
+  LEVEL_ID    Int?
+  UNIT_CODE   String?   @db.VarChar(10)
+  STEP        Int?
+  COM         String?   @db.VarChar(40)
+  DIR         String?   @db.VarChar(40)
+  DIV         String?   @db.VarChar(40)
+  DEP         String?   @db.VarChar(40)
+  SEC         String?   @db.VarChar(40)
+  LIN         String?   @db.VarChar(40)
+  GRU         String?   @db.VarChar(40)
+  DIR_ID      Int?
+  DIV_ID      Int?
+  DEP_ID      Int?
+  SEC_ID      Int?
+  LIN_ID      Int?
+  GRU_ID      Int?
+  CREATED_BY  String?   @db.VarChar(64)
+  CREATED_DT  DateTime? @default(now(), map: "DF__TB_M_ORG___CREAT__6C190EBB") @db.DateTime
+  UPDATED_BY  String?   @db.VarChar(64)
+  UPDATED_DT  DateTime? @db.DateTime
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_M_ORG_STRUCTURE {
+  LINE_CD      String?   @db.VarChar(20)
+  LINE_NAME    String?   @db.VarChar(100)
+  DEPARTMENT   String?   @db.VarChar(100)
+  DIVISION     String?   @db.VarChar(100)
+  SHIFT_NAME   String?   @db.VarChar(10)
+  VALID_FROM   String?   @db.VarChar(10)
+  VALID_TO     String?   @db.VarChar(10)
+  CREATED_BY   String?   @db.VarChar(50)
+  CREATED_DT   DateTime? @db.DateTime
+  SECTION_CD   String?   @db.VarChar(20)
+  SECTION_NAME String?   @db.VarChar(100)
+  COST_CENTER  String?   @db.VarChar(100)
+  LABOR_TYPE   String?   @db.VarChar(100)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_M_ORG_USER_POSITION_20150819 {
+  ORG_ID           Int
+  OBJECT_TYPE      String?   @db.VarChar(2)
+  NOREG            String    @db.VarChar(8)
+  JOB_CODE         Int
+  JOB_TITLE        String?   @db.VarChar(40)
+  POSITION_CODE    Int
+  POSITION_TITLE   String?   @db.VarChar(40)
+  COMPANY_CODE     String?   @db.VarChar(3)
+  USERNAME         String?   @db.VarChar(64)
+  POSITION_LEVEL   Int
+  POSITION_ABBR    String?   @db.VarChar(10)
+  CLASS            String?   @db.VarChar(12)
+  VALID_FROM       DateTime  @db.DateTime
+  VALID_TO         DateTime  @db.DateTime
+  DELIMIT_DATE     DateTime? @db.DateTime
+  SAP_FLAG         Boolean
+  PRIORITY         Int       @db.SmallInt
+  POSITION_PERCENT Int?      @db.SmallInt
+  CHIEF_TAG        String?   @db.Char(1)
+  CREATED_BY       String?   @db.VarChar(64)
+  CREATED_DT       DateTime? @db.DateTime
+  UPDATED_BY       String?   @db.VarChar(64)
+  UPDATED_DT       DateTime? @db.DateTime
+
+  @@ignore
+}
+
+model TB_M_PERSON_INFO {
+  NOREG         String    @id(map: "PK_TB_M_PERSON_INFO") @db.VarChar(8)
+  NAME          String?   @db.VarChar(80)
+  DATE_OF_BIRTH DateTime? @db.Date
+  NATIONALITY   String?   @db.VarChar(10)
+  GENDER        String?   @db.VarChar(10)
+  Class         String?   @db.VarChar(50)
+  ORG_ID        Int?
+  UNIT_CODE     String?   @db.VarChar(10)
+  POSITION_ABBR String?   @db.VarChar(10)
+  STATUS        String?   @db.VarChar(30)
+  MAIN_LOCATION String?   @db.VarChar(40)
+  EMAIL         String?   @db.VarChar(80)
+  TELEPHONE     String?   @db.VarChar(80)
+  PHONE_EXT     String?   @db.VarChar(5)
+  ADDRESS       String?   @db.VarChar(600)
+  CREATED_BY    String?   @db.VarChar(64)
+  CREATED_DT    DateTime? @db.DateTime
+  UPDATED_BY    String?   @db.VarChar(64)
+  UPDATED_DT    DateTime? @db.DateTime
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_M_PERSON_INFO_20170829 {
+  NOREG         String    @db.VarChar(8)
+  NAME          String?   @db.VarChar(80)
+  DATE_OF_BIRTH DateTime? @db.Date
+  NATIONALITY   String?   @db.VarChar(10)
+  GENDER        String?   @db.VarChar(10)
+  Class         String?   @db.VarChar(50)
+  ORG_ID        Int?
+  UNIT_CODE     String?   @db.VarChar(10)
+  POSITION_ABBR String?   @db.VarChar(10)
+  STATUS        String?   @db.VarChar(30)
+  MAIN_LOCATION String?   @db.VarChar(40)
+  EMAIL         String?   @db.VarChar(80)
+  TELEPHONE     String?   @db.VarChar(80)
+  PHONE_EXT     String?   @db.VarChar(5)
+  ADDRESS       String?   @db.VarChar(600)
+  CREATED_BY    String?   @db.VarChar(64)
+  CREATED_DT    DateTime? @db.DateTime
+  UPDATED_BY    String?   @db.VarChar(64)
+  UPDATED_DT    DateTime? @db.DateTime
+
+  @@ignore
+}
+
+model TB_M_PRESENCE {
+  PRESENCE_TYPE        String    @id(map: "PK_TB_M_PRESENCE") @db.VarChar(4)
+  PRESENCE_DESCRIPTION String    @db.VarChar(255)
+  CATEGORY             String?   @db.VarChar(10)
+  CATEGORY_NEW         String?   @db.VarChar(20)
+  SEQ_ORDER            Int?
+  TIME_FLAG            Boolean?
+  ATTACH_FLAG          Boolean?
+  MAX_DAY              Int?
+  POLICY               String?   @db.VarChar(255)
+  COLOR                String?   @db.VarChar(50)
+  GENDER_ID            String?   @db.VarChar(1)
+  BPK_STATUS           String?   @db.VarChar(3)
+  MASA_KERJA_MIN       Int?
+  MUST_BACKDATE        Int?
+  CREATED_BY           String    @db.VarChar(80)
+  CREATED_DT           DateTime  @db.DateTime
+  UPDATED_BY           String?   @db.VarChar(80)
+  UPDATED_DT           DateTime? @db.DateTime
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model TB_M_WH_MGMT {
+  DATE          String?   @db.VarChar(10)
+  LINE_CD       String?   @db.VarChar(20)
+  LINE_NAME     String?   @db.VarChar(100)
+  ATTEND_MP     Decimal?  @db.Decimal(10, 4)
+  PARTIAL_LEAVE Decimal?  @db.Decimal(10, 4)
+  OT_PRD        Decimal?  @db.Decimal(10, 4)
+  OT_PRJ        Decimal?  @db.Decimal(10, 4)
+  OT_TRN        Decimal?  @db.Decimal(10, 4)
+  OT_QCC        Decimal?  @db.Decimal(10, 4)
+  OT_MNT        Decimal?  @db.Decimal(10, 4)
+  OT_ADM        Decimal?  @db.Decimal(10, 4)
+  OT_5R         Decimal?  @db.Decimal(10, 4)
+  OT_IMP        Decimal?  @db.Decimal(10, 4)
+  CREATED_BY    String?   @db.VarChar(50)
+  CREATED_DT    DateTime? @db.DateTime
+  HR_CONFIRM    String?   @db.VarChar(1)
+
+  @@ignore
+}
+
+model tb_org {
+  org_code  String    @id(map: "tb_org_pk") @db.VarChar(16)
+  org_name  String    @db.VarChar(64)
+  create_by String    @db.VarChar(16)
+  create_on DateTime  @db.DateTime
+  update_by String?   @db.VarChar(16)
+  update_on DateTime? @db.DateTime
+  tb_pr     tb_pr[]
+}
+
+model tb_po {
+  po_no         String      @id(map: "tb_po_pk") @db.VarChar(16)
+  pr_no         String      @db.VarChar(16)
+  po_date       DateTime    @db.Date
+  supplier_code String      @db.VarChar(16)
+  create_by     String      @db.VarChar(16)
+  create_on     DateTime    @db.DateTime
+  update_by     String?     @db.VarChar(16)
+  update_on     DateTime?   @db.DateTime
+  tb_pr         tb_pr       @relation(fields: [pr_no], references: [pr_no], onUpdate: NoAction, map: "tb_po_fk1")
+  tb_supplier   tb_supplier @relation(fields: [supplier_code], references: [supplier_code], onUpdate: NoAction, map: "tb_po_fk2")
+  tb_po_dtl     tb_po_dtl[]
+}
+
+model tb_po_dtl {
+  po_no       String    @db.VarChar(16)
+  pr_no       String    @db.VarChar(16)
+  item_code   String    @db.VarChar(16)
+  request_qty Decimal   @db.Decimal(8, 0)
+  unit_price  Decimal   @db.Decimal(8, 0)
+  create_by   String    @db.VarChar(16)
+  create_on   DateTime  @db.DateTime
+  update_by   String?   @db.VarChar(16)
+  update_on   DateTime? @db.DateTime
+  tb_po       tb_po     @relation(fields: [po_no], references: [po_no], onUpdate: NoAction, map: "tb_po_dtl_fk1")
+  tb_pr_dtl   tb_pr_dtl @relation(fields: [pr_no, item_code], references: [pr_no, item_code], onUpdate: NoAction, map: "tb_po_dtl_fk2")
+
+  @@id([po_no, pr_no, item_code], map: "tb_po_dtl_pk")
+}
+
+model tb_pr {
+  pr_no     String      @id(map: "tb_pr_pk") @db.VarChar(16)
+  pr_date   DateTime    @db.Date
+  req_org   String      @db.VarChar(16)
+  create_by String      @db.VarChar(16)
+  create_on DateTime    @db.DateTime
+  update_by String?     @db.VarChar(16)
+  update_on DateTime?   @db.DateTime
+  tb_po     tb_po[]
+  tb_org    tb_org      @relation(fields: [req_org], references: [org_code], onUpdate: NoAction, map: "tb_pr_fk1")
+  tb_pr_dtl tb_pr_dtl[]
+}
+
+model tb_pr_dtl {
+  pr_no       String      @db.VarChar(16)
+  item_code   String      @db.VarChar(16)
+  request_qty Decimal     @db.Decimal(8, 0)
+  create_by   String      @db.VarChar(16)
+  create_on   DateTime    @db.DateTime
+  update_by   String?     @db.VarChar(16)
+  update_on   DateTime?   @db.DateTime
+  tb_po_dtl   tb_po_dtl[]
+  tb_pr       tb_pr       @relation(fields: [pr_no], references: [pr_no], onUpdate: NoAction, map: "tb_pr_dtl_fk1")
+  tb_item     tb_item     @relation(fields: [item_code], references: [item_code], onUpdate: NoAction, map: "tb_pr_dtl_fk2")
+
+  @@id([pr_no, item_code], map: "tb_pr_dtl_pk")
+}
+
+model TB_R_ATTENDANCE_SUMMARY {
+  NOREG          String    @db.VarChar(8)
+  PERIOD         DateTime  @db.DateTime
+  PRESENCE_TYPE  String    @db.VarChar(5)
+  PRESENCE_COUNT Int?      @default(0, map: "DF__TB_R_ATTE__PRESE__6D0D32F4")
+  CREATED_BY     String?   @db.VarChar(64)
+  CREATED_DT     DateTime? @db.DateTime
+  UPDATED_BY     String?   @db.VarChar(64)
+  UPDATED_DT     DateTime? @db.DateTime
+
+  @@id([NOREG, PERIOD, PRESENCE_TYPE], map: "PK_PRESENCE_SUMMARY")
+}
+
+model TB_R_DOCUMENT {
+  doc_no      String    @id(map: "PK_TB_R_DOCUMENT") @db.VarChar(500)
+  asset_no    String?   @db.VarChar(15)
+  employee_id String?   @db.VarChar(20)
+  owner       String    @db.VarChar(50)
+  description String?   @db.VarChar(50)
+  doc_id      String?   @db.VarChar(15)
+  doc_dt      DateTime  @db.Date
+  valid_from  DateTime  @db.Date
+  valid_to    DateTime  @db.Date
+  reminder_dt DateTime  @db.Date
+  attachment  String?   @db.VarChar(Max)
+  created_by  String?   @db.VarChar(35)
+  created_dt  DateTime? @db.DateTime
+  updated_by  String?   @db.VarChar(35)
+  updated_dt  DateTime? @db.DateTime
+}
+
+model TB_R_VALUES {
+  PERIOD     DateTime   @db.DateTime
+  NOREG      String     @db.VarChar(8)
+  ID         Int
+  VAL        Decimal?   @db.Decimal(18, 2)
+  CREATED_BY String?    @db.VarChar(64)
+  CREATED_DT DateTime?  @db.DateTime
+  UPDATED_BY String?    @db.VarChar(64)
+  UPDATED_DT DateTime?  @db.DateTime
+  TB_M_NAMES TB_M_NAMES @relation(fields: [ID], references: [ID], onUpdate: NoAction, map: "FK_R_VALUES")
+
+  @@id([PERIOD, NOREG, ID], map: "PK_R_VALUES")
+}
+
+model tb_supplier {
+  supplier_code String    @id(map: "tb_supplier_pk") @db.VarChar(16)
+  supplier_name String    @db.VarChar(64)
+  address       String    @db.VarChar(128)
+  city          String    @db.VarChar(32)
+  province      String    @db.VarChar(32)
+  create_by     String    @db.VarChar(16)
+  create_on     DateTime  @db.DateTime
+  update_by     String?   @db.VarChar(16)
+  update_on     DateTime? @db.DateTime
+  tb_po         tb_po[]
+}
