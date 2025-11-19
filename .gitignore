@@ -6,6 +6,7 @@ node_modules
 # Test coverage
 coverage
 *.lcov
+tdd-docs/
 
 /dist
 generated

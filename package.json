@@ -56,7 +56,6 @@
     "jsonwebtoken": "^9.0.2",
     "mssql": "^12.0.0",
     "multipart": "^0.1.5",
-    "node-cron": "^4.2.1",
     "node-schedule": "^2.1.1",
     "pino": "^9.3.2",
     "xlsx": "^0.18.5",

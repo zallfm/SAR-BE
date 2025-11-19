@@ -14,7 +14,11 @@ import { PrismaClient as LdapPrismaClient } from "../generated/prisma-ldap";
 import { runGlobalSecuritySyncWorker } from "../workers/sync/globalScSync.worker";
 import { runLdapSyncWorker } from "../workers/sync/ldapSync.worker";
 import { runTmminRoleSyncWorker } from "../workers/sync/tmminRoleSync.worker";
-import { initBatchArcScheduler } from "../modules/batch/batch_arc&purg.service";
+import {
+  runBatchArcWorker,
+  getBatchArcConfig,
+  buildBatchArcCron
+} from "../modules/batch/batch_arc&purg.service";
 export async function startScheduler(app: FastifyInstance) {
 
   const workerContext: WorkerContext = {
@@ -120,13 +124,45 @@ export async function startScheduler(app: FastifyInstance) {
     });
   };
 
+  const setupBatchArcJob = async () => {
+    try {
+      const cfg = await getBatchArcConfig(app.prisma);
+
+      if (!cfg) {
+        app.log.warn("[BATCH_ARC] Found no active configuration. Job not scheduled.");
+        return;
+      }
+
+      let cronExpr = buildBatchArcCron(cfg);
+
+      if (!cronExpr) {
+        app.log.warn("[BATCH_ARC] Cron expression failed to create. Check VALUE_TEXT/TIME.");
+        return;
+      }
+
+      if (process.env.NODE_ENV === "development") {
+        app.log.info("[BATCH_ARC] DEV MODE: override schedule to every 1 minute.");
+        cronExpr = "* * * * *";
+      }
+
+      app.log.info(`[BATCH_ARC] Scheduling job with cron: ${cronExpr}`);
+
+      schedule.scheduleJob(cronExpr, async () => {
+        await runBatchArcWorker(workerContext, cfg);
+      });
+
+    } catch (error) {
+      app.log.error(error, "[BATCH_ARC] Failed to initialize dynamic scheduler.");
+    }
+  };
+
   // schedule.scheduleJob("*/1 * * * *", mainScheduledJob);
   schedule.scheduleJob("0 8 * * *", scheduleNotifReminderJob);
   schedule.scheduleJob("0 0 * * 1", scheduleSecuritySyncJob);
   schedule.scheduleJob("0 0 * * 2", scheduleGlobalSecuritySyncJob);
   schedule.scheduleJob("0 0 * * 3", scheduleLdapSyncJob);
   schedule.scheduleJob("0 0 * * 4", scheduleTmminRoleSyncJob);
-  await initBatchArcScheduler()
+  await setupBatchArcJob()
 
   app.log.info("Scheduler started: Jobs are now scheduled.");
 }
