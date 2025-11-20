@@ -554,7 +554,7 @@ model TB_M_SYSTEM {
   SYSTEM_CD     String    @db.NVarChar(30)
   VALID_FROM_DT DateTime  @db.Date
   VALID_TO_DT   DateTime  @db.Date
-  VALUE_TEXT    String?   @db.NVarChar(30)
+  VALUE_TEXT    String?
   VALUE_NUM     Int?
   VALUE_TIME    DateTime? @db.Time
   CREATED_BY    String    @db.NVarChar(20)
