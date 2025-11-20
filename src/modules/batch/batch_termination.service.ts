@@ -45,7 +45,7 @@ export async function runBatchTermination(
     await execSp(prisma, logger, "LOAD_TEMP", "sp_SAR04_LoadTempEmployeeTermination");
     await execSp(prisma, logger, "VALIDATE_TEMP", "sp_SAR04_ValidateTempEmployeeTermination");
     await execSp(prisma, logger, "INSERT_TERMINATION", "sp_SAR04_InsertEmployeeTerminationFromTemp");
-    await execSp(prisma, logger, "FINALIZE", "sp_SAR04_UpdateMasterEmployeeFromTemp");
+    // await execSp(prisma, logger, "FINALIZE", "sp_SAR04_UpdateMasterEmployeeFromTemp");
 
     logger.info("[BATCH_TERMINATION] ✅ All steps finished successfully.");
   } catch (err) {

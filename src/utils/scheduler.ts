@@ -166,9 +166,13 @@ export async function startScheduler(app: FastifyInstance) {
   };
 
   // test satu menit
-  // schedule.scheduleJob("* * * * *", scheduleTerminationBatchJob);
-  // jam 12 malem
-  schedule.scheduleJob("0 0 * * *", scheduleTerminationBatchJob);
+  if (process.env.NODE_ENV === "development") {
+    schedule.scheduleJob("* * * * *", scheduleTerminationBatchJob);
+  } else {
+    // jam 12 malem
+    schedule.scheduleJob("0 0 * * *", scheduleTerminationBatchJob);
+  }
+
   // schedule.scheduleJob("*/1 * * * *", mainScheduledJob);
   schedule.scheduleJob("0 8 * * *", scheduleNotifReminderJob);
   schedule.scheduleJob("0 0 * * 1", scheduleSecuritySyncJob);
