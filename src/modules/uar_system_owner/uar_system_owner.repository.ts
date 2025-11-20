@@ -147,9 +147,11 @@ export const uarSystemOwnerRepository =
 
         let workflowFilteredUarIds: string[] | undefined = undefined;
         const whereWorkflow: any = {
-            DIVISION_ID: divisionId, // <-- Using divisionId
+            DIVISION_ID: divisionId,
+            IS_APPROVED: '1',
+            IS_REJECTED: '0',
         };
-        const hasWorkflowFilter = createdDate || completedDate;
+        const shouldFilterWorkflow = true;
 
         if (createdDate) {
             whereWorkflow.CREATED_DT = createFullDayFilter(createdDate);
@@ -158,7 +160,7 @@ export const uarSystemOwnerRepository =
             whereWorkflow.APPROVED_DT = createFullDayFilter(completedDate);
         }
 
-        if (hasWorkflowFilter) {
+        if (shouldFilterWorkflow) {
             const workflowUars = await prisma.tB_R_WORKFLOW.findMany({
                 where: whereWorkflow,
                 select: { UAR_ID: true },

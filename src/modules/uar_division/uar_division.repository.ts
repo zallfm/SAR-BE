@@ -3,6 +3,9 @@ import type { UarDivisionBatchUpdateDTO } from "../../types/uar_division";
 import { prisma } from "../../db/prisma";
 import { ApplicationError } from "../../core/errors/applicationError";
 import { ERROR_CODES } from "../../core/errors/errorCodes";
+import { runNotificationPusherWorker } from "../../workers/notification/notificationPusher.worker";
+import { NotificationStatus } from "../../workers/uar/uarTaskCreation.worker";
+import { Prisma } from "../../generated/prisma";
 async function getDbNow(): Promise<Date> {
     const rows: Array<{ now: Date }> = await prisma.$queryRaw`SELECT GETDATE() AS now`;
     return rows[0]?.now ?? new Date();
@@ -371,7 +374,8 @@ export const uarDivisionRepository = {
             .map(item => ({ USERNAME: item.username, ROLE_ID: item.roleId }));
 
         try {
-            return await prisma.$transaction(async (tx) => {
+
+            const transactionResult = await prisma.$transaction(async (tx) => {
 
                 const approveUpdateResult = (approvedItems.length > 0)
                     ? await tx.tB_R_UAR_DIVISION_USER.updateMany({
@@ -386,7 +390,7 @@ export const uarDivisionRepository = {
                             REVIEWED_DT: now,
                         },
                     })
-                    : { count: 0 }; // Default result if none
+                    : { count: 0 };
 
                 const revokeUpdateResult = (revokedItems.length > 0)
                     ? await tx.tB_R_UAR_DIVISION_USER.updateMany({
@@ -408,51 +412,49 @@ export const uarDivisionRepository = {
                 };
 
                 const allItemsInUar = await tx.tB_R_UAR_DIVISION_USER.findMany({
-                    where: { UAR_ID: uarId, DIVISION_ID: userDivisionId, },
-                    select: { DIV_APPROVAL_STATUS: true, },
+                    where: { UAR_ID: uarId, DIVISION_ID: userDivisionId },
+                    select: { DIV_APPROVAL_STATUS: true },
                 });
 
+                const hasPendingZeroStatus = allItemsInUar.some(item => item.DIV_APPROVAL_STATUS === '0');
 
-                const totalItems = allItemsInUar.length;
-                let rejectedCount = 0;
-                let pendingCount = 0;
+                let generatedNotificationId: bigint | null = null;
+                if (!hasPendingZeroStatus) {
+                    generatedNotificationId = BigInt(Date.now());
+                    await tx.tB_T_CANDIDATE_NOTIFICATION.create({
+                        data: {
+                            ID: generatedNotificationId,
+                            REQUEST_ID: uarId,
+                            ITEM_CODE: "DIV_COMPLETED",
+                            APPROVER_ID: userNoreg,
+                            STATUS: NotificationStatus.Pending,
+                            LINK_DETAIL: "1",
+                            DUE_DATE: now,
+                            CREATED_DT: now,
+                        } as Prisma.TB_T_CANDIDATE_NOTIFICATIONUncheckedCreateInput,
+                    });
 
-                for (const item of allItemsInUar) {
-                    if (item.DIV_APPROVAL_STATUS === '0') {
-                        rejectedCount++;
-                    } else if (item.DIV_APPROVAL_STATUS === null) {
-                        pendingCount++;
-                    }
+                    console.log(`Notification queued for UAR ${uarId}`);
                 }
 
-                let isApproved: 'Y' | 'N' = 'N';
-                let isRejected: 'Y' | 'N' = 'N';
-                let approvedDt: Date | null = null;
-
-                if (rejectedCount > 0) {
-                    isRejected = 'Y';
-                    approvedDt = now;
-                } else if (pendingCount > 0) {
-                } else {
-                    isApproved = 'Y';
-                    approvedDt = now;
-                }
-
-                const workflowUpdateResult = await tx.tB_R_WORKFLOW.updateMany({
-                    where: {
-                        UAR_ID: uarId,
-                        DIVISION_ID: userDivisionId,
-                    },
-                    data: {
-                        IS_APPROVED: isApproved,
-                        IS_REJECTED: isRejected,
-                        APPROVED_BY: userNoreg,
-                        APPROVED_DT: approvedDt,
-                    },
-                });
-
-                return { userUpdateResult, workflowUpdateResult };
+                return { userUpdateResult, generatedNotificationId };
             });
+
+            if (transactionResult.generatedNotificationId) {
+                console.log("Triggering worker for specific ID only...");
+
+                const workerContext = { prisma: prisma, log: app.log };
+
+                void runNotificationPusherWorker(
+                    workerContext,
+                    transactionResult.generatedNotificationId
+                ).catch(err => {
+                    console.error("Manual worker trigger failed:", err);
+                });
+            }
+
+            return transactionResult.userUpdateResult;
+
         } catch (error) {
             console.error("Batch update transaction failed:", error);
             throw new Error("Batch update failed.");
