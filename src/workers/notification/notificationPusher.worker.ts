@@ -1,7 +1,10 @@
 import { WorkerContext } from "../worker.context";
 import { NotificationStatus, SystemConfig, SystemUsers } from '../uar/uarTaskCreation.worker';
 
-export async function runNotificationPusherWorker(context: WorkerContext) {
+export async function runNotificationPusherWorker(
+    context: WorkerContext,
+    specificNotificationId?: bigint
+) {
     const { prisma, log } = context;
     log.info("Running Notification Pusher Worker...");
 
@@ -33,8 +36,17 @@ export async function runNotificationPusherWorker(context: WorkerContext) {
 
     let candidates = [];
     try {
+        const whereClause: any = {
+            STATUS: NotificationStatus.Pending
+        };
+
+        if (specificNotificationId) {
+            whereClause.ID = specificNotificationId;
+            log.info(`Worker triggered for specific Notification ID: ${specificNotificationId}`);
+        }
+
         candidates = await prisma.tB_T_CANDIDATE_NOTIFICATION.findMany({
-            where: { STATUS: NotificationStatus.Pending },
+            where: whereClause,
             take: 50,
         });
 
