@@ -94,14 +94,20 @@ export const userRepository = {
     }
 
     if (dbUser.IN_ACTIVE_DIRECTORY) {
-      console.log(`User ${username} has IN_ACTIVE_DIRECTORY=1, authenticating via HR Portal`)
-      const hrPortalAuth = await hrPortalClient.checkSCMobile(
-        username,
-        password,
+      console.log(
+        `User ${username} has IN_ACTIVE_DIRECTORY=1, authenticating via HR Portal`
       );
 
+      const hrPortalAuth = await hrPortalClient.checkSCMobile(username, password);
+      // console.log("hrPortalAuth", hrPortalAuth)
+
       if (!hrPortalAuth.success) {
-        throw new Error('Username or password incorrect');
+        // boleh pakai message dari HR Portal kalau mau
+        const msg =
+          (hrPortalAuth.data.message as { EN?: string })?.EN ||
+          'Username or password incorrect';
+        // console.log("msg", msg)
+        throw new Error(msg);
       }
     } else {
       console.log(`User ${username} has IN_ACTIVE_DIRECTORY=0, using local password verification`)

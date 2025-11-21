@@ -50,6 +50,6 @@ export async function publishMonitoringLog(app: FastifyInstance, input: PublishL
   await logRepository.insertLog(newLog).catch((err) => {
     app.log.warn({ err, processId }, "Failed to insert monitoring log (non-blocking)");
   });
-  console.log("newLog", newLog)
+  // console.log("newLog", newLog)
   return newLog;
 }
