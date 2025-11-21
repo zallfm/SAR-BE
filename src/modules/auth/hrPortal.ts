@@ -64,7 +64,7 @@ export class HRPortalClient {
         this.urlEncode(authData),
       );
 
-      console.log(response)
+      // console.log(response)
 
       if (response.status === 200) {
         const apiResponse = response.data as {
@@ -85,7 +85,7 @@ export class HRPortalClient {
             }`,
           );
         }
-        console.log("responnya", apiResponse.data)
+        // console.log("responnya", apiResponse.data)
 
         return {
           success,
