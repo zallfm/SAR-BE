@@ -7,6 +7,7 @@ const ApplicationItemSchema = {
     APPLICATION_ID: { type: "string" },
     APPLICATION_NAME: { type: "string" },
     DIVISION_ID_OWNER: { type: "string" },
+    DIVISION_ID_OWNER_NAME: { type: "string" },
     NOREG_SYSTEM_OWNER: { type: "string" },
     NOREG_SYSTEM_CUST: { type: "string" },
     SECURITY_CENTER: { type: "string" },
@@ -17,9 +18,9 @@ const ApplicationItemSchema = {
     CHANGED_DT: { type: "string" },
   },
   required: [
-    "APPLICATION_ID","APPLICATION_NAME","DIVISION_ID_OWNER",
-    "NOREG_SYSTEM_OWNER","NOREG_SYSTEM_CUST","SECURITY_CENTER",
-    "APPLICATION_STATUS","CREATED_BY","CREATED_DT","CHANGED_BY","CHANGED_DT"
+    "APPLICATION_ID", "APPLICATION_NAME", "DIVISION_ID_OWNER",
+    "NOREG_SYSTEM_OWNER", "NOREG_SYSTEM_CUST", "SECURITY_CENTER",
+    "APPLICATION_STATUS", "CREATED_BY", "CREATED_DT", "CHANGED_BY", "CHANGED_DT"
   ],
 } as const;
 

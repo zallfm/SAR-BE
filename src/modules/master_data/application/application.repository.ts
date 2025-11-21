@@ -29,6 +29,7 @@ function mapRowDbToDto(r: any): ApplicationRow {
     APPLICATION_ID: r.APPLICATION_ID,
     APPLICATION_NAME: r.APPLICATION_NAME,
     DIVISION_ID_OWNER: String(r.DIVISION_ID_OWNER),
+    DIVISION_ID_OWNER_NAME: r.TB_M_DIVISION?.DIVISION_NAME ?? "-",
     NOREG_SYSTEM_OWNER: r.NOREG_SYSTEM_OWNER,
     NOREG_SYSTEM_CUST: r.NOREG_SYSTEM_CUST,
     SECURITY_CENTER: r.SECURITY_CENTER,
@@ -89,6 +90,11 @@ export const applicationRepository = {
         orderBy: toOrder(params.sortField, params.sortOrder),
         skip: (params.page - 1) * params.limit,
         take: params.limit,
+        include: {
+          TB_M_DIVISION: {
+            select: { DIVISION_NAME: true }
+          }
+        }
       }),
       prisma.tB_M_APPLICATION.count({ where }),
     ]);
