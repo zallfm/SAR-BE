@@ -237,6 +237,8 @@ export const applicationRepository = {
   },
   // List user untuk dropdown FE: distinct berdasarkan NOREG
   // Pencarian by NOREG/NAME, sort by PERSONNEL_NAME
+
+
   async listUsers(p?: { q?: string; limit?: number; offset?: number }) {
     const q = (p?.q ?? "").trim();
     const limit = Math.min(p?.limit ?? 10, 50);
@@ -263,13 +265,10 @@ export const applicationRepository = {
           DEPARTMENT_ID: true,
           NOREG: true,
           PERSONNEL_NAME: true,
+
           DIVISION_NAME: true,
+
           MAIL: true,
-          TB_M_DIVISION: {
-            select: {
-              DIVISION_NAME: true,
-            },
-          },
           DEPARTMENT_NAME: true,
         },
       }),
@@ -281,12 +280,15 @@ export const applicationRepository = {
       DIVISION_ID: r.DIVISION_ID,
       DEPARTMENT_ID: r.DEPARTMENT_ID,
       PERSONAL_NAME: r.PERSONNEL_NAME ?? "",
-      DIVISION_NAME: r.TB_M_DIVISION?.DIVISION_NAME ?? "",
+
+      DIVISION_NAME: r.DIVISION_NAME ?? "",
+
       MAIL: r.MAIL ?? "",
       DEPARTMENT_NAME: r.DEPARTMENT_NAME ?? "",
       canBeOwner: true,
       canBeCustodian: true,
     }));
+
     console.log("items", items)
     return { items, total };
   },

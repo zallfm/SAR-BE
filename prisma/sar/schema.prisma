@@ -44,29 +44,27 @@ model TB_H_EMPLOYEE {
 }
 
 model TB_M_APPLICATION {
-  APPLICATION_ID                                                   String                          @id(map: "PK_TB_M_APPLICATION") @db.NVarChar(20)
-  APPLICATION_NAME                                                 String                          @db.NVarChar(100)
-  DIVISION_ID_OWNER                                                Int
-  NOREG_SYSTEM_OWNER                                               String                          @db.NVarChar(8)
-  NOREG_SYSTEM_CUST                                                String                          @db.NVarChar(8)
-  SECURITY_CENTER                                                  String                          @db.NVarChar(20)
-  APPLICATION_STATUS                                               String                          @db.Char(1)
-  CREATED_BY                                                       String                          @db.NVarChar(20)
-  CREATED_DT                                                       DateTime                        @db.Date
-  CHANGED_BY                                                       String?                         @db.NVarChar(20)
-  CHANGED_DT                                                       DateTime?                       @db.Date
-  TB_M_DIVISION                                                    TB_M_DIVISION                   @relation(fields: [DIVISION_ID_OWNER], references: [DIVISION_ID], onUpdate: NoAction, map: "FK_TB_M_APPLICATION_DIVISION")
-  TB_M_EMPLOYEE_TB_M_APPLICATION_NOREG_SYSTEM_OWNERToTB_M_EMPLOYEE TB_M_EMPLOYEE                   @relation("TB_M_APPLICATION_NOREG_SYSTEM_OWNERToTB_M_EMPLOYEE", fields: [NOREG_SYSTEM_OWNER], references: [NOREG], onUpdate: NoAction, map: "TB_M_APPLICATION__TB_M_EMPLOYEE_FK")
-  TB_M_EMPLOYEE_TB_M_APPLICATION_NOREG_SYSTEM_CUSTToTB_M_EMPLOYEE  TB_M_EMPLOYEE                   @relation("TB_M_APPLICATION_NOREG_SYSTEM_CUSTToTB_M_EMPLOYEE", fields: [NOREG_SYSTEM_CUST], references: [NOREG], onUpdate: NoAction, map: "TB_M_APPLICATION_CUST_TB_M_EMPLOYEE_FK")
-  TB_M_AUTH_DETAIL                                                 TB_M_AUTH_DETAIL[]
-  TB_M_AUTH_MAPPING                                                TB_M_AUTH_MAPPING[]
-  TB_M_AUTH_MAPPING_TERMINATION                                    TB_M_AUTH_MAPPING_TERMINATION[]
-  TB_M_SCHEDULE                                                    TB_M_SCHEDULE[]
-  TB_R_UAR_DIVISION_USER                                           TB_R_UAR_DIVISION_USER[]
-  TB_R_UAR_SYSTEM_OWNER                                            TB_R_UAR_SYSTEM_OWNER[]
-  TB_T_AUTH_DETAIL                                                 TB_T_AUTH_DETAIL[]
-  TB_T_AUTH_MAPPING                                                TB_T_AUTH_MAPPING[]
-  TB_T_AUTH_MAPPING_TERMINATION                                    TB_T_AUTH_MAPPING_TERMINATION[]
+  APPLICATION_ID                String                          @id(map: "PK_TB_M_APPLICATION") @db.NVarChar(20)
+  APPLICATION_NAME              String                          @db.NVarChar(100)
+  DIVISION_ID_OWNER             Int
+  NOREG_SYSTEM_OWNER            String                          @db.NVarChar(8)
+  NOREG_SYSTEM_CUST             String                          @db.NVarChar(8)
+  SECURITY_CENTER               String                          @db.NVarChar(20)
+  APPLICATION_STATUS            String                          @db.Char(1)
+  CREATED_BY                    String                          @db.NVarChar(20)
+  CREATED_DT                    DateTime                        @db.Date
+  CHANGED_BY                    String?                         @db.NVarChar(20)
+  CHANGED_DT                    DateTime?                       @db.Date
+  TB_M_DIVISION                 TB_M_DIVISION                   @relation(fields: [DIVISION_ID_OWNER], references: [DIVISION_ID], onUpdate: NoAction, map: "FK_TB_M_APPLICATION_DIVISION")
+  TB_M_AUTH_DETAIL              TB_M_AUTH_DETAIL[]
+  TB_M_AUTH_MAPPING             TB_M_AUTH_MAPPING[]
+  TB_M_AUTH_MAPPING_TERMINATION TB_M_AUTH_MAPPING_TERMINATION[]
+  TB_M_SCHEDULE                 TB_M_SCHEDULE[]
+  TB_R_UAR_DIVISION_USER        TB_R_UAR_DIVISION_USER[]
+  TB_R_UAR_SYSTEM_OWNER         TB_R_UAR_SYSTEM_OWNER[]
+  TB_T_AUTH_DETAIL              TB_T_AUTH_DETAIL[]
+  TB_T_AUTH_MAPPING             TB_T_AUTH_MAPPING[]
+  TB_T_AUTH_MAPPING_TERMINATION TB_T_AUTH_MAPPING_TERMINATION[] @ignore
 }
 
 model TB_M_AUTH_DETAIL {
@@ -136,50 +134,45 @@ model TB_M_DIVISION {
   CHANGED_BY                String?                     @db.NVarChar(20)
   CHANGED_DT                DateTime?                   @db.Date
   TB_M_APPLICATION          TB_M_APPLICATION[]
-  TB_M_EMPLOYEE             TB_M_EMPLOYEE[]
   TB_M_EMPLOYEE_TERMINATION TB_M_EMPLOYEE_TERMINATION[]
   TB_M_UAR_PIC              TB_M_UAR_PIC[]
   TB_R_UAR_DIVISION_USER    TB_R_UAR_DIVISION_USER[]
   TB_R_UAR_SYSTEM_OWNER     TB_R_UAR_SYSTEM_OWNER[]
   TB_R_WORKFLOW             TB_R_WORKFLOW[]
-  TB_T_EMPLOYEE             TB_T_EMPLOYEE[]
   TB_T_EMPLOYEE_TERMINATION TB_T_EMPLOYEE_TERMINATION[]
 }
 
 model TB_M_EMPLOYEE {
-  NOREG                                                               String             @unique(map: "UQ_TB_M_EMPLOYEE_NOREG") @db.NVarChar(8)
-  PERSONNEL_NAME                                                      String?            @db.NVarChar(80)
-  MAIL                                                                String?            @db.NVarChar(50)
-  POSITION_NAME                                                       String?            @db.NVarChar(10)
-  CLASS_NAME                                                          String?            @db.NVarChar(20)
-  POSITION_CODE                                                       Int
-  POSITION_TITLE                                                      String?            @db.NVarChar(100)
-  POSITION_LEVEL                                                      Int?
-  JOB_CODE                                                            Int
-  JOB_TITLE                                                           String?            @db.NVarChar(50)
-  DIRECTORATE_ID                                                      Int?
-  DIRECTORATE_NAME                                                    String?            @db.NVarChar(255)
-  DIVISION_ID                                                         Int?
-  DIVISION_NAME                                                       String?            @db.NVarChar(255)
-  DEPARTMENT_ID                                                       Int?
-  DEPARTMENT_NAME                                                     String?            @db.NVarChar(255)
-  SECTION_ID                                                          Int?
-  SECTION_NAME                                                        String?            @db.NVarChar(255)
-  LINE_ID                                                             Int?
-  LINE_NAME                                                           String?            @db.NVarChar(255)
-  GROUP_ID                                                            Int?
-  GROUP_NAME                                                          String?            @db.NVarChar(255)
-  VALID_FROM                                                          DateTime           @db.Date
-  VALID_TO                                                            DateTime           @db.Date
-  ORG_ID                                                              Int
-  ORG_TITLE                                                           String?            @db.NVarChar(255)
-  CREATED_BY                                                          String             @db.NVarChar(20)
-  CREATED_DT                                                          DateTime           @db.Date
-  CHANGED_BY                                                          String?            @db.NVarChar(20)
-  CHANGED_DT                                                          DateTime?          @db.Date
-  TB_M_APPLICATION_TB_M_APPLICATION_NOREG_SYSTEM_OWNERToTB_M_EMPLOYEE TB_M_APPLICATION[] @relation("TB_M_APPLICATION_NOREG_SYSTEM_OWNERToTB_M_EMPLOYEE")
-  TB_M_APPLICATION_TB_M_APPLICATION_NOREG_SYSTEM_CUSTToTB_M_EMPLOYEE  TB_M_APPLICATION[] @relation("TB_M_APPLICATION_NOREG_SYSTEM_CUSTToTB_M_EMPLOYEE")
-  TB_M_DIVISION                                                       TB_M_DIVISION?     @relation(fields: [DIVISION_ID], references: [DIVISION_ID], onDelete: NoAction, onUpdate: NoAction, map: "TB_M_EMPLOYEE_TB_M_DIVISION_FK")
+  NOREG            String    @db.NVarChar(8)
+  PERSONNEL_NAME   String?   @db.NVarChar(80)
+  MAIL             String?   @db.NVarChar(50)
+  POSITION_NAME    String?   @db.NVarChar(10)
+  CLASS_NAME       String?   @db.NVarChar(20)
+  POSITION_CODE    Int
+  POSITION_TITLE   String?   @db.NVarChar(100)
+  POSITION_LEVEL   Int?
+  JOB_CODE         Int
+  JOB_TITLE        String?   @db.NVarChar(50)
+  DIRECTORATE_ID   Int?
+  DIRECTORATE_NAME String?   @db.NVarChar(255)
+  DIVISION_ID      Int?
+  DIVISION_NAME    String?   @db.NVarChar(255)
+  DEPARTMENT_ID    Int?
+  DEPARTMENT_NAME  String?   @db.NVarChar(255)
+  SECTION_ID       Int?
+  SECTION_NAME     String?   @db.NVarChar(255)
+  LINE_ID          Int?
+  LINE_NAME        String?   @db.NVarChar(255)
+  GROUP_ID         Int?
+  GROUP_NAME       String?   @db.NVarChar(255)
+  VALID_FROM       DateTime  @db.Date
+  VALID_TO         DateTime  @db.Date
+  ORG_ID           Int
+  ORG_TITLE        String?   @db.NVarChar(255)
+  CREATED_BY       String    @db.NVarChar(20)
+  CREATED_DT       DateTime  @db.Date
+  CHANGED_BY       String?   @db.NVarChar(20)
+  CHANGED_DT       DateTime? @db.Date
 
   @@id([NOREG, POSITION_CODE, JOB_CODE, VALID_FROM, VALID_TO, ORG_ID], map: "PK_TB_M_EMPLOYEE")
 }
@@ -219,10 +212,10 @@ model TB_M_EMPLOYEE_TERMINATION {
   CREATED_DT        DateTime       @db.Date
   CHANGED_BY        String?        @db.NVarChar(20)
   CHANGED_DT        DateTime?      @db.Date
-  PROCESS_ID        Int            @unique(map: "TB_M_EMPLOYEE_TERMINATION_UNIQUE")
+  PROCESS_ID        BigInt
   TB_M_DIVISION     TB_M_DIVISION? @relation(fields: [DIVISION_ID], references: [DIVISION_ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_TB_M_EMPLOYEE_TERMINATION_DIVISION")
 
-  @@id([NOREG, POSITION_CODE, JOB_CODE, VALID_FROM, VALID_TO, ORG_ID], map: "PK_TB_M_EMPLOYEE_TERMINATION")
+  @@unique([NOREG, PROCESS_ID], map: "TB_M_EMPLOYEE_TERMINATION_UNIQUE")
 }
 
 model TB_M_FUNCTION {
@@ -421,7 +414,7 @@ model TB_R_WORKFLOW {
 }
 
 model TB_T_AUTH_DETAIL {
-  PROCESS_ID       Int              @id(map: "PK_TB_T_AUTH_DETAIL")
+  PROCESS_ID       BigInt           @id(map: "PK_TB_T_AUTH_DETAIL")
   APPLICATION_ID   String           @db.NVarChar(20)
   ROLE_ID          String           @db.NVarChar(20)
   ROLE_NAME        String?          @db.NVarChar(200)
@@ -436,7 +429,7 @@ model TB_T_AUTH_DETAIL {
 }
 
 model TB_T_AUTH_MAPPING {
-  PROCESS_ID       Int              @id(map: "PK_TB_T_AUTH_MAPPING")
+  PROCESS_ID       BigInt           @id(map: "PK_TB_T_AUTH_MAPPING")
   APPLICATION_ID   String           @db.NVarChar(20)
   USERNAME         String           @db.NVarChar(50)
   NOREG            String?          @db.NVarChar(20)
@@ -454,8 +447,9 @@ model TB_T_AUTH_MAPPING {
   TB_M_APPLICATION TB_M_APPLICATION @relation(fields: [APPLICATION_ID], references: [APPLICATION_ID], onUpdate: NoAction, map: "FK_TB_T_AUTH_MAPPING_APP")
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model TB_T_AUTH_MAPPING_TERMINATION {
-  PROCESS_ID       Int              @id(map: "PK_TB_T_AUTH_MAPPING_TERMINATION")
+  PROCESS_ID       BigInt
   APPLICATION_ID   String           @db.NVarChar(20)
   USERNAME         String           @db.NVarChar(50)
   NOREG            String           @db.NVarChar(20)
@@ -471,44 +465,46 @@ model TB_T_AUTH_MAPPING_TERMINATION {
   CHANGED_BY       String?          @db.NVarChar(20)
   CHANGED_DT       DateTime?        @db.Date
   TB_M_APPLICATION TB_M_APPLICATION @relation(fields: [APPLICATION_ID], references: [APPLICATION_ID], onUpdate: NoAction, map: "FK_TB_T_AUTH_MAPPING_TERMINATION_APP")
+
+  @@ignore
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model TB_T_EMPLOYEE {
-  PROCESS_ID       Int
-  NOREG            String         @db.NVarChar(8)
-  PERSONNEL_NAME   String?        @db.NVarChar(80)
-  MAIL             String?        @db.NVarChar(50)
-  POSITION_NAME    String?        @db.NVarChar(10)
-  CLASS_NAME       String?        @db.NVarChar(20)
+  PROCESS_ID       BigInt
+  NOREG            String    @db.NVarChar(8)
+  PERSONNEL_NAME   String?   @db.NVarChar(80)
+  MAIL             String?   @db.NVarChar(50)
+  POSITION_NAME    String?   @db.NVarChar(10)
+  CLASS_NAME       String?   @db.NVarChar(20)
   POSITION_CODE    Int
-  POSITION_TITLE   String?        @db.NVarChar(100)
+  POSITION_TITLE   String?   @db.NVarChar(100)
   POSITION_LEVEL   Int?
   JOB_CODE         Int
-  JOB_TITLE        String?        @db.NVarChar(50)
+  JOB_TITLE        String?   @db.NVarChar(50)
   DIRECTORATE_ID   Int?
-  DIRECTORATE_NAME String?        @db.NVarChar(255)
+  DIRECTORATE_NAME String?   @db.NVarChar(255)
   DIVISION_ID      Int?
-  DIVISION_NAME    String?        @db.NVarChar(255)
+  DIVISION_NAME    String?   @db.NVarChar(255)
   DEPARTMENT_ID    Int?
-  DEPARTMENT_NAME  String?        @db.NVarChar(255)
+  DEPARTMENT_NAME  String?   @db.NVarChar(255)
   SECTION_ID       Int?
-  SECTION_NAME     String?        @db.NVarChar(255)
+  SECTION_NAME     String?   @db.NVarChar(255)
   LINE_ID          Int?
-  LINE_NAME        String?        @db.NVarChar(255)
+  LINE_NAME        String?   @db.NVarChar(255)
   GROUP_ID         Int?
-  GROUP_NAME       String?        @db.NVarChar(255)
-  VALID_FROM       DateTime       @db.Date
-  VALID_TO         DateTime       @db.Date
+  GROUP_NAME       String?   @db.NVarChar(255)
+  VALID_FROM       DateTime  @db.Date
+  VALID_TO         DateTime  @db.Date
   ORG_ID           Int
-  ORG_TITLE        String?        @db.NVarChar(255)
+  ORG_TITLE        String?   @db.NVarChar(255)
   SYNC_STATUS      Int
-  CREATED_BY       String         @db.NVarChar(20)
-  CREATED_DT       DateTime       @db.Date
-  CHANGED_BY       String?        @db.NVarChar(20)
-  CHANGED_DT       DateTime?      @db.Date
-  TB_M_DIVISION    TB_M_DIVISION? @relation(fields: [DIVISION_ID], references: [DIVISION_ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_TB_T_EMPLOYEE_DIVISION")
+  CREATED_BY       String    @db.NVarChar(20)
+  CREATED_DT       DateTime  @db.Date
+  CHANGED_BY       String?   @db.NVarChar(20)
+  CHANGED_DT       DateTime? @db.Date
 
-  @@id([PROCESS_ID, NOREG, POSITION_CODE, JOB_CODE, VALID_FROM, VALID_TO, ORG_ID, SYNC_STATUS], map: "PK_TB_T_EMPLOYEE")
+  @@ignore
 }
 
 model TB_T_EMPLOYEE_TERMINATION {
@@ -595,7 +591,7 @@ model TB_M_TEMPLATE {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model TB_R_LOG_D_BACKUP {
-  PROCESS_ID      Int
+  PROCESS_ID      BigInt?
   SEQ_NO          Int
   MESSAGE_ID      String    @db.NVarChar(12)
   MESSAGE_TYPE    String    @db.NVarChar(3)
@@ -828,7 +824,7 @@ model TB_R_ARC_LOG_D {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model TB_R_ARC_LOG_D_BACKUP {
-  PROCESS_ID      Int
+  PROCESS_ID      BigInt?
   SEQ_NO          Int
   MESSAGE_ID      String    @db.NVarChar(12)
   MESSAGE_TYPE    String    @db.NVarChar(3)
@@ -969,7 +965,7 @@ model TB_R_PEFF_LOG_D {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model TB_R_PEFF_LOG_D_BACKUP {
-  PROCESS_ID      Int
+  PROCESS_ID      BigInt?
   SEQ_NO          Int
   MESSAGE_ID      String    @db.NVarChar(12)
   MESSAGE_TYPE    String    @db.NVarChar(3)

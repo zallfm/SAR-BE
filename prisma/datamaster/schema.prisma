@@ -797,3 +797,57 @@ model tb_supplier {
   update_on     DateTime? @db.DateTime
   tb_po         tb_po[]
 }
+
+model TB_M_ORG_USER_POSITION {
+  ORG_ID           Int
+  OBJECT_TYPE      String?   @db.VarChar(2)
+  NOREG            String    @db.VarChar(8)
+  JOB_CODE         Int
+  JOB_TITLE        String?   @db.VarChar(40)
+  POSITION_CODE    Int
+  POSITION_TITLE   String?   @db.VarChar(40)
+  COMPANY_CODE     String?   @db.VarChar(3)
+  USERNAME         String?   @db.VarChar(64)
+  POSITION_LEVEL   Int
+  POSITION_ABBR    String?   @db.VarChar(10)
+  CLASS            String?   @db.VarChar(12)
+  VALID_FROM       DateTime  @db.DateTime
+  VALID_TO         DateTime  @db.DateTime
+  DELIMIT_DATE     DateTime? @db.DateTime
+  SAP_FLAG         Boolean
+  PRIORITY         Int       @db.SmallInt
+  POSITION_PERCENT Int?      @db.SmallInt
+  CHIEF_TAG        String?   @db.Char(1)
+  CREATED_BY       String?   @db.VarChar(64)
+  CREATED_DT       DateTime? @db.DateTime
+  UPDATED_BY       String?   @db.VarChar(64)
+  UPDATED_DT       DateTime? @db.DateTime
+  COST_CENTER      String?   @db.VarChar(10)
+  PROFILE_SCORE    Int?
+
+  @@id([NOREG, ORG_ID, JOB_CODE, POSITION_CODE, VALID_FROM, VALID_TO], map: "PK_TB_M_ORG_USER_POSITION")
+}
+
+model TB_M_PROFILE_MAIN {
+  NOREG             String    @db.VarChar(8)
+  TITLE             String    @db.VarChar(15)
+  NAME              String    @db.VarChar(80)
+  NICKNAME          String?   @db.VarChar(30)
+  GENDER            String    @db.VarChar(1)
+  DATE_OF_BIRTH     DateTime  @db.Date
+  PLACE_OF_BIRTH    String    @db.VarChar(40)
+  COUNTRY_OF_BIRTH  String    @db.VarChar(40)
+  PROVINCE_OF_BIRTH String?   @db.VarChar(40)
+  NATIONALITY       String    @db.VarChar(340)
+  BLOOD_TYPE        String?   @db.VarChar(2)
+  RELIGION          String    @db.VarChar(2)
+  MARITAL_STATUS    String    @db.VarChar(1)
+  MARITAL_DATE      DateTime? @db.Date
+  BPK_STATUS        String    @db.VarChar(3)
+  VALID_FROM        DateTime  @db.DateTime
+  VALID_TO          DateTime  @db.DateTime
+  APPROVAL_STATUS   Int
+  DATA_STATUS       String?   @db.Char(1)
+
+  @@id([NOREG, VALID_FROM, VALID_TO], map: "PK_TB_M_PROFILE_MAIN_1")
+}
