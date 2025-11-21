@@ -19,6 +19,7 @@ import {
   getBatchArcConfig,
   buildBatchArcCron
 } from "../modules/batch/batch_arc&purg.service";
+import { runEmployeeSyncWorker } from "../workers/sync/employeeSync.worker";
 export async function startScheduler(app: FastifyInstance) {
 
   const workerContext: WorkerContext = {
@@ -124,6 +125,19 @@ export async function startScheduler(app: FastifyInstance) {
     });
   };
 
+  const scheduleEmployeeSyncJob = () => {
+    app.log.info("Running employee sync job.");
+
+    const employeeSyncContext = {
+      sarPrisma: app.prisma,
+      log: app.log
+    };
+
+    runEmployeeSyncWorker(employeeSyncContext).catch(err => {
+      app.log.error(err, "Employee Sync Worker failed");
+    });
+  };
+
   const setupBatchArcJob = async () => {
     try {
       const cfg = await getBatchArcConfig(app.prisma);
@@ -162,6 +176,7 @@ export async function startScheduler(app: FastifyInstance) {
   schedule.scheduleJob("0 0 * * 2", scheduleGlobalSecuritySyncJob);
   schedule.scheduleJob("0 0 * * 3", scheduleLdapSyncJob);
   schedule.scheduleJob("0 0 * * 4", scheduleTmminRoleSyncJob);
+  schedule.scheduleJob("0 0 * * 4", scheduleEmployeeSyncJob);
   await setupBatchArcJob()
 
   app.log.info("Scheduler started: Jobs are now scheduled.");
