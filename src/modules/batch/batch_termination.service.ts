@@ -42,9 +42,9 @@ export async function runBatchTermination(
   logger.info("[BATCH_TERMINATION] ===== START nightly termination batch =====");
 
   try {
-    await execSp(prisma, logger, "LOAD_TEMP", "SP_SAR04_LOADTEMP_EMPLOYEE_TERMINATION");
-    await execSp(prisma, logger, "VALIDATE_TEMP", "SP_SAR04_VALIDATETEMP_EMPLOYEE_TERMINATION");
-    await execSp(prisma, logger, "INSERT_TERMINATION", "SP_SAR04_INSERTEMPLOYEETERMINATIONFROMTEMP");
+    await execSp(prisma, logger, "LOAD_TEMP", "sp_SAR04_LOADTEMP_EMPLOYEE_TERMINATION");
+    await execSp(prisma, logger, "VALIDATE_TEMP", "sp_SAR04_VALIDATETEMP_EMPLOYEE_TERMINATION");
+    await execSp(prisma, logger, "INSERT_TERMINATION", "sp_SAR04_INSERTEMPLOYEETERMINATIONFROMTEMP");
     // await execSp(prisma, logger, "FINALIZE", "sp_SAR04_UpdateMasterEmployeeFromTemp");
 
     logger.info("[BATCH_TERMINATION] ✅ All steps finished successfully.");
